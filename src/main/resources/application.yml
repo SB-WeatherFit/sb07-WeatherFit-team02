@@ -1,1 +1,7 @@
-spring.application.name=WeatherFit
+spring:
+  application:
+    name: WeatherFit
+  profiles:
+    default: dev
+
+
