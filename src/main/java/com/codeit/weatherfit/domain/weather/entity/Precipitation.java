@@ -1,12 +1,21 @@
 package com.codeit.weatherfit.domain.weather.entity;
 
 import jakarta.persistence.Embeddable;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Embeddable
-public record Precipitation(
+@Getter
+@NoArgsConstructor
+public class Precipitation {
 
-    PrecipitationType type,
-    double amount,
-    double probability
-) {
+    private PrecipitationType type;
+    private double amount;
+    private double probability;
+
+    public Precipitation(PrecipitationType type, double amount, double probability) {
+        this.type = type;
+        this.amount = amount;
+        this.probability = probability;
+    }
 }
