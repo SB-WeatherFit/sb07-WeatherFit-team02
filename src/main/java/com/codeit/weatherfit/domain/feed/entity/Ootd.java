@@ -2,6 +2,7 @@ package com.codeit.weatherfit.domain.feed.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -17,8 +18,7 @@ public class Ootd extends BaseEntity {
     @ManyToOne
     private Feed feed;
 
-    @ManyToOne
-    private Clothes  clothes;
-
+    @Embedded
+    private OotdClothes clothes;
 
 }

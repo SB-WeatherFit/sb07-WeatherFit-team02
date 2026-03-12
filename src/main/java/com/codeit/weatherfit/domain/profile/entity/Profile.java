@@ -21,9 +21,7 @@ public class Profile extends BaseEntity {
 
     @OneToOne
     private User user;
-
-    private String name;
-    private Gender gender; // todo : enum으로 빼기
+    private Gender gender;
     private LocalDate birthDate;
 
     @Embedded

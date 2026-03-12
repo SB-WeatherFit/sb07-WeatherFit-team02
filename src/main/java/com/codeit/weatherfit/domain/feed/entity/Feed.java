@@ -2,6 +2,7 @@ package com.codeit.weatherfit.domain.feed.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
 import com.codeit.weatherfit.domain.user.entity.User;
+import com.codeit.weatherfit.domain.weather.entity.Weather;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -21,7 +22,8 @@ public class Feed extends BaseEntity {
     @ManyToOne
     private User author;
 
-    private String weather; //todo : weather 타입 생성후 weather 타입 받기
+    @ManyToOne
+    private Weather weather;
 
     @OneToMany
     private List<Ootd> ootds;
