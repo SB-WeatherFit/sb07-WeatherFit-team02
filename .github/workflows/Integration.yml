@@ -3,7 +3,7 @@ name: Integration
 on:
   pull_request:
     branches:
-      - develop
+      - dev
       - main
 
 jobs:
