@@ -15,6 +15,9 @@ jobs:
       contents: read
       pull-requests: write
 
+    env:
+      WEATHER_API_KEY: ${{secrets.WEATHER_API_KEY}}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
