@@ -77,7 +77,7 @@ create table clothes_attribute_types
     updated_at timestamp with time zone not null default CURRENT_TIMESTAMP,
     name       text                     not null
 
-)
+);
 
 create table selectable_values
 (
@@ -87,23 +87,21 @@ create table selectable_values
     type_id    uuid                     not null,
     value      text                     not null,
 
-    CONSTRAINT fk_selectable_values_clothing_attribute_types foreign key (type_id) references clothing_attribute_types (id),
+    CONSTRAINT fk_selectable_values_clothes_attribute_types foreign key (type_id) references clothes_attribute_types (id),
     CONSTRAINT uk_type_value unique (type_id, value)
 
-)
+);
 
 create table clothes_attributes
 (
     id         uuid PRIMARY KEY,
     created_at timestamp with time zone not null DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    clothes_id   uuid                     not null,
-    type_id    uuid                     not null,
-    value      text                     not null,
+    clothes_id uuid                     not null,
+    value_id   uuid                     not null,
 
-    CONSTRAINT fk_clothing_attributes_clothes foreign key (clothes_id) references clothes (id),
-    CONSTRAINT fk_clothing_attributes_clothing_attribute_types foreign key (type_id) references clothing_attribute_types (id),
-    CONSTRAINT uk_clothes_types unique (clothes_id, type_id)
+    CONSTRAINT fk_clothes_attributes_clothes foreign key (clothes_id) references clothes (id),
+    constraint fk_clothes_attributes_selectable_values foreign key (value_id) references selectable_values (id)
 
 );
 
@@ -207,7 +205,7 @@ create table profiles
     profile_image_url       text,
 
     constraint check_sensitivity_range check ((temperature_sensitivity between 1 and 5)),
-    constraint check_gender check(gender in ('MALE','FEMALE','ETC'))
+    constraint check_gender check (gender in ('MALE', 'FEMALE', 'OTHER'))
 
 );
 

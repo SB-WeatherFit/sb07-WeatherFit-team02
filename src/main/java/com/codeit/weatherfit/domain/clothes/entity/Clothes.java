@@ -21,6 +21,6 @@ public class Clothes extends BaseEntity {
 
     private String name;
     private String imageUrl;
-    private ClothingType type;
+    private ClothesType type;
 
 }
