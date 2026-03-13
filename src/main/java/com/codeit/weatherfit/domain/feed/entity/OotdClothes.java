@@ -1,14 +1,14 @@
 package com.codeit.weatherfit.domain.feed.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 
 @Embeddable
 @Getter
 public class OotdClothes {
 
-    @NotBlank
+    @Column(nullable = false)
     private String name;
 
     private String imageUrl;

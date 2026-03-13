@@ -2,7 +2,6 @@ package com.codeit.weatherfit.domain.feed.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -13,11 +12,10 @@ import lombok.NoArgsConstructor;
 public class Ootd extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @NotNull
+    @JoinColumn(nullable = false)
     private Feed feed;
 
     @Embedded
-    @NotNull
     private OotdClothes clothes;
 
 }
