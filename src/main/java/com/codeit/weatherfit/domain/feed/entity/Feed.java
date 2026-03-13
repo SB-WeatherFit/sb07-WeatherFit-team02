@@ -8,26 +8,19 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Table(name = "feeds")
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Feed extends BaseEntity {
 
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private User author;
 
-
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "weather_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Weather weather;
-
-    @JoinColumn(nullable = false)
-    @OneToMany
-    private List<Ootd> ootds;
 
     @Column(nullable = false)
     private String content;
