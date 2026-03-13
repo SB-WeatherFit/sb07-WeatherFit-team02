@@ -8,7 +8,7 @@ public class TestFixture {
 
     public LocationResponse locationFactory(){
         double randomLongitude = Math.random()*360 -180;
-        double randomLatitude = Math.random()*360 -180;
+        double randomLatitude = Math.random()*180 -90;
         String address = "서울특별시";
         return new LocationResponse(
                 randomLatitude,
