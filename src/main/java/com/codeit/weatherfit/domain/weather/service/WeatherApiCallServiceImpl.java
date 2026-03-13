@@ -24,6 +24,7 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
         double latitude = location.latitude();
         double longitude = location.longitude();
 
+        long before = System.currentTimeMillis();
         WeatherApiResponse result = webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/data/2.5/forecast")
@@ -37,7 +38,9 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 .retrieve()
                 .bodyToMono(WeatherApiResponse.class)
                 .block();
-        log.info("result: {}", result);
+        long after = System.currentTimeMillis();
+
+        log.info("spending time: {} sec", (after - before) / 1000.0);
         return result;
     }
 }
