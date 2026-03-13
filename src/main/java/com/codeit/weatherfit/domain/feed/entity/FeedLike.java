@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "feeds_likes")
+@Table(name = "feed_likes")
 public class FeedLike extends BaseEntity {
 
     @ManyToOne

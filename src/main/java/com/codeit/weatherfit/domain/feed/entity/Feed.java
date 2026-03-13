@@ -8,8 +8,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Table(name = "feeds")
 @Getter
 @Entity
@@ -20,14 +18,9 @@ public class Feed extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private User author;
 
-
     @JoinColumn(name = "weather_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Weather weather;
-
-    @JoinColumn(name = "ootd_id", nullable = false)
-    @OneToMany
-    private List<Ootd> ootds;
 
     @Column(nullable = false)
     private String content;
