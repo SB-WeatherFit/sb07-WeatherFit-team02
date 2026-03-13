@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class Ootd extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "feed_id", nullable = false)
     private Feed feed;
 
     @Embedded

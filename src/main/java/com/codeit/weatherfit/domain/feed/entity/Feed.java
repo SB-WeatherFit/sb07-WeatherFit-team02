@@ -16,16 +16,16 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Feed extends BaseEntity {
 
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private User author;
 
 
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "weather_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Weather weather;
 
-    @JoinColumn(nullable = false)
+    @JoinColumn(name = "ootd_id", nullable = false)
     @OneToMany
     private List<Ootd> ootds;
 
