@@ -70,7 +70,7 @@ create table clothes
     CONSTRAINT fk_clothes_users foreign key (owner_id) references users (id)
 );
 
-create table clothing_attribute_types
+create table clothes_attribute_types
 (
     id         uuid PRIMARY KEY,
     created_at timestamp with time zone not null default CURRENT_TIMESTAMP,
@@ -87,22 +87,23 @@ create table selectable_values
     type_id    uuid                     not null,
     value      text                     not null,
 
-    CONSTRAINT fk_selectable_values_clothing_attribute_types foreign key (type_id) references clothing_attribute_types (id)
+    CONSTRAINT fk_selectable_values_clothing_attribute_types foreign key (type_id) references clothing_attribute_types (id),
+    CONSTRAINT uk_type_value unique (type_id, value)
 
 )
 
-create table clothing_attributes
+create table clothes_attributes
 (
     id         uuid PRIMARY KEY,
     created_at timestamp with time zone not null DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    cloth_id   uuid                     not null,
+    clothes_id   uuid                     not null,
     type_id    uuid                     not null,
     value      text                     not null,
 
-    CONSTRAINT fk_clothing_attributes_clothes foreign key (cloth_id) references clothes (id),
+    CONSTRAINT fk_clothing_attributes_clothes foreign key (clothes_id) references clothes (id),
     CONSTRAINT fk_clothing_attributes_clothing_attribute_types foreign key (type_id) references clothing_attribute_types (id),
-    CONSTRAINT uk_clothes_types unique (cloth_id, type_id)
+    CONSTRAINT uk_clothes_types unique (clothes_id, type_id)
 
 );
 
@@ -205,7 +206,8 @@ create table profiles
     address                 text,
     profile_image_url       text,
 
-    constraint check_sensitivity_range check ((temperature_sensitivity between 1 and 5))
+    constraint check_sensitivity_range check ((temperature_sensitivity between 1 and 5)),
+    constraint check_gender check(gender in ('MALE','FEMALE','ETC'))
 
 );
 
