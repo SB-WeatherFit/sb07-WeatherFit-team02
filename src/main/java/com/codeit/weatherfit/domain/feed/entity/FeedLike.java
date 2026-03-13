@@ -5,6 +5,7 @@ import com.codeit.weatherfit.domain.user.entity.User;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,8 +17,10 @@ import lombok.NoArgsConstructor;
 public class FeedLike extends BaseEntity {
 
     @ManyToOne
+    @NotNull
     private Feed feed;
 
     @ManyToOne
+    @NotNull
     private User user;
 }

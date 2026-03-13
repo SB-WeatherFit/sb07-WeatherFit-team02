@@ -3,10 +3,9 @@ package com.codeit.weatherfit.domain.feed.entity;
 import com.codeit.weatherfit.domain.base.BaseEntity;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,14 +18,20 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Feed extends BaseEntity {
 
-    @ManyToOne
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
     private User author;
 
-    @ManyToOne
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
     private Weather weather;
 
+    @NotNull
     @OneToMany
     private List<Ootd> ootds;
+
+    @NotBlank
     private String content;
 
 }
