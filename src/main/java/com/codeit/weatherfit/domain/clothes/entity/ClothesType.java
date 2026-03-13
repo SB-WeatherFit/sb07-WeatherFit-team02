@@ -1,6 +1,6 @@
 package com.codeit.weatherfit.domain.clothes.entity;
 
-public enum ClothingType {
+public enum ClothesType {
 
         TOP("상의"),
     BOTTOM("하의"),
@@ -16,7 +16,7 @@ public enum ClothingType {
     ETC("기타");
 
         private final String description;
-    ClothingType(String description) {
+    ClothesType(String description) {
         this.description = description;
     }
 
