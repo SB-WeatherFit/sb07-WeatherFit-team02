@@ -2,6 +2,7 @@ package com.codeit.weatherfit.domain.clothes.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -13,7 +14,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ClothingAttribute extends BaseEntity {
 
-    private String name;
-    private String value;
+    @ManyToOne
+    private Clothes clothes;
 
+    @ManyToOne
+    private ClothingAttributeType clothingAttributeType;
+
+    private String value;
 }

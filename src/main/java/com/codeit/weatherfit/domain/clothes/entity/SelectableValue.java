@@ -7,6 +7,6 @@ import jakarta.persistence.Table;
 public class SelectableValue {
 
     @ManyToOne
-    private ClothingAttribute clothingAttribute;
+    private ClothingAttributeType clothingAttributeType;
     private String value;
 }
