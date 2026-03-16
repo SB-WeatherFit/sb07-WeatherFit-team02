@@ -6,7 +6,7 @@ import java.util.UUID;
 public record FeedCreateRequestDto(
         UUID userId,
         UUID weatherId,
-        List<UUID> clothedIds,
+        List<UUID> clothesIds,
         String content
 ) {
 }
