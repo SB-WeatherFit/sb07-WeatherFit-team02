@@ -11,8 +11,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 class MessageEventListenerTest {
@@ -35,7 +34,7 @@ class MessageEventListenerTest {
         TransactionTemplate tx = new TransactionTemplate(transactionManager);
         tx.executeWithoutResult(status -> eventPublisher.publishEvent(event));
 
-        verify(messagingTemplate).convertAndSend(
+        verify(messagingTemplate, timeout(3000)).convertAndSend(
                 "/sub/direct-messages_" + event.messageKey(),
                 event.content()
         );
