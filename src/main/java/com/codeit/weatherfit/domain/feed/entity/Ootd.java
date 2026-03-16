@@ -1,11 +1,7 @@
 package com.codeit.weatherfit.domain.feed.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
-import com.codeit.weatherfit.domain.clothes.entity.Clothes;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -15,7 +11,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "ootds")
 public class Ootd extends BaseEntity {
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "feed_id", nullable = false)
     private Feed feed;
 
     @Embedded
