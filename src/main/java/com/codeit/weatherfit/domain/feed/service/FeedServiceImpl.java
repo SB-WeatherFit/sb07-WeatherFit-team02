@@ -3,9 +3,13 @@ package com.codeit.weatherfit.domain.feed.service;
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
+import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
+import com.codeit.weatherfit.domain.feed.exception.FeedNotExistException;
+import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
+import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
@@ -28,6 +32,8 @@ public class FeedServiceImpl implements FeedService {
     private final WeatherRepository weatherRepository;
     private final FeedRepository feedRepository;
     private final FeedClothesRepository feedClothesRepository;
+    private final FeedLikeRepository feedLikeRepository;
+    private final CommentRepository commentRepository;
 
     @Override
     @Transactional
@@ -42,17 +48,47 @@ public class FeedServiceImpl implements FeedService {
                 .map(c -> FeedClothes.create(saved, c.getName(), c.getImageUrl()))
                 .toList();
         feedClothesRepository.saveAll(coords);
-        return FeedDto.from(saved, coords, 0L, 0L, false);
+        return toFeedDto(feed);
     }
 
     @Override
     public FeedDto findById(UUID id) {
-        return null;
+        return null; // TODO
     }
 
     @Override
     public List<FeedDto> findAllByUserId(UUID userId) {
-        return List.of();
+        return List.of(); // TODO
+    }
+
+    @Override
+    @Transactional
+    public FeedDto update(UUID id, FeedUpdateRequest requestDto) {
+        Feed feed = getFeedOrThrow(id);
+        feed.update(requestDto.content());
+        return toFeedDto(feed);
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID id) {
+        Feed feed = getFeedOrThrow(id);
+        feedRepository.delete(feed);
+    }
+
+    private FeedDto toFeedDto(Feed feed) {
+        return FeedDto.from(
+                feed,
+                feedClothesRepository.findAllByFeed(feed),
+                feedLikeRepository.countByFeed(feed),
+                commentRepository.countByFeed(feed),
+                feedLikeRepository.existsByFeedAndUser(feed, feed.getAuthor())
+        );
+    }
+
+    private Feed getFeedOrThrow(UUID id) {
+        return feedRepository.findById(id)
+                .orElseThrow(() -> new FeedNotExistException(id));
     }
 
     private List<Clothes> getClothesOrThrow(List<UUID> clothesIds) {
