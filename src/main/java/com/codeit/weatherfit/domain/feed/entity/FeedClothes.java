@@ -2,11 +2,12 @@ package com.codeit.weatherfit.domain.feed.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "feed_clothes")
 public class FeedClothes extends BaseEntity { // FeedCoordinate
