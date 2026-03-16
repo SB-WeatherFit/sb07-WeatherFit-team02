@@ -2,19 +2,27 @@ package com.codeit.weatherfit.domain.weather.dto.response;
 
 import com.codeit.weatherfit.domain.profile.entity.Location;
 
-public record LocationResponse(
+import java.util.List;
 
+public record LocationResponse(
         double latitude,
         double longitude,
-        String address
+        Integer x,
+        Integer y,
+        List<String> locationNames
 ) {
 
     public static LocationResponse from(Location location) {
-        if (location == null) return null;
+        if (location == null) {
+            return null;
+        }
+
         return new LocationResponse(
                 location.getLatitude(),
                 location.getLongitude(),
-                location.getAddress()
+                location.getX(),
+                location.getY(),
+                location.getLocationNames()
         );
     }
 }
