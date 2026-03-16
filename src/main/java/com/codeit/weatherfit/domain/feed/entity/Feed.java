@@ -25,4 +25,12 @@ public class Feed extends BaseEntity {
     @Column(nullable = false)
     private String content;
 
+    public static Feed create(User author, Weather weather, String content) {
+        Feed feed = new Feed();
+        feed.author = author;
+        feed.weather = weather;
+        feed.content = content;
+        return feed;
+    }
+
 }

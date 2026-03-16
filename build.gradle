@@ -43,8 +43,6 @@ dependencies {
     runtimeOnly 'com.h2database:h2'
     runtimeOnly 'org.postgresql:postgresql'
 
-
-
     // Development
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -64,6 +62,9 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    // instancio
+    testImplementation 'org.instancio:instancio-junit:5.5.1'
+    
     //websocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
 }
