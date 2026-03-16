@@ -51,6 +51,11 @@ public class User extends BaseEntity {
         return new User(email, name, role, password, false);
     }
 
+    public void changeName(String name) {
+        validateName(name);
+        this.name = name;
+    }
+
     public void changeRole(UserRole role) {
         validateRole(role);
         this.role = role;
