@@ -35,7 +35,7 @@ public class UserServiceImpl implements UserService {
         );
 
         User savedUser = userRepository.save(user);
-        Profile profile = Profile.createDefault(savedUser);
+        Profile profile = Profile.create(savedUser, null, null, null, null, null);
         profileRepository.save(profile);
 
         return UserDto.from(savedUser);

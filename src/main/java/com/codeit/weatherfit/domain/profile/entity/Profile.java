@@ -61,7 +61,7 @@ public class Profile extends BaseEntity {
         this.user = user;
         this.gender = gender;
         this.birthDate = birthDate;
-        this.location = location == null ? Location.empty() : location;
+        this.location = location;
         this.temperatureSensitivity = temperatureSensitivity;
         this.profileImageUrl = profileImageUrl;
     }
@@ -71,27 +71,16 @@ public class Profile extends BaseEntity {
             Gender gender,
             LocalDate birthDate,
             Location location,
-            int temperatureSensitivity,
+            Integer temperatureSensitivity,
             String profileImageUrl
     ) {
         return new Profile(
                 user,
-                gender,
+                gender == null ? Gender.OTHER : gender,
                 birthDate,
-                location,
-                temperatureSensitivity,
+                location == null ? Location.empty() : location,
+                temperatureSensitivity == null ? 3 : temperatureSensitivity,
                 profileImageUrl
-        );
-    }
-
-    public static Profile createDefault(User user) {
-        return new Profile(
-                user,
-                Gender.OTHER,
-                null,
-                Location.empty(),
-                3,
-                null
         );
     }
 
