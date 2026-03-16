@@ -7,10 +7,9 @@ import com.codeit.weatherfit.domain.feed.service.FeedService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,4 +23,17 @@ public class FeedController {
                 feedService.create(request)
         );
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<FeedDto> update(@PathVariable UUID id, @RequestBody FeedUpdateRequest request) {
+        return ResponseEntity.ok(feedService.update(id, request));
+    }
+
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        feedService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }
