@@ -64,6 +64,9 @@ dependencies {
 
     // instancio
     testImplementation 'org.instancio:instancio-junit:5.5.1'
+    
+    //websocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 }
 
 tasks.named('test') {
