@@ -1,7 +1,7 @@
 package com.codeit.weatherfit.domain.feed.dto;
 
-import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
+import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 
@@ -15,20 +15,20 @@ public record FeedDto(
         Instant updatedAt,
         User author, // TODO 추후 UserDto로 수정
         Weather weather, // TODO 추후 WeatherDto로 수정
-        List<Clothes> ootds, // 추후 List<OotdDto>로 수정
+        List<FeedClothesDto> ootds,
         String content,
         long likeCount,
         long commentCount,
         boolean likedByMe
 ) {
-    public FeedDto from(Feed feed, List<Clothes> ootds, Long likeCount, Long commentCount, boolean likedByMe){
+    public static FeedDto from(Feed feed, List<FeedClothes> ootds, Long likeCount, Long commentCount, boolean likedByMe){
         return new FeedDto(
                 feed.getId(),
                 feed.getCreatedAt(),
                 feed.getUpdatedAt(),
                 feed.getAuthor(),
                 feed.getWeather(),
-                ootds,
+                ootds.stream().map(FeedClothesDto::from).toList(),
                 feed.getContent(),
                 likeCount,
                 commentCount,
