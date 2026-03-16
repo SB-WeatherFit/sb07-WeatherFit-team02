@@ -46,7 +46,7 @@ public class Message extends BaseEntity {
 
     private static void validateUsersExist(User sender, User receiver) {
         if (sender == null || receiver == null) {
-            throw new InvalidMessageArgumentException(ErrorCode.INVALID_MESSAGE_ARGUMENT);
+            throw new InvalidMessageArgumentException();
         }
     }
 
@@ -55,19 +55,19 @@ public class Message extends BaseEntity {
         UUID receiverId = receiver.getId();
 
         if (senderId != null && senderId.equals(receiverId)) {
-            throw new NotSendSelfMessageException(ErrorCode.NOT_SEND_SELF_MESSAGE);
+            throw new NotSendSelfMessageException();
         }
     }
 
     private static void validateContent(String content) {
         if(content == null){
-            throw new MessageContentNullException(ErrorCode.MESSAGE_CONTENT_NULL);
+            throw new MessageContentNullException();
         }
     }
 
     private static void validateUserIdNotNull(User sender, User receiver) {
         if(sender.getId()==null || receiver.getId() ==null){
-            throw new InvalidMessageArgumentException(ErrorCode.INVALID_MESSAGE_ARGUMENT);
+            throw new InvalidMessageArgumentException();
         }
     }
 }

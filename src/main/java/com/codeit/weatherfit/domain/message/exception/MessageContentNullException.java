@@ -4,7 +4,7 @@ import com.codeit.weatherfit.global.exception.ErrorCode;
 
 public class MessageContentNullException extends MessageException{
 
-    public MessageContentNullException(ErrorCode errorCode) {
-        super(errorCode);
+    public MessageContentNullException() {
+        super(ErrorCode.MESSAGE_CONTENT_NULL);
     }
 }
