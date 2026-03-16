@@ -1,7 +1,8 @@
 package com.codeit.weatherfit.domain.feed.controller;
 
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequestDto;
+import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
+import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
 import com.codeit.weatherfit.domain.feed.service.FeedService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,7 @@ public class FeedController {
     private final FeedService feedService;
 
     @PostMapping
-    public ResponseEntity<FeedDto> createFeed(@RequestBody FeedCreateRequestDto request){
+    public ResponseEntity<FeedDto> createFeed(@RequestBody FeedCreateRequest request){
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 feedService.create(request)
         );

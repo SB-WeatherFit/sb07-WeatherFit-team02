@@ -1,7 +1,7 @@
 package com.codeit.weatherfit.domain.feed.service;
 
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequestDto;
+import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
 
 import java.util.List;
 import java.util.UUID;

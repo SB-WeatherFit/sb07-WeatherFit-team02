@@ -2,7 +2,7 @@ package com.codeit.weatherfit.domain.feed.service;
 
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequestDto;
+import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
@@ -31,7 +31,7 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
-    public FeedDto create(FeedCreateRequestDto requestDto) {
+    public FeedDto create(FeedCreateRequest requestDto) {
         User author = getUserOrThrow(requestDto.userId());
         Weather weather = getWeatherOrThrow(requestDto.weatherId());
         List<Clothes> clothes = getClothesOrThrow(requestDto.clothesIds());
