@@ -156,7 +156,7 @@ create table messages
     updated_at  timestamp with time zone not null default CURRENT_TIMESTAMP,
     receiver_id uuid                     not null,
     sender_id   uuid                     not null,
-    content     text,
+    content     text                     not null,
 
     CONSTRAINT fk_messages_receiver_users foreign key (receiver_id) references users (id),
     CONSTRAINT fk_messages_sender_users foreign key (sender_id) references users (id)
