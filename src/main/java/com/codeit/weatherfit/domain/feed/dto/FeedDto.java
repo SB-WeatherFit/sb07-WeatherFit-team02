@@ -17,8 +17,8 @@ public record FeedDto(
         Weather weather, // TODO 추후 WeatherDto로 수정
         List<FeedClothesDto> ootds,
         String content,
-        long likeCount,
-        long commentCount,
+        Long likeCount,
+        Long commentCount,
         boolean likedByMe
 ) {
     public static FeedDto from(Feed feed, List<FeedClothes> ootds, Long likeCount, Long commentCount, boolean likedByMe){
