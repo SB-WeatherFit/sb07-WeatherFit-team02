@@ -2,8 +2,8 @@ package com.codeit.weatherfit.domain.message.service;
 
 import com.codeit.weatherfit.domain.message.dto.request.MessageCreateRequest;
 import com.codeit.weatherfit.domain.message.entity.Message;
-import com.codeit.weatherfit.domain.message.entity.MessageCreatedEvent;
 import com.codeit.weatherfit.domain.message.repository.MessageRepository;
+import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +41,6 @@ public class MessageServiceImpl implements MessageService{
 
         String dmKey = generateDmKey(senderId, receiverId);
         eventPublisher.publishEvent(new MessageCreatedEvent(dmKey, content));
-
     }
 
     private String generateDmKey(UUID senderId, UUID receiverId) {

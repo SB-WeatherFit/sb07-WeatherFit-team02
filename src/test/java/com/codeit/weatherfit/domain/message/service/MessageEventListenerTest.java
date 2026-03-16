@@ -1,6 +1,6 @@
 package com.codeit.weatherfit.domain.message.event;
 
-import com.codeit.weatherfit.domain.message.entity.MessageCreatedEvent;
+import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -36,7 +36,7 @@ class MessageEventListenerTest {
         tx.executeWithoutResult(status -> eventPublisher.publishEvent(event));
 
         verify(messagingTemplate).convertAndSend(
-                "/sub/direct-messages_" + event.dmKey(),
+                "/sub/direct-messages_" + event.messageKey(),
                 event.content()
         );
     }

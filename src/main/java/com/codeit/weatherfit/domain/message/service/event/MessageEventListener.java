@@ -1,6 +1,5 @@
-package com.codeit.weatherfit.domain.message.service;
+package com.codeit.weatherfit.domain.message.service.event;
 
-import com.codeit.weatherfit.domain.message.entity.MessageCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
@@ -13,11 +12,11 @@ public class MessageEventListener {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    //@Aysnc
+//    @Aysnc
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleMessage(MessageCreatedEvent event) {
         messagingTemplate.convertAndSend(
-                "/sub/direct-messages_" + event.dmKey(),
+                "/sub/direct-messages_" + event.messageKey(),
                 event.content()
         );
     }

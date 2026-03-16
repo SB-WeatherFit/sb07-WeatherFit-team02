@@ -1,8 +1,8 @@
 package com.codeit.weatherfit.domain.message.service;
 
 import com.codeit.weatherfit.domain.message.dto.request.MessageCreateRequest;
-import com.codeit.weatherfit.domain.message.entity.MessageCreatedEvent;
 import com.codeit.weatherfit.domain.message.entity.UserFixture;
+import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
