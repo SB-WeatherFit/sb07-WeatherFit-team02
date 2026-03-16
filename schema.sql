@@ -53,6 +53,7 @@ create table feeds
     CONSTRAINT fk_feeds_users foreign key (author_id) references users (id),
     constraint fk_feeds_weathers foreign key (weather_id) references weathers (id)
 );
+
 create table clothes
 (
     id         uuid PRIMARY KEY,
@@ -62,7 +63,6 @@ create table clothes
     owner_id   uuid                     not null,
     image_url  TEXT,
     name       varchar(255)             not null,
-
 
     constraint check_clothes_type check (type in
                                          ('TOP', 'BOTTOM', 'DRESS', 'OUTER', 'UNDERWEAR', 'ACCESSORY', 'SHOES', 'SOCKS',
@@ -119,8 +119,6 @@ create table comments
     constraint fk_comments_feeds foreign key (feed_id) references feeds (id)
 );
 
-
-
 create table feed_likes
 (
     id            uuid PRIMARY KEY,
@@ -132,7 +130,6 @@ create table feed_likes
     constraint fk_feed_likes_feeds foreign key (feed_id) references feeds (id),
     CONSTRAINT fk_feed_likes_users foreign key (liked_user_id) references users (id)
 );
-
 
 create table follows
 (
@@ -156,7 +153,7 @@ create table messages
     updated_at  timestamp with time zone not null default CURRENT_TIMESTAMP,
     receiver_id uuid                     not null,
     sender_id   uuid                     not null,
-    content     text,
+    content     text                     not null,
 
     CONSTRAINT fk_messages_receiver_users foreign key (receiver_id) references users (id),
     CONSTRAINT fk_messages_sender_users foreign key (sender_id) references users (id)
@@ -176,7 +173,7 @@ create table notifications
     CONSTRAINT check_notification_level CHECK (level IN ('INFO', 'WARNING', 'ERROR'))
 );
 
-create table ootds
+create table feed_clothes
 (
     id         uuid primary key,
     created_at timestamp with time zone not null default CURRENT_TIMESTAMP,
@@ -185,7 +182,7 @@ create table ootds
     name       varchar(255)             not null,
     image_url  TEXT,
 
-    constraint fk_ootds_feeds foreign key (feed_id) references feeds (id) on DELETE cascade
+    constraint fk_feed_clothes_feeds foreign key (feed_id) references feeds (id) on DELETE cascade
 
 );
 
@@ -199,15 +196,21 @@ create table profiles
     gender                  varchar(20)              not null,
     latitude                double precision,
     longitude               double precision,
+    x                       integer,
+    y                       integer,
     temperature_sensitivity smallint                 not null default 3,
     user_id                 uuid                     not null unique,
-    address                 text,
     profile_image_url       text,
 
     constraint check_sensitivity_range check ((temperature_sensitivity between 1 and 5)),
-    constraint check_gender check (gender in ('MALE', 'FEMALE', 'OTHER'))
-
+    constraint check_gender check (gender in ('MALE', 'FEMALE', 'OTHER')),
+    constraint fk_profiles_users foreign key (user_id) references users (id)
 );
 
+create table profile_location_names
+(
+    profile_id    uuid         not null,
+    location_name varchar(255) not null,
 
-
+    constraint fk_profile_location_names_profiles foreign key (profile_id) references profiles (id)
+);
