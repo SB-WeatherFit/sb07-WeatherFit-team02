@@ -20,7 +20,6 @@ public record ProfileUpdateRequest(
         LocalDate birthDate,
 
         @Valid
-        @NotNull(message = "위치 정보는 필수입니다.")
         LocationRequest location,
 
         @NotNull(message = "온도 민감도는 필수입니다.")

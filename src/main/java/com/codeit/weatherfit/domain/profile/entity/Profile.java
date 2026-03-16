@@ -2,6 +2,8 @@ package com.codeit.weatherfit.domain.profile.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
 import com.codeit.weatherfit.domain.user.entity.User;
+import com.codeit.weatherfit.global.exception.ErrorCode;
+import com.codeit.weatherfit.global.exception.WeatherFitException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -82,7 +84,7 @@ public class Profile extends BaseEntity {
         );
     }
 
-    public static Profile createEmpty(User user) {
+    public static Profile createDefault(User user) {
         return new Profile(
                 user,
                 Gender.OTHER,
@@ -93,38 +95,43 @@ public class Profile extends BaseEntity {
         );
     }
 
-    public void update(
-            Gender gender,
-            LocalDate birthDate,
-            Location location,
-            int temperatureSensitivity,
-            String profileImageUrl
-    ) {
+    public void updateGender(Gender gender) {
         validateGender(gender);
-        validateTemperatureSensitivity(temperatureSensitivity);
-
         this.gender = gender;
+    }
+
+    public void updateBirthDate(LocalDate birthDate) {
         this.birthDate = birthDate;
-        this.location = location == null ? Location.empty() : location;
+    }
+
+    public void updateLocation(Location location) {
+        this.location = location == null ? this.location : location;
+    }
+
+    public void updateTemperatureSensitivity(int temperatureSensitivity) {
+        validateTemperatureSensitivity(temperatureSensitivity);
         this.temperatureSensitivity = temperatureSensitivity;
+    }
+
+    public void updateProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
     }
 
     private static void validateUser(User user) {
         if (Objects.isNull(user)) {
-            throw new IllegalArgumentException("user must not be null");
+            throw new WeatherFitException(ErrorCode.INVALID_PROFILE_USER);
         }
     }
 
     private static void validateGender(Gender gender) {
         if (Objects.isNull(gender)) {
-            throw new IllegalArgumentException("gender must not be null");
+            throw new WeatherFitException(ErrorCode.INVALID_PROFILE_GENDER);
         }
     }
 
     private static void validateTemperatureSensitivity(int temperatureSensitivity) {
         if (temperatureSensitivity < 1 || temperatureSensitivity > 5) {
-            throw new IllegalArgumentException("temperatureSensitivity must be between 1 and 5");
+            throw new WeatherFitException(ErrorCode.INVALID_PROFILE_TEMPERATURE_SENSITIVITY);
         }
     }
 }

@@ -7,6 +7,8 @@ import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.global.exception.ErrorCode;
+import com.codeit.weatherfit.global.exception.WeatherFitException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,10 +27,10 @@ public class ProfileServiceImpl implements ProfileService {
     @Transactional(readOnly = true)
     public ProfileDto get(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("user not found"));
+                .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
 
         Profile profile = profileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("profile not found"));
+                .orElseThrow(() -> new WeatherFitException(ErrorCode.PROFILE_NOT_FOUND));
 
         return ProfileDto.from(profile);
     }
@@ -36,14 +38,16 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ProfileDto update(UUID userId, ProfileUpdateRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("user not found"));
+                .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
 
         Profile profile = profileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("profile not found"));
+                .orElseThrow(() -> new WeatherFitException(ErrorCode.PROFILE_NOT_FOUND));
 
-        user.changeName(request.name());
+        user.updateName(request.name());
 
-        Location location = Location.create(
+        Location location = request.location() == null
+                ? null
+                : Location.create(
                 request.location().latitude(),
                 request.location().longitude(),
                 request.location().x(),
@@ -51,13 +55,10 @@ public class ProfileServiceImpl implements ProfileService {
                 request.location().locationNames()
         );
 
-        profile.update(
-                request.gender(),
-                request.birthDate(),
-                location,
-                request.temperatureSensitivity(),
-                profile.getProfileImageUrl()
-        );
+        profile.updateGender(request.gender());
+        profile.updateBirthDate(request.birthDate());
+        profile.updateLocation(location);
+        profile.updateTemperatureSensitivity(request.temperatureSensitivity());
 
         return ProfileDto.from(profile);
     }

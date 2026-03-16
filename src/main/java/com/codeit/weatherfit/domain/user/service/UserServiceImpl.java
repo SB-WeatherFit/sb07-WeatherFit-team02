@@ -7,6 +7,8 @@ import com.codeit.weatherfit.domain.user.dto.response.UserDto;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.entity.UserRole;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.global.exception.ErrorCode;
+import com.codeit.weatherfit.global.exception.WeatherFitException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +24,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto create(UserCreateRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("email already exists");
+            throw new WeatherFitException(ErrorCode.DUPLICATED_USER_EMAIL);
         }
 
         User user = User.create(
@@ -33,7 +35,7 @@ public class UserServiceImpl implements UserService {
         );
 
         User savedUser = userRepository.save(user);
-        Profile profile = Profile.createEmpty(savedUser);
+        Profile profile = Profile.createDefault(savedUser);
         profileRepository.save(profile);
 
         return UserDto.from(savedUser);
