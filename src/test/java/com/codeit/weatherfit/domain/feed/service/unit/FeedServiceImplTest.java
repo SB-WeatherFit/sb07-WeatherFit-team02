@@ -25,6 +25,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -63,6 +65,8 @@ class FeedServiceImplTest {
 
         // then
         assertThat(feedDto.content()).isEqualTo(request.content());
+        verify(feedRepository).save(any(Feed.class));
+        verify(feedClothesRepository).saveAll(anyList());
     }
 
     @Nested
