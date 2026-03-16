@@ -14,6 +14,7 @@ import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -29,6 +30,7 @@ public class FeedServiceImpl implements FeedService {
     private final FeedClothesRepository feedClothesRepository;
 
     @Override
+    @Transactional
     public FeedDto create(FeedCreateRequestDto requestDto) {
         User author = getUserOrThrow(requestDto.userId());
         Weather weather = getWeatherOrThrow(requestDto.weatherId());
