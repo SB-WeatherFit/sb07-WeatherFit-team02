@@ -19,6 +19,6 @@ public class ClothesAttribute extends BaseEntity {
     private Clothes clothes;
 
     @ManyToOne
-    private SelectableValue value;
+    private SelectableValue option;
 
 }
