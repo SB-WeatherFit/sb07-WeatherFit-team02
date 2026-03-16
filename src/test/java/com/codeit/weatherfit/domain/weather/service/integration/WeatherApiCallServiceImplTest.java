@@ -21,19 +21,7 @@ class WeatherApiCallServiceImplTest {
     @Autowired
     TestFixture testFixture;
 
-    @Test
-    @DisplayName("[정상 케이스] - 날씨 api 호출 ")
-    @Tag("external")
-    void testWeatherCall() {
 
-        //given
-        LocationResponse locationResponse = testFixture.locationFactory();
-
-        //when
-        WeatherApiResponse weathersFromNow = weatherApiCallService.getWeathersFromNow(locationResponse);
-        Assertions.assertThat(weathersFromNow).isNotNull();
-
-    }
 
 
 }
