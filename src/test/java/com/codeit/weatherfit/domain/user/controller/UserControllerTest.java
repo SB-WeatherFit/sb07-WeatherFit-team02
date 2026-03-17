@@ -1,5 +1,8 @@
 package com.codeit.weatherfit.domain.user.controller;
 
+import com.codeit.weatherfit.domain.user.dto.request.ChangePasswordRequest;
+import com.codeit.weatherfit.domain.user.dto.request.UserLockUpdateRequest;
+import com.codeit.weatherfit.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.weatherfit.domain.user.dto.response.UserDto;
 import com.codeit.weatherfit.domain.user.dto.response.UserDtoCursorResponse;
 import com.codeit.weatherfit.domain.user.entity.UserRole;
@@ -17,6 +20,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -102,7 +106,7 @@ class UserControllerTest {
                 false
         );
 
-        when(userService.updateRole(eq(userId), eq(new com.codeit.weatherfit.domain.user.dto.request.UserRoleUpdateRequest(UserRole.ADMIN))))
+        when(userService.updateRole(eq(userId), eq(new UserRoleUpdateRequest(UserRole.ADMIN))))
                 .thenReturn(response);
 
         mockMvc.perform(patch("/api/users/{userId}/role", userId)
@@ -131,7 +135,7 @@ class UserControllerTest {
                 true
         );
 
-        when(userService.updateLock(eq(userId), eq(new com.codeit.weatherfit.domain.user.dto.request.UserLockUpdateRequest(true))))
+        when(userService.updateLock(eq(userId), eq(new UserLockUpdateRequest(true))))
                 .thenReturn(response);
 
         mockMvc.perform(patch("/api/users/{userId}/lock", userId)
@@ -144,5 +148,22 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(userId.toString()))
                 .andExpect(jsonPath("$.locked").value(true));
+    }
+
+    @Test
+    @DisplayName("비밀번호 변경에 성공한다")
+    void updatePassword() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        doNothing().when(userService).updatePassword(eq(userId), eq(new ChangePasswordRequest("new-password")));
+
+        mockMvc.perform(patch("/api/users/{userId}/password", userId)
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "password": "new-password"
+                                }
+                                """))
+                .andExpect(status().isNoContent());
     }
 }

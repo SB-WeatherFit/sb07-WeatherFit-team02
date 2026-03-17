@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.user.service;
 
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
+import com.codeit.weatherfit.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserLockUpdateRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.weatherfit.domain.user.dto.response.UserDto;
@@ -90,6 +91,36 @@ class UserServiceImplTest {
             when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> userService.updateLock(userId, new UserLockUpdateRequest(true)))
+                    .isInstanceOf(WeatherFitException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    class UpdatePasswordTest {
+
+        @Test
+        @DisplayName("비밀번호 변경에 성공한다")
+        void updatePassword() {
+            UUID userId = UUID.randomUUID();
+            User user = User.create("user@test.com", "tester", UserRole.USER, "password");
+
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+            userService.updatePassword(userId, new ChangePasswordRequest("new-password"));
+
+            assertThat(user.getPassword()).isEqualTo("new-password");
+        }
+
+        @Test
+        @DisplayName("비밀번호 변경 시 사용자가 없으면 예외가 발생한다")
+        void updatePasswordFailWhenUserNotFound() {
+            UUID userId = UUID.randomUUID();
+
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> userService.updatePassword(userId, new ChangePasswordRequest("new-password")))
                     .isInstanceOf(WeatherFitException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
