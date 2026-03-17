@@ -26,7 +26,7 @@ public class FollowCustomRepositoryImpl implements FollowCustomRepository {
                 .from(follow)
                 .join(follow.followee, user).fetchJoin()
                 .where(
-                        follow.follower.id.eq(condition.followeeId()),
+                        follow.follower.id.eq(condition.followerId()),
                         cursorCondition(condition.cursor()),
                         nameLike(condition.nameLike()))
                 .orderBy(follow.createdAt.asc())
@@ -41,7 +41,7 @@ public class FollowCustomRepositoryImpl implements FollowCustomRepository {
                 .from(follow)
                 .join(follow.follower, user).fetchJoin()
                 .where(
-                        follow.followee.id.eq(condition.followerId()),
+                        follow.followee.id.eq(condition.followeeId()),
                         cursorCondition(condition.cursor()),
                         nameLike(condition.nameLike()))
                 .orderBy(follow.createdAt.asc())

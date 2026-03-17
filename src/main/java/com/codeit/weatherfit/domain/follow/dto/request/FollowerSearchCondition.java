@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record FollowerSearchCondition(
-        @NotNull UUID followerId,
+        @NotNull UUID followeeId,
         Instant cursor,
         UUID idAfter,
         @NotNull int limit,

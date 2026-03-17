@@ -11,12 +11,9 @@ public record FollowUser(
 ) {
     public static FollowUser from(Profile profile) {
         return new FollowUser(
-//                profile.getUser().getId(),
-//                profile.getUser().getName(),
-//                profile.getProfileImageUrl()
-                null,
-                null,
-                null
+                profile.getUser().getId(),
+                profile.getUser().getName(),
+                profile.getProfileImageUrl()
         );
     }
 }
