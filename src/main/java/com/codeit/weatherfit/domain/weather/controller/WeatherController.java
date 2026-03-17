@@ -2,8 +2,10 @@ package com.codeit.weatherfit.domain.weather.controller;
 
 import com.codeit.weatherfit.domain.weather.dto.request.WeatherApiTestRequest;
 import com.codeit.weatherfit.domain.weather.dto.request.WeatherRequest;
+import com.codeit.weatherfit.domain.weather.dto.response.KakaoLocationResponse;
 import com.codeit.weatherfit.domain.weather.dto.response.WeatherResponse;
 import com.codeit.weatherfit.domain.weather.dto.response.weatherAdministrationApi.WeatherAdministrationTime;
+import com.codeit.weatherfit.domain.weather.service.LocationApiCallServiceImpl;
 import com.codeit.weatherfit.domain.weather.service.WeatherApiCallServiceImpl;
 import com.codeit.weatherfit.domain.weather.service.WeatherService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class WeatherController {
 
     private final WeatherService weatherService;
     private final WeatherApiCallServiceImpl  weatherApiCallService;
+    private final LocationApiCallServiceImpl locationApiCallService;
 
     @GetMapping
     public ResponseEntity<List<WeatherResponse>> createWeather(WeatherRequest weatherRequest) {
@@ -38,6 +41,12 @@ public class WeatherController {
     @GetMapping("/test")
     public ResponseEntity<List<WeatherAdministrationTime>> test(WeatherApiTestRequest request) {
         List<WeatherAdministrationTime> response = weatherApiCallService.apiTest(request);
+        return ResponseEntity.ok().body(response);
+    }
+
+    @GetMapping("/test/kakao")
+    public ResponseEntity<KakaoLocationResponse> testKakao(WeatherRequest request){
+        KakaoLocationResponse response = locationApiCallService.getKaKaoResponse(request);
         return ResponseEntity.ok().body(response);
     }
 
