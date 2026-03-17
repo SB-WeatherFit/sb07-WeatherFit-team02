@@ -75,24 +75,11 @@ public class FollowServiceImpl implements FollowService{
         List<Follow> follows = followRepository.searchFollowees(condition);
         long totalCount = followRepository.countByFolloweeId(condition.followeeId());
 
-        return cursorSupport(follows, condition.limit(), totalCount);
-    }
-
-    @Override
-    public FollowListResponse getFollowers(FollowerSearchCondition condition) {
-        List<Follow> follows = followRepository.searchFollowers(condition);
-        long totalCount = followRepository.countByFollowerId(condition.followerId());
-
-
-        return cursorSupport(follows, condition.limit(), totalCount);
-    }
-
-    private FollowListResponse cursorSupport(List<Follow> follows, long limit, long totalCount) {
         Instant nextCursor = null;
         UUID nextIdAfter ;
         boolean hasNext = false;
 
-        if(follows.size() >limit){
+        if(follows.size() >condition.limit()){
             follows.removeLast();
             hasNext = true;
             nextCursor = follows.getLast().getCreatedAt();
@@ -111,6 +98,8 @@ public class FollowServiceImpl implements FollowService{
 //                    .where(profile.user.id.in(userIds))
 //                    .fetch();
 //        }
+        // todo: ids 만들기
+//        data.stream().map(followDto -> followDto.)
 //        Map<UUID, Profile> profileMap = profileRepository.findAllByUserIdIn(userIds).stream()
 //            .collect(Collectors.toMap(
 //                p -> p.getUser().getId(), // Key: 유저 ID
@@ -119,6 +108,15 @@ public class FollowServiceImpl implements FollowService{
 
 
         return new FollowListResponse(data, nextCursor, nextIdAfter, hasNext, totalCount);
+    }
+
+    @Override
+    public FollowListResponse getFollowers(FollowerSearchCondition condition) {
+        List<Follow> follows = followRepository.searchFollowers(condition);
+        long totalCount = followRepository.countByFollowerId(condition.followerId());
+
+
+        return null;
     }
 
     @Override
