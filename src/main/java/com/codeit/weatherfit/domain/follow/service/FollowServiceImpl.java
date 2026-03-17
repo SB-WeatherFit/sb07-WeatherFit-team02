@@ -6,40 +6,162 @@ import com.codeit.weatherfit.domain.follow.dto.request.FollowerSearchCondition;
 import com.codeit.weatherfit.domain.follow.dto.response.FollowDto;
 import com.codeit.weatherfit.domain.follow.dto.response.FollowListResponse;
 import com.codeit.weatherfit.domain.follow.dto.response.FollowSummaryDto;
+import com.codeit.weatherfit.domain.follow.entity.Follow;
+import com.codeit.weatherfit.domain.follow.entity.FollowCreateParam;
+import com.codeit.weatherfit.domain.follow.exception.AlreadyFollowException;
+import com.codeit.weatherfit.domain.follow.exception.FollowProfileNotExistException;
+import com.codeit.weatherfit.domain.follow.exception.FollowUserNotExistException;
+import com.codeit.weatherfit.domain.follow.exception.NotExistFollowException;
 import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
+import com.codeit.weatherfit.domain.profile.entity.Profile;
+import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
+import com.codeit.weatherfit.domain.user.entity.User;
+import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class FollowServiceImpl implements FollowService{
+@Transactional(readOnly = true)
+public class FollowServiceImpl implements FollowService {
 
     private final FollowRepository followRepository;
+    private final ProfileRepository profileRepository;
+    private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public FollowDto follow(FollowCreateRequest createRequest) {
-        return null;
+        if (checkFollowExist(createRequest.followeeId(), createRequest.followerId())) {
+            throw new AlreadyFollowException();
+        }
+
+        User followee = userRepository.findById(createRequest.followeeId()).orElseThrow();
+        User follower = userRepository.findById(createRequest.followerId()).orElseThrow();
+
+
+        Follow follow = Follow.create(new FollowCreateParam(followee, follower));
+        Follow save = followRepository.save(follow);
+
+        Profile followeeProfile = profileRepository.findWithUser(createRequest.followeeId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
+        Profile followerProfile = profileRepository.findWithUser(createRequest.followerId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
+
+        return FollowDto.create(save.getId(), followeeProfile, followerProfile);
     }
 
     @Override
-    public FollowSummaryDto getFollowSummary(UUID userId) {
-        return null;
+    public FollowSummaryDto getFollowSummary(UUID userId, UUID myId) {
+        checkExistUser(userId);
+
+        long followerCount = followRepository.getFollowerCount(userId);
+        long followingCount = followRepository.getFollowingCount(userId);
+        boolean followedByMe = false;
+        UUID followId = null;
+
+        Optional<Follow> optionalFollow = followRepository.findByFolloweeIdAndFollowerId(userId, myId);
+        if (optionalFollow.isPresent()) {
+            followedByMe = true;
+            followId = optionalFollow.get().getId();
+        }
+
+        boolean followingMe = checkFollowExist(myId, userId);
+        return FollowSummaryDto.create(userId, followerCount, followingCount, followedByMe, followId, followingMe);
     }
 
-    @Override
-    public FollowListResponse getFollowings(FollowerSearchCondition condition) {
-        return null;
+    private void checkExistUser(UUID userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new FollowUserNotExistException(ErrorCode.USER_NOT_FOUND);
+        }
+    }
+
+    private boolean checkFollowExist(UUID followeeId, UUID followerId) {
+        return followRepository.existsByFolloweeIdAndFollowerId(followeeId, followerId);
     }
 
     @Override
     public FollowListResponse getFollowees(FolloweeSearchCondition condition) {
-        return null;
+        List<Follow> follows = followRepository.searchFollowees(condition);
+        long totalCount = followRepository.countByFollowerId(condition.followerId());
+
+        Instant nextCursor = null;
+        UUID nextIdAfter;
+        boolean hasNext = false;
+
+        if (follows.size() > condition.limit()) {
+            follows.removeLast();
+            hasNext = true;
+            nextCursor = follows.getLast().getCreatedAt();
+        }
+
+        nextIdAfter = follows.getLast().getFollowee().getId();
+
+        List<UUID> ids = follows.stream().map(follow -> follow.getFollowee().getId()).toList();
+        Map<UUID, Profile> collect = profileRepository.findByUserIds(ids).stream()
+                .collect(Collectors.toMap(
+                        p -> p.getUser().getId(),
+                        p -> p
+                ));
+        Profile profile = profileRepository.findByUserId(condition.followerId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
+
+        List<FollowDto> data = follows.stream()
+                .map(follow -> FollowDto.create(follow.getId(),
+                        collect.get(follow.getFollowee().getId()),
+                        profile)
+                )
+                .toList();
+
+        return new FollowListResponse(data, nextCursor, nextIdAfter, hasNext, totalCount);
     }
 
     @Override
-    public void unFollow(UUID followId) {
+    public FollowListResponse getFollowers(FollowerSearchCondition condition) {
+        List<Follow> follows = followRepository.searchFollowers(condition);
+        long totalCount = followRepository.countByFolloweeId(condition.followeeId());
 
+        Instant nextCursor = null;
+        UUID nextIdAfter;
+        boolean hasNext = false;
+
+        if (follows.size() > condition.limit()) {
+            follows.removeLast();
+            hasNext = true;
+            nextCursor = follows.getLast().getCreatedAt();
+        }
+
+        nextIdAfter = follows.getLast().getFollowee().getId();
+
+        List<UUID> ids = follows.stream().map(follow -> follow.getFollower().getId()).toList();
+        Map<UUID, Profile> collect = profileRepository.findByUserIds(ids).stream()
+                .collect(Collectors.toMap(
+                        p -> p.getUser().getId(),
+                        p -> p
+                ));
+        Profile profile = profileRepository.findByUserId(condition.followeeId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
+
+        List<FollowDto> data = follows.stream()
+                .map(follow -> FollowDto.create(follow.getId(),
+                        profile,
+                        collect.get(follow.getFollower().getId()))
+                )
+                .toList();
+
+        return new FollowListResponse(data, nextCursor, nextIdAfter, hasNext, totalCount);
+    }
+
+    @Override
+    @Transactional
+    public void unFollow(UUID followId) {
+        Follow follow = followRepository.findById(followId).orElseThrow(NotExistFollowException::new);
+
+        followRepository.delete(follow);
     }
 }

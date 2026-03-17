@@ -1,13 +1,15 @@
 package com.codeit.weatherfit.domain.follow.dto.request;
 
+import jakarta.validation.constraints.NotNull;
+
 import java.time.Instant;
 import java.util.UUID;
 
 public record FolloweeSearchCondition(
-        UUID followeeId,
+        @NotNull UUID followerId,
         Instant cursor,
         UUID idAfter,
-        int limit,
+        @NotNull int limit,
         String nameLike
 ) {
 }

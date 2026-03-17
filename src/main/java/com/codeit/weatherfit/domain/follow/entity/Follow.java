@@ -4,7 +4,6 @@ import com.codeit.weatherfit.domain.base.BaseEntity;
 import com.codeit.weatherfit.domain.follow.exception.InvalidFollowArgumentException;
 import com.codeit.weatherfit.domain.follow.exception.SelfFollowNotAllowedException;
 import com.codeit.weatherfit.domain.user.entity.User;
-import com.codeit.weatherfit.global.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -26,7 +25,10 @@ public class Follow extends BaseEntity {
     @JoinColumn(name = "follower_id", nullable = false)
     private User follower;
 
-    public static Follow create(User followee, User follower){
+    public static Follow create(FollowCreateParam followCreateParam) {
+        User followee = followCreateParam.followee();
+        User follower = followCreateParam.follower();
+
         validateUsersExist(followee, follower);
         validateNotSelfFollow(followee, follower);
 
@@ -38,8 +40,8 @@ public class Follow extends BaseEntity {
     }
 
     private static void validateUsersExist(User followee, User follower) {
-        if(followee == null || follower ==null){
-            throw new InvalidFollowArgumentException(ErrorCode.INVALID_FOLLOW_ARGUMENT);
+        if (followee == null || follower == null) {
+            throw new InvalidFollowArgumentException();
         }
     }
 
@@ -47,8 +49,8 @@ public class Follow extends BaseEntity {
         UUID followeeId = followee.getId();
         UUID followerId = follower.getId();
 
-        if (followeeId!=null && followeeId.equals(followerId)){
-            throw new SelfFollowNotAllowedException(ErrorCode.SELF_FOLLOW_NOT_ALLOWED);
+        if (followeeId != null && followeeId.equals(followerId)) {
+            throw new SelfFollowNotAllowedException();
         }
     }
 }
