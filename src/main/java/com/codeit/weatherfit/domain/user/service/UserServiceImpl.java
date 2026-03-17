@@ -11,14 +11,13 @@ import com.codeit.weatherfit.domain.user.dto.response.UserDtoCursorResponse;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.entity.UserRole;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.domain.user.repository.UserSearchCondition;
 import com.codeit.weatherfit.global.exception.ErrorCode;
 import com.codeit.weatherfit.global.exception.WeatherFitException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -62,28 +61,34 @@ public class UserServiceImpl implements UserService {
             String roleEqual,
             Boolean locked
     ) {
-        String normalizedEmailLike = emailLike == null ? "" : emailLike;
-        UserRole role = roleEqual == null || roleEqual.isBlank() ? null : UserRole.valueOf(roleEqual);
-        PageRequest pageable = PageRequest.of(0, limit + 1);
+        UserRole parsedRoleEqual = parseRole(roleEqual);
 
-        List<User> users;
-        if (cursor == null || cursor.isBlank()) {
-            users = getFirstPage(normalizedEmailLike, role, locked, pageable);
-        } else {
-            Instant cursorInstant = Instant.parse(cursor);
-            users = getNextPage(normalizedEmailLike, role, locked, cursorInstant, pageable);
-        }
+        UserSearchCondition condition = new UserSearchCondition(
+                cursor,
+                idAfter,
+                limit,
+                sortBy,
+                sortDirection,
+                emailLike,
+                parsedRoleEqual,
+                locked
+        );
 
-        long totalCount = countUsers(normalizedEmailLike, role, locked);
+        List<User> users = userRepository.searchUsers(condition);
+        long totalCount = userRepository.countUsers(condition);
+
         boolean hasNext = users.size() > limit;
         List<User> pageContent = hasNext ? users.subList(0, limit) : users;
+
+        String normalizedSortBy = normalizeSortBy(sortBy);
+        String normalizedSortDirection = normalizeSortDirection(sortDirection);
 
         String nextCursor = null;
         UUID nextIdAfter = null;
 
         if (hasNext && !pageContent.isEmpty()) {
             User lastUser = pageContent.get(pageContent.size() - 1);
-            nextCursor = lastUser.getCreatedAt().toString();
+            nextCursor = extractNextCursor(lastUser, normalizedSortBy);
             nextIdAfter = lastUser.getId();
         }
 
@@ -97,8 +102,8 @@ public class UserServiceImpl implements UserService {
                 nextIdAfter,
                 hasNext,
                 totalCount,
-                sortBy,
-                sortDirection
+                normalizedSortBy,
+                normalizedSortDirection
         );
     }
 
@@ -130,78 +135,35 @@ public class UserServiceImpl implements UserService {
         user.updatePassword(request.password());
     }
 
-    private List<User> getFirstPage(
-            String emailLike,
-            UserRole role,
-            Boolean locked,
-            PageRequest pageable
-    ) {
-        if (role != null && locked != null) {
-            return userRepository.findByEmailContainingIgnoreCaseAndRoleAndLockedOrderByCreatedAtDescIdDesc(
-                    emailLike, role, locked, pageable
-            );
+    private UserRole parseRole(String roleEqual) {
+        if (roleEqual == null || roleEqual.isBlank()) {
+            return null;
         }
 
-        if (role != null) {
-            return userRepository.findByEmailContainingIgnoreCaseAndRoleOrderByCreatedAtDescIdDesc(
-                    emailLike, role, pageable
-            );
-        }
-
-        if (locked != null) {
-            return userRepository.findByEmailContainingIgnoreCaseAndLockedOrderByCreatedAtDescIdDesc(
-                    emailLike, locked, pageable
-            );
-        }
-
-        return userRepository.findByEmailContainingIgnoreCaseOrderByCreatedAtDescIdDesc(
-                emailLike, pageable
-        );
+        return UserRole.valueOf(roleEqual);
     }
 
-    private List<User> getNextPage(
-            String emailLike,
-            UserRole role,
-            Boolean locked,
-            Instant cursor,
-            PageRequest pageable
-    ) {
-        if (role != null && locked != null) {
-            return userRepository.findByEmailContainingIgnoreCaseAndRoleAndLockedAndCreatedAtLessThanOrderByCreatedAtDescIdDesc(
-                    emailLike, role, locked, cursor, pageable
-            );
+    private String normalizeSortBy(String sortBy) {
+        if ("email".equals(sortBy)) {
+            return "email";
         }
 
-        if (role != null) {
-            return userRepository.findByEmailContainingIgnoreCaseAndRoleAndCreatedAtLessThanOrderByCreatedAtDescIdDesc(
-                    emailLike, role, cursor, pageable
-            );
-        }
-
-        if (locked != null) {
-            return userRepository.findByEmailContainingIgnoreCaseAndLockedAndCreatedAtLessThanOrderByCreatedAtDescIdDesc(
-                    emailLike, locked, cursor, pageable
-            );
-        }
-
-        return userRepository.findByEmailContainingIgnoreCaseAndCreatedAtLessThanOrderByCreatedAtDescIdDesc(
-                emailLike, cursor, pageable
-        );
+        return "createdAt";
     }
 
-    private long countUsers(String emailLike, UserRole role, Boolean locked) {
-        if (role != null && locked != null) {
-            return userRepository.countByEmailContainingIgnoreCaseAndRoleAndLocked(emailLike, role, locked);
+    private String normalizeSortDirection(String sortDirection) {
+        if ("ASCENDING".equals(sortDirection)) {
+            return "ASCENDING";
         }
 
-        if (role != null) {
-            return userRepository.countByEmailContainingIgnoreCaseAndRole(emailLike, role);
+        return "DESCENDING";
+    }
+
+    private String extractNextCursor(User user, String sortBy) {
+        if ("email".equals(sortBy)) {
+            return user.getEmail();
         }
 
-        if (locked != null) {
-            return userRepository.countByEmailContainingIgnoreCaseAndLocked(emailLike, locked);
-        }
-
-        return userRepository.countByEmailContainingIgnoreCase(emailLike);
+        return user.getCreatedAt().toString();
     }
 }
