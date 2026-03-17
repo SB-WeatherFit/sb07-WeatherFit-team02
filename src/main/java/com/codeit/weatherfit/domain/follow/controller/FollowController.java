@@ -7,6 +7,7 @@ import com.codeit.weatherfit.domain.follow.dto.response.FollowDto;
 import com.codeit.weatherfit.domain.follow.dto.response.FollowListResponse;
 import com.codeit.weatherfit.domain.follow.dto.response.FollowSummaryDto;
 import com.codeit.weatherfit.domain.follow.service.FollowService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,7 @@ public class FollowController {
 
     @PostMapping
     public ResponseEntity<FollowDto> createFollow(
-            @RequestBody FollowCreateRequest createRequest) {
+            @Valid @RequestBody FollowCreateRequest createRequest) {
         FollowDto result = followService.follow(createRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(result);
@@ -41,14 +42,14 @@ public class FollowController {
 
     @GetMapping("/followings")
     public ResponseEntity<FollowListResponse> getFollowings(
-            @ModelAttribute FolloweeSearchCondition condition){
+            @Valid @ModelAttribute FolloweeSearchCondition condition){
         FollowListResponse result = followService.getFollowees(condition);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/followers")
     public ResponseEntity<FollowListResponse> getFollowers(
-            @ModelAttribute FollowerSearchCondition condition){
+            @Valid @ModelAttribute FollowerSearchCondition condition){
         FollowListResponse result = followService.getFollowers(condition);
         return ResponseEntity.ok(result);
     }
