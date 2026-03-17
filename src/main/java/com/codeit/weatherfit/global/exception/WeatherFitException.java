@@ -7,11 +7,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Getter
-public class WeatherFitException extends RuntimeException{
+public class WeatherFitException extends RuntimeException {
 
     final ErrorCode errorCode;
-    final Map<String,Object> details;
-    public WeatherFitException(ErrorCode errorCode, Map<String,Object> details) {
+    final Map<String, Object> details;
+
+    public WeatherFitException(ErrorCode errorCode, Map<String, Object> details) {
         details.put("timestamp", Instant.now());
         this.errorCode = errorCode;
         this.details = details;
