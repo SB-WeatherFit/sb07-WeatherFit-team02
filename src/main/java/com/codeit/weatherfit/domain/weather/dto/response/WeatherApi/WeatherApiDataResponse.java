@@ -7,7 +7,6 @@ import java.util.List;
 
 public record WeatherApiDataResponse(
 
-        long dt,
         @JsonProperty("dt_txt")
         String dtTxt,
         WeatherApiMainResponse main,
@@ -15,9 +14,7 @@ public record WeatherApiDataResponse(
         WeatherApiCloudResponse clouds,
         WeatherApiWindResponse wind,
         long visibility,
-        double pop,
         @Nullable
-        WeatherApiRainResponse rain,
-        WeatherApiSysResponse sys
+        WeatherApiRainResponse rain
 ) {
 }

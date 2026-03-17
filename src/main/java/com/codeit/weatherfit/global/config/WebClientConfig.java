@@ -16,4 +16,12 @@ public class WebClientConfig {
                 .build();
 
     }
+
+    @Bean
+    public WebClient weatherAdministrationClient() {
+        return WebClient.builder()
+                .baseUrl("http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0")
+                .defaultHeader("Content-Type", "application/json")
+                .build();
+    }
 }
