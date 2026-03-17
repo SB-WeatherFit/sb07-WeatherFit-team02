@@ -84,7 +84,7 @@ public class FeedServiceImpl implements FeedService {
                 feedClothesRepository.findAllByFeed(feed),
                 feedLikeRepository.countByFeed(feed),
                 commentRepository.countByFeed(feed),
-                feedLikeRepository.existsByFeedAndUser(feed, feed.getAuthor())
+                feedLikeRepository.existsByFeedAndUser(feed, feed.getAuthor()) // TODO 인증 구현 후 현재 로그인 유저로 변경
         );
     }
 
@@ -94,10 +94,10 @@ public class FeedServiceImpl implements FeedService {
     }
 
     private List<Clothes> getClothesOrThrow(List<UUID> clothesIds) {
-        return clothesIds.stream()
-                .map(id -> clothesRepository.findById(id)
-                        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 id입니다.")))
-                .toList();// TODO 커스텀 에러로 수정
+        List<Clothes> clothes = clothesRepository.findAllById(clothesIds);
+        if (clothes.size() != clothesIds.size())
+            throw new IllegalArgumentException("존재하지 않는 옷이 포함되어 있습니다.");
+        return clothes;
     }
 
     private Weather getWeatherOrThrow(UUID weatherId) {
