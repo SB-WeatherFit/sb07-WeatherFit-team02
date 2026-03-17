@@ -15,7 +15,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -33,18 +32,21 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
 
     public WeatherResponse getWeatherFromAdministration(WeatherRequest request, Instant time) throws InterruptedException {
 
+        long before = System.currentTimeMillis();
         LocalDateTime kst = LocalDateTime.ofInstant(time, KST);
 
         String baseDate = getBaseDate(kst);
         String yesterdayDate = getBaseDate(kst.minusDays(1));
 
-        log.info("baseDate: {}, yesterdayDate: {}", baseDate, yesterdayDate);
-        String currentTime = getCurrentTime(kst.toLocalTime());
+
+        String baseTime = getBaseTime(kst.toLocalTime());
+        String currentTime = getCurrentTime(time);
         int nx = convertToGrid(request)[0];
         int ny = convertToGrid(request)[1];
+        log.info("currentTime: {}",currentTime);
 
         Location location = Location.create(request.latitude(), request.longitude(), 0, 0, List.of("서울특별"));
-        WeatherAdministration todayData = getWeatherFromApi(baseDate, currentTime, nx, ny, 13 * 24);
+        WeatherAdministration todayData = getWeatherFromApi(baseDate, baseTime, nx, ny, 13 * 24);
         WeatherAdministration yesterdayData = getWeatherFromApi(yesterdayDate, "0500", nx, ny, 13 * 24 * 2);
 
 
@@ -82,7 +84,7 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
         WindSpeed windSpeed = getWindSpeed(todayItems, currentTime);
         Precipitation precipitation = getPrecipitation(todayItems, currentTime);
         SkyStatus skyStatus = getSkyStatus(todayItems, currentTime);
-        Humidity humidity = getHumidity(todayItems,yesterdayItems,yesterdayDate, currentTime);
+        Humidity humidity = getHumidity(todayItems, yesterdayItems, yesterdayDate, currentTime);
 
         Weather weather = Weather.create(
                 temperature,
@@ -94,7 +96,8 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 forecastAt,
                 location
         );
-
+        long after = System.currentTimeMillis();
+        log.info("Spending time: {}",(after-before)/1000.0);
         return WeatherResponse.from(weather);
     }
 
@@ -120,6 +123,12 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
         return targetDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
 
+    private String getCurrentTime(Instant time) {
+        ZonedDateTime zdt = time.atZone(KST);
+        int hour = zdt.getHour();
+        return String.format("%02d00", hour+1);
+    }
+
     private Instant getForecastedAt(Instant targetTime) {
         List<Integer> timeLis = List.of(2, 5, 8, 11, 14, 17, 20, 23);
         ZonedDateTime zonedDateTime = targetTime.atZone(KST);
@@ -136,7 +145,7 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
         return forecastedAt.toInstant();
     }
 
-    private String getCurrentTime(LocalTime now) {
+    private String getBaseTime(LocalTime now) {
 
         if (now.isAfter(LocalTime.of(23, 0))) return "2300";
         if (now.isAfter(LocalTime.of(20, 0))) return "2000";
@@ -291,18 +300,18 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No humidity"));
         String yesterdayHumidityData = yesterdayItemLis.stream()
-                .filter(x-> x.category().equals(WeatherCategoryType.REH.name()))
-                .filter(x-> x.fcstTime().equals(currentTime) && x.fcstDate().equals(yesterdayDate))
+                .filter(x -> x.category().equals(WeatherCategoryType.REH.name()))
+                .filter(x -> x.fcstTime().equals(currentTime) && x.fcstDate().equals(yesterdayDate))
                 .map(WeatherAdministrationTime::fcstValue)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No humidity"));
 
-        Double todayHumidity =  Double.parseDouble(humidityData);
-        Double yesterdayHumidity =   Double.parseDouble(yesterdayHumidityData);
+        Double todayHumidity = Double.parseDouble(humidityData);
+        Double yesterdayHumidity = Double.parseDouble(yesterdayHumidityData);
 
         return new Humidity(
                 todayHumidity,
-                todayHumidity-yesterdayHumidity
+                todayHumidity - yesterdayHumidity
         );
     }
 
