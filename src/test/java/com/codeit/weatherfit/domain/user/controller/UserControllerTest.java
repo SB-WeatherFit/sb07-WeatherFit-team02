@@ -36,7 +36,6 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         userService = Mockito.mock(UserService.class);
-
         UserController userController = new UserController(userService);
         mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
     }
