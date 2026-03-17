@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.feed.service;
 
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
+import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
 import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
@@ -34,6 +35,7 @@ public class FeedServiceImpl implements FeedService {
     private final FeedClothesRepository feedClothesRepository;
     private final FeedLikeRepository feedLikeRepository;
     private final CommentRepository commentRepository;
+    private final ClothesRepository clothesRepository;
 
     @Override
     @Transactional
@@ -92,11 +94,10 @@ public class FeedServiceImpl implements FeedService {
     }
 
     private List<Clothes> getClothesOrThrow(List<UUID> clothesIds) {
-        return List.of();
-//        return clothesIds.stream()
-//                .map(clothesRepository.findById(clothesIds)
-//                        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 id입니다.")))
-//                .toList();// TODO 커스텀 에러로 수정
+        return clothesIds.stream()
+                .map(id -> clothesRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 id입니다.")))
+                .toList();// TODO 커스텀 에러로 수정
     }
 
     private Weather getWeatherOrThrow(UUID weatherId) {
