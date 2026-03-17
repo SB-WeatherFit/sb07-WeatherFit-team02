@@ -26,7 +26,10 @@ public class Follow extends BaseEntity {
     @JoinColumn(name = "follower_id", nullable = false)
     private User follower;
 
-    public static Follow create(User followee, User follower){
+    public static Follow create(FollowCreateParam followCreateParam) {
+        User followee = followCreateParam.followee();
+        User follower = followCreateParam.follower();
+
         validateUsersExist(followee, follower);
         validateNotSelfFollow(followee, follower);
 
@@ -39,7 +42,7 @@ public class Follow extends BaseEntity {
 
     private static void validateUsersExist(User followee, User follower) {
         if(followee == null || follower ==null){
-            throw new InvalidFollowArgumentException(ErrorCode.INVALID_FOLLOW_ARGUMENT);
+            throw new InvalidFollowArgumentException();
         }
     }
 
@@ -48,7 +51,7 @@ public class Follow extends BaseEntity {
         UUID followerId = follower.getId();
 
         if (followeeId!=null && followeeId.equals(followerId)){
-            throw new SelfFollowNotAllowedException(ErrorCode.SELF_FOLLOW_NOT_ALLOWED);
+            throw new SelfFollowNotAllowedException();
         }
     }
 }
