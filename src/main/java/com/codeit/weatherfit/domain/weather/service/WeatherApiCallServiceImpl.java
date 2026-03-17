@@ -7,6 +7,7 @@ import com.codeit.weatherfit.domain.weather.dto.response.weatherAdministrationAp
 import com.codeit.weatherfit.domain.weather.dto.response.weatherAdministrationApi.WeatherAdministrationTime;
 import com.codeit.weatherfit.domain.weather.dto.response.weatherAdministrationApi.WeatherCategoryType;
 import com.codeit.weatherfit.domain.weather.entity.*;
+import com.codeit.weatherfit.domain.weather.exception.WeatherCategoryNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,7 +30,10 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
     @Value("${open-administration-map.api-key}")
     private String administrationApiKey;
 
+    public List<WeatherResponse> getWeatherLisFromAdministration(WeatherRequest request, Instant time) throws InterruptedException{
 
+    return null;
+    }
     public WeatherResponse getWeatherFromAdministration(WeatherRequest request, Instant time) throws InterruptedException {
 
         long before = System.currentTimeMillis();
@@ -68,14 +72,14 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 .filter(item -> item.fcstDate().equals(baseDate))
                 .map(WeatherAdministrationTime::fcstValue)
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No TMX"));
+                .orElseThrow(() -> new WeatherCategoryNotFoundException(WeatherCategoryType.TMX));
 
         String tmn = yesterdayItems.stream()
                 .filter(item -> item.category().equals(WeatherCategoryType.TMN.name()))
                 .filter(item -> item.fcstDate().equals(baseDate)) // baseDate 이후 날짜
                 .map(WeatherAdministrationTime::fcstValue)
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No TMN"));
+                .orElseThrow(() -> new WeatherCategoryNotFoundException(WeatherCategoryType.TMN));
 
         Instant forecastedAt = getForecastedAt(time);
         Instant forecastAt = forecastedAt.plus(Duration.ofHours(1));
@@ -224,12 +228,12 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 .filter(x -> x.fcstDate().equals(yesterdayDate) && x.fcstTime().equals(currentTime))
                 .map(x -> x.fcstValue())
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(()->new WeatherCategoryNotFoundException(WeatherCategoryType.TMP));
         Double yesterDayTemperature = Double.parseDouble(yesterdayTemperatureData);
         Double temperature = tempLis.stream()
                 .map(item -> Double.parseDouble(item.fcstValue()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No temperature"));
+                .orElseThrow(() ->new WeatherCategoryNotFoundException(WeatherCategoryType.TMP));
 
         return new Temperature(
                 temperature,
@@ -248,7 +252,7 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
         String windSpeed = windLis.stream()
                 .map(WeatherAdministrationTime::fcstValue)
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No windspeed"));
+                .orElseThrow(() ->new WeatherCategoryNotFoundException(WeatherCategoryType.SKY));
         Double speed = Double.parseDouble(windSpeed);
         AsWord asWord;
         if (speed > 0 && speed < 4.0) asWord = AsWord.WEAK;
@@ -269,7 +273,7 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 )
                 .map(WeatherAdministrationTime::fcstValue)
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(()->new WeatherCategoryNotFoundException(WeatherCategoryType.SKY));
         int idx = Integer.parseInt(skyStatus);
 
         switch (idx) {
@@ -298,13 +302,13 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 )
                 .map(WeatherAdministrationTime::fcstValue)
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No humidity"));
+                .orElseThrow(() -> new WeatherCategoryNotFoundException(WeatherCategoryType.REH));
         String yesterdayHumidityData = yesterdayItemLis.stream()
                 .filter(x -> x.category().equals(WeatherCategoryType.REH.name()))
                 .filter(x -> x.fcstTime().equals(currentTime) && x.fcstDate().equals(yesterdayDate))
                 .map(WeatherAdministrationTime::fcstValue)
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No humidity"));
+                .orElseThrow(() -> new WeatherCategoryNotFoundException(WeatherCategoryType.REH));
 
         Double todayHumidity = Double.parseDouble(humidityData);
         Double yesterdayHumidity = Double.parseDouble(yesterdayHumidityData);
@@ -321,7 +325,7 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 )
                 .map(WeatherAdministrationTime::fcstValue)
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(()->new WeatherCategoryNotFoundException(WeatherCategoryType.PTY));
 
 
         String popValue = itemLis.stream().filter(x ->
@@ -330,14 +334,14 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 )
                 .map(WeatherAdministrationTime::fcstValue)
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(()->new WeatherCategoryNotFoundException(WeatherCategoryType.POP));
 
         String pcpValue = itemLis.stream().filter(x ->
                         x.category().equals(WeatherCategoryType.PCP.name())
                 )
                 .map(WeatherAdministrationTime::fcstValue)
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(()-> new WeatherCategoryNotFoundException(WeatherCategoryType.PCP));
 
         int ptyIdx = Integer.parseInt(ptyValue);
         PrecipitationType type = switch (ptyIdx) {

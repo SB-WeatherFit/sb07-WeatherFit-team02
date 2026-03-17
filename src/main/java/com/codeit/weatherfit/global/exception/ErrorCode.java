@@ -28,7 +28,10 @@ public enum ErrorCode {
     INVALID_PROFILE_GENDER(HttpStatus.BAD_REQUEST, "성별은 필수입니다.", "P-003"),
     INVALID_PROFILE_TEMPERATURE_SENSITIVITY(HttpStatus.BAD_REQUEST, "온도 민감도는 1 이상 5 이하여야 합니다.", "P-004"),
 
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001"),
+
+    //Weather
+    WEATHER_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND,"날씨 정보를 불러오는데 실패했습니다","W-001");
 
     final HttpStatus httpStatus;
     final String message;
