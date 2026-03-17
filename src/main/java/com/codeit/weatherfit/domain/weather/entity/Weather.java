@@ -2,6 +2,10 @@ package com.codeit.weatherfit.domain.weather.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
 import com.codeit.weatherfit.domain.profile.entity.Location;
+import com.codeit.weatherfit.domain.weather.dto.response.HumidityResponse;
+import com.codeit.weatherfit.domain.weather.dto.response.PrecipitaionResponse;
+import com.codeit.weatherfit.domain.weather.dto.response.TemperatureResponse;
+import com.codeit.weatherfit.domain.weather.dto.response.WindSpeedResponse;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -32,6 +36,29 @@ public class Weather extends BaseEntity {
 
     @Embedded
     private WindSpeed windSpeed;
+
+    public static Weather create(Temperature temperature,
+                                 WindSpeed windSpeed,
+                                 Precipitation precipitation,
+                                 SkyStatus skyStatus,
+                                 Humidity humidity,
+                                 Instant forecastedAt,
+                                 Instant forecastAt,
+                                 Location location
+    ) {
+        Weather newWeather = new Weather();
+
+        newWeather.location = location;
+        newWeather.humidity = humidity;
+        newWeather.temperature = temperature;
+        newWeather.skyStatus = skyStatus;
+        newWeather.precipitation = precipitation;
+        newWeather.windSpeed = windSpeed;
+        newWeather.forecastedAt = forecastedAt;
+        newWeather.forecastAt = forecastAt;
+        return newWeather;
+
+    }
 
 
 }

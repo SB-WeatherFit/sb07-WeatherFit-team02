@@ -85,10 +85,10 @@ create table selectable_values
     created_at timestamp with time zone not null default CURRENT_TIMESTAMP,
     updated_at timestamp with time zone not null default CURRENT_TIMESTAMP,
     type_id    uuid                     not null,
-    value      text                     not null,
+    option      text                     not null,
 
     CONSTRAINT fk_selectable_values_clothes_attribute_types foreign key (type_id) references clothes_attribute_types (id),
-    CONSTRAINT uk_type_value unique (type_id, value)
+    CONSTRAINT uk_type_option unique (type_id, option)
 
 );
 

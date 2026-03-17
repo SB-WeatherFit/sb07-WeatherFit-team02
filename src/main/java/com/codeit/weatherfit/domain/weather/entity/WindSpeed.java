@@ -12,8 +12,9 @@ public class WindSpeed {
     private double speed;
     private AsWord asWord;
 
-    public WindSpeed(double speed, AsWord asWord) {
+    public WindSpeed(AsWord asWord,double speed) {
         this.speed = speed;
         this.asWord = asWord;
+
     }
 }
