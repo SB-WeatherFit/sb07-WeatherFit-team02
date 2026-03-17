@@ -2,6 +2,7 @@ package com.codeit.weatherfit.domain.user.service;
 
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
+import com.codeit.weatherfit.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserCreateRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserLockUpdateRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserRoleUpdateRequest;
@@ -119,6 +120,14 @@ public class UserServiceImpl implements UserService {
         user.updateLockState(request.locked());
 
         return UserDto.from(user);
+    }
+
+    @Override
+    public void updatePassword(UUID userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
+
+        user.updatePassword(request.password());
     }
 
     private List<User> getFirstPage(
