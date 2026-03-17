@@ -4,6 +4,7 @@ import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
 import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
 import com.codeit.weatherfit.domain.feed.service.FeedService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,14 +19,14 @@ public class FeedController {
     private final FeedService feedService;
 
     @PostMapping
-    public ResponseEntity<FeedDto> createFeed(@RequestBody FeedCreateRequest request){
+    public ResponseEntity<FeedDto> createFeed(@RequestBody @Valid FeedCreateRequest request){
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 feedService.create(request)
         );
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<FeedDto> update(@PathVariable UUID id, @RequestBody FeedUpdateRequest request) {
+    public ResponseEntity<FeedDto> update(@PathVariable UUID id, @RequestBody @Valid FeedUpdateRequest request) {
         return ResponseEntity.ok(feedService.update(id, request));
     }
 
