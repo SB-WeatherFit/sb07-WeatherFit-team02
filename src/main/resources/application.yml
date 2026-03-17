@@ -4,7 +4,7 @@ spring:
   profiles:
     default: dev
 
-open-weather-map:
-  api-key: ${WEATHER_API_KEY:}
+open-administration-map:
+  api-key: ${WEATHER_ADMINISTRATION_API_KEY}
 
 
