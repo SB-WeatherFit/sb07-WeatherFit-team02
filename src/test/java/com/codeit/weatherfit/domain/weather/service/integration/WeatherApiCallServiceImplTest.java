@@ -1,7 +1,6 @@
 package com.codeit.weatherfit.domain.weather.service.integration;
 
 import com.codeit.weatherfit.domain.weather.dto.response.LocationResponse;
-import com.codeit.weatherfit.domain.weather.dto.response.WeatherApi.WeatherApiResponse;
 import com.codeit.weatherfit.domain.weather.service.WeatherApiCallService;
 import com.codeit.weatherfit.domain.weather.util.TestFixture;
 import org.assertj.core.api.Assertions;
@@ -20,20 +19,5 @@ class WeatherApiCallServiceImplTest {
 
     @Autowired
     TestFixture testFixture;
-
-    @Test
-    @DisplayName("[정상 케이스] - 날씨 api 호출 ")
-    @Tag("external")
-    void testWeatherCall() {
-
-        //given
-        LocationResponse locationResponse = testFixture.locationFactory();
-
-        //when
-        WeatherApiResponse weathersFromNow = weatherApiCallService.getWeathersFromNow(locationResponse);
-        Assertions.assertThat(weathersFromNow).isNotNull();
-
-    }
-
 
 }

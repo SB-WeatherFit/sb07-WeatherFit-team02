@@ -9,11 +9,10 @@ public class WebClientConfig {
 
 
     @Bean
-    public WebClient weatherApiWebClient() {
+    public WebClient weatherAdministrationClient() {
         return WebClient.builder()
-                .baseUrl("https://api.openweathermap.org")
+                .baseUrl("http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0")
                 .defaultHeader("Content-Type", "application/json")
                 .build();
-
     }
 }
