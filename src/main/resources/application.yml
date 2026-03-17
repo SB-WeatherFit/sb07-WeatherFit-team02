@@ -5,6 +5,6 @@ spring:
     default: dev
 
 open-administration-map:
-  api-key: ${WEATHER_ADMINISTRATION_API_KEY}
+  api-key: ${WEATHER_ADMINISTRATION_API_KEY:-}
 
 
