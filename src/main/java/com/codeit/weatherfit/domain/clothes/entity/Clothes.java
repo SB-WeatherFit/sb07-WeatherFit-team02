@@ -23,4 +23,14 @@ public class Clothes extends BaseEntity {
     private String imageUrl;
     private ClothesType type;
 
+    protected Clothes(User owner, String name, ClothesType type) {
+        this.owner = owner;
+        this.name = name;
+        this.type = type;
+    }
+
+    public static Clothes create(User owner, String name, ClothesType type) {
+        return new Clothes(owner, name, type);
+    }
+
 }

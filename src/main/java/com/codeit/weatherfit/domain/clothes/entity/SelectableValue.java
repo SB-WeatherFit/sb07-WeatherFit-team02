@@ -16,5 +16,5 @@ public class SelectableValue extends BaseEntity {
 
     @ManyToOne
     private ClothesAttributeType clothesAttributeType;
-    private String value;
+    private String option;
 }
