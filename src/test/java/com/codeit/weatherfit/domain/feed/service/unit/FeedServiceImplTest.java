@@ -78,12 +78,12 @@ class FeedServiceImplTest {
             when(feedRepository.save(any(Feed.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
 
-            when(clothesRepository.findById(any(UUID.class)))
-                    .thenAnswer(invocation -> Optional.of(Instancio.create(Clothes.class)));
+            when(clothesRepository.findAllById(request.clothesIds()))
+                    .thenAnswer(invocation -> Instancio.ofList(Clothes.class).size(request.clothesIds().size()).create());
             stubToFeedDto();
 
             // when
-            FeedDto feedDto = feedService.create(request);
+            feedService.create(request);
 
             // then
             verify(userRepository).findById(request.userId());
@@ -125,15 +125,16 @@ class FeedServiceImplTest {
             @DisplayName("옷이 존재해야한다")
             void clothes() {
                 // given
+                FeedCreateRequest request = Instancio.create(FeedCreateRequest.class);
                 when(userRepository.findById(any()))
                         .thenReturn(Optional.of(Instancio.create(User.class)));
                 when(weatherRepository.findById(any(UUID.class)))
                         .thenReturn(Optional.of(Instancio.create(Weather.class)));
-                when(clothesRepository.findById(any()))
-                        .thenReturn(Optional.empty());
+                when(clothesRepository.findAllById(any()))
+                        .thenReturn(Instancio.ofList(Clothes.class).size(Math.max(0, request.clothesIds().size() - 1)).create());
 
                 // when & then
-                assertThatThrownBy(() -> feedService.create(Instancio.create(FeedCreateRequest.class)))
+                assertThatThrownBy(() -> feedService.create(request))
                         .isInstanceOf(IllegalArgumentException.class); // 추후 커스텀 에러로 수정
             }
 
