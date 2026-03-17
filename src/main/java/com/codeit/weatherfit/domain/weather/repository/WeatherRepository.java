@@ -9,4 +9,5 @@ import java.util.UUID;
 
 public interface WeatherRepository extends JpaRepository<Weather, UUID> {
 
+
 }

@@ -8,7 +8,6 @@ import java.time.Instant;
 
 public interface WeatherService {
 
-
     WeatherResponse getWeather(WeatherRequest request, Instant time) throws InterruptedException;
     public LocationResponse getWeatherLocation(WeatherRequest weatherRequest);
 
