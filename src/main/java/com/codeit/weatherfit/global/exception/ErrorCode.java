@@ -31,7 +31,8 @@ public enum ErrorCode {
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001"),
 
     //Weather
-    WEATHER_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND,"날씨 정보를 불러오는데 실패했습니다","W-001");
+    WEATHER_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND,"날씨 정보를 불러오는데 실패했습니다","W-001"),
+    WEATHER_NOT_FOUND(HttpStatus.NOT_FOUND,"날씨 정보를 DB에서 찾을 수 없습니다","W-002");
 
     final HttpStatus httpStatus;
     final String message;

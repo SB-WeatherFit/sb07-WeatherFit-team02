@@ -30,11 +30,12 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
     @Value("${open-administration-map.api-key}")
     private String administrationApiKey;
 
-    public List<WeatherResponse> getWeatherLisFromAdministration(WeatherRequest request, Instant time) throws InterruptedException{
+    @Override
+    public List<WeatherResponse> getWeatherLisFromAdministration(WeatherRequest request, Instant time){
 
     return null;
     }
-    public WeatherResponse getWeatherFromAdministration(WeatherRequest request, Instant time) throws InterruptedException {
+    public WeatherResponse getWeatherFromAdministration(WeatherRequest request, Instant time) {
 
         long before = System.currentTimeMillis();
         LocalDateTime kst = LocalDateTime.ofInstant(time, KST);

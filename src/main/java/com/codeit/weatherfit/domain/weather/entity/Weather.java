@@ -2,10 +2,7 @@ package com.codeit.weatherfit.domain.weather.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
 import com.codeit.weatherfit.domain.profile.entity.Location;
-import com.codeit.weatherfit.domain.weather.dto.response.HumidityResponse;
-import com.codeit.weatherfit.domain.weather.dto.response.PrecipitaionResponse;
-import com.codeit.weatherfit.domain.weather.dto.response.TemperatureResponse;
-import com.codeit.weatherfit.domain.weather.dto.response.WindSpeedResponse;
+import com.codeit.weatherfit.domain.weather.dto.response.*;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -58,6 +55,45 @@ public class Weather extends BaseEntity {
         newWeather.forecastAt = forecastAt;
         return newWeather;
 
+    }
+
+    public static Weather create(
+            WeatherResponse dto
+    ){
+        Weather newWeather = new Weather();
+        newWeather.location = Location.create(
+                dto.location().latitude(),
+                dto.location().longitude(),
+                dto.location().x(),
+                dto.location().y(),
+                dto.location().locationNames()
+        );
+
+        newWeather.humidity = new Humidity(
+
+                dto.humidity().current(),
+                dto.humidity().comparedTodayBefore()
+        );
+        newWeather.temperature = new  Temperature(
+                dto.temperature().current(),
+                dto.temperature().comparedToDayBefore(),
+                dto.temperature().min(),
+                dto.temperature().max()
+        );
+        newWeather.skyStatus = dto.skyStatus();
+        newWeather.precipitation = new Precipitation(
+                dto.precipitation().type(),
+                dto.precipitation().amount(),
+                dto.precipitation().probability()
+        );
+        newWeather.windSpeed = new WindSpeed(
+                dto.windSpeed().asWord(),
+                dto.windSpeed().speed()
+
+        );
+        newWeather.forecastedAt = dto.forecastedAt();
+        newWeather.forecastAt = dto.forecastAt();
+        return newWeather;
     }
 
 
