@@ -69,7 +69,6 @@ class FeedServiceImplTest {
         @Test
         @DisplayName("성공")
         void success() {
-            // TODO 지금은 ClothesRepository 없이 작성된 테스트. 나중에 수정 필요.
             // given
             FeedCreateRequest request = Instancio.create(FeedCreateRequest.class);
             when(userRepository.findById(any(UUID.class)))
