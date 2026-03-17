@@ -4,7 +4,6 @@ import com.codeit.weatherfit.domain.follow.dto.request.FolloweeSearchCondition;
 import com.codeit.weatherfit.domain.follow.dto.request.FollowerSearchCondition;
 import com.codeit.weatherfit.domain.follow.entity.Follow;
 import com.codeit.weatherfit.domain.follow.entity.FollowCreateParam;
-import com.codeit.weatherfit.domain.follow.entity.FollowFixture;
 import com.codeit.weatherfit.domain.message.entity.UserFixture;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
