@@ -10,9 +10,7 @@ import java.util.UUID;
 
 public interface WeatherService {
 
-    WeatherResponse getWeather(WeatherRequest request, Instant time) throws InterruptedException;
 
-    public LocationResponse getWeatherLocation(WeatherRequest weatherRequest);
     public List<WeatherResponse> create(WeatherRequest request, Instant time);
     public void delete(UUID id);
     public WeatherResponse getWeather(UUID id);

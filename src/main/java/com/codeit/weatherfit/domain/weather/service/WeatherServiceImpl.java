@@ -21,17 +21,7 @@ public class WeatherServiceImpl implements WeatherService {
     private final WeatherApiCallService weatherApiCallService;
     private final WeatherRepository weatherRepository;
 
-    @Override
-    public WeatherResponse getWeather(WeatherRequest request, Instant time) throws InterruptedException {
-        return weatherApiCallService.getWeatherFromAdministration(request,time);
 
-
-    }
-
-    @Override
-    public LocationResponse getWeatherLocation(WeatherRequest request) {
-        return null;
-    }
 
     @Override
     public List<WeatherResponse> create(WeatherRequest request, Instant time) {

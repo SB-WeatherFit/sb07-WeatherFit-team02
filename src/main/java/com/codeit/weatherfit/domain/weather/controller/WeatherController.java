@@ -1,7 +1,10 @@
 package com.codeit.weatherfit.domain.weather.controller;
 
+import com.codeit.weatherfit.domain.weather.dto.request.WeatherApiTestRequest;
 import com.codeit.weatherfit.domain.weather.dto.request.WeatherRequest;
 import com.codeit.weatherfit.domain.weather.dto.response.WeatherResponse;
+import com.codeit.weatherfit.domain.weather.dto.response.weatherAdministrationApi.WeatherAdministrationTime;
+import com.codeit.weatherfit.domain.weather.service.WeatherApiCallServiceImpl;
 import com.codeit.weatherfit.domain.weather.service.WeatherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/weathers")
@@ -17,17 +21,24 @@ import java.time.Instant;
 public class WeatherController {
 
     private final WeatherService weatherService;
+    private final WeatherApiCallServiceImpl  weatherApiCallService;
 
     @GetMapping
-    public ResponseEntity<WeatherResponse> getWeather(WeatherRequest weatherRequest) throws InterruptedException {
+    public ResponseEntity<List<WeatherResponse>> createWeather(WeatherRequest weatherRequest) {
 
-        WeatherResponse response = weatherService.getWeather(weatherRequest, Instant.now());
+        List<WeatherResponse> response = weatherService.create(weatherRequest, Instant.now());
         return ResponseEntity.ok().body(response);
     }
 
     @GetMapping("/location")
     public void getWeatherLocation(WeatherRequest weatherRequest) {
 
+    }
+
+    @GetMapping("/test")
+    public ResponseEntity<List<WeatherAdministrationTime>> test(WeatherApiTestRequest request) {
+        List<WeatherAdministrationTime> response = weatherApiCallService.apiTest(request);
+        return ResponseEntity.ok().body(response);
     }
 
 
