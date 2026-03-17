@@ -173,7 +173,7 @@ create table notifications
     CONSTRAINT check_notification_level CHECK (level IN ('INFO', 'WARNING', 'ERROR'))
 );
 
-create table ootds
+create table feed_clothes
 (
     id         uuid primary key,
     created_at timestamp with time zone not null default CURRENT_TIMESTAMP,
@@ -182,7 +182,7 @@ create table ootds
     name       varchar(255)             not null,
     image_url  TEXT,
 
-    constraint fk_ootds_feeds foreign key (feed_id) references feeds (id) on DELETE cascade
+    constraint fk_feed_clothes_feeds foreign key (feed_id) references feeds (id) on DELETE cascade
 
 );
 
