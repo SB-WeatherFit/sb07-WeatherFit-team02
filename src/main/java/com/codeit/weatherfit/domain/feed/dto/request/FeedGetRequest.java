@@ -4,13 +4,14 @@ import com.codeit.weatherfit.domain.weather.entity.PrecipitationType;
 import com.codeit.weatherfit.domain.weather.entity.SkyStatus;
 import jakarta.validation.constraints.NotNull;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public record FeedGetRequest(
 
-        String cursor,
+        Instant cursor,
 
-        String idAfter,
+        UUID idAfter,
 
         @NotNull
         int limit,
