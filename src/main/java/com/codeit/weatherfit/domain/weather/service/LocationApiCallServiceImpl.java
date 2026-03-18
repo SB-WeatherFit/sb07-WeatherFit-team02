@@ -30,7 +30,6 @@ public class LocationApiCallServiceImpl implements LocationApiCallService {
                 .bodyToMono(KakaoLocationResponse.class)
                 .block();
 
-
     }
 
 }

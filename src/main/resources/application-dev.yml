@@ -3,6 +3,20 @@ spring:
     url: jdbc:h2:mem:weatherfit
     username: sa
     driver-class-name: org.h2.Driver
+  cache:
+    type: redis
+    cache-name:
+      - weathers
+    redis:
+      enable-statistics: true
+      time-to-live: 6000  #ttl 10분
+      cache-null-values: false
+    data:
+      redis:
+        host: ${REDIS_HOST:localhost}
+        port: ${REDIS_PORT:6379}
+
+
 
   jpa:
     show-sql: true

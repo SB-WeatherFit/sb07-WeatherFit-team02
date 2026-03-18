@@ -20,6 +20,7 @@ public class WeatherServiceImpl implements WeatherService {
 
     private final WeatherApiCallService weatherApiCallService;
     private final WeatherRepository weatherRepository;
+    private final LocationApiCallService locationApiCallService;
 
 
 
@@ -45,5 +46,10 @@ public class WeatherServiceImpl implements WeatherService {
     public WeatherResponse getWeather(UUID id) {
         Weather weather = weatherRepository.findById(id).orElseThrow(() -> new WeatherNotFoundException(id));
         return WeatherResponse.from(weather);
+    }
+
+    @Override
+    public WeatherResponse getWeather(WeatherRequest request, Instant time) {
+        return null;
     }
 }
