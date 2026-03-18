@@ -7,6 +7,7 @@ import com.codeit.weatherfit.domain.weather.dto.response.WeatherResponse;
 import com.codeit.weatherfit.domain.weather.dto.response.weatherAdministrationApi.WeatherAdministrationTime;
 import com.codeit.weatherfit.domain.weather.service.LocationApiCallServiceImpl;
 import com.codeit.weatherfit.domain.weather.service.WeatherApiCallServiceImpl;
+import com.codeit.weatherfit.domain.weather.service.WeatherScheduler;
 import com.codeit.weatherfit.domain.weather.service.WeatherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ public class WeatherController {
     private final WeatherService weatherService;
     private final WeatherApiCallServiceImpl  weatherApiCallService;
     private final LocationApiCallServiceImpl locationApiCallService;
+    private final WeatherScheduler weatherScheduler;
 
     @GetMapping
     public ResponseEntity<List<WeatherResponse>> createWeather(WeatherRequest weatherRequest) {
@@ -49,6 +51,16 @@ public class WeatherController {
         KakaoLocationResponse response = locationApiCallService.getKaKaoResponse(request);
         return ResponseEntity.ok().body(response);
     }
+
+    @GetMapping("/test/scheduler")
+    public ResponseEntity<List<WeatherResponse>> testScheduler(){
+        List<WeatherResponse> response = weatherScheduler.updateWeather();
+        return ResponseEntity.ok().body(response);
+    }
+
+
+
+
 
 
 

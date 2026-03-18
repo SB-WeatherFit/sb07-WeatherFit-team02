@@ -29,6 +29,9 @@ public class AsyncConfig {
         return createExecutor("message-", 20, 40, 500);
     }
 
+    @Bean(name = "weatherUpdateTaskExecutor")
+    public Executor weatherUpdateTaskExecutor() {return createExecutor("weather-update-", 20, 40, 500);}
+
 
     private ThreadPoolTaskExecutor createExecutor(String prefix, int core, int max, int queue) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
