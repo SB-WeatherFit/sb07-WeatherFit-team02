@@ -1,6 +1,8 @@
 package com.codeit.weatherfit.domain.clothes.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
+import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefUpdateRequest;
+import com.codeit.weatherfit.domain.clothes.dto.response.ClothesAttributeDefDto;
 import com.codeit.weatherfit.domain.user.entity.User;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
@@ -8,6 +10,8 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Table(name = "clothes")
 @Getter
@@ -23,7 +27,7 @@ public class Clothes extends BaseEntity {
     private String imageUrl;
     private ClothesType type;
 
-    protected Clothes(User owner, String name, ClothesType type) {
+    private Clothes(User owner, String name, ClothesType type) {
         this.owner = owner;
         this.name = name;
         this.type = type;
@@ -33,4 +37,8 @@ public class Clothes extends BaseEntity {
         return new Clothes(owner, name, type);
     }
 
+    public void update(String name, ClothesType type) {
+        this.name = name;
+        this.type = type;
+    }
 }
