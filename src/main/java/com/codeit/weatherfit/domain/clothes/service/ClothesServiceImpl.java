@@ -84,6 +84,15 @@ public class ClothesServiceImpl implements ClothesService {
     }
 
     @Override
+    public void delete(UUID clothesId) {
+        Clothes clothes = clothesRepository.findById(clothesId)
+                .orElseThrow(() -> new IllegalArgumentException("옷을 찾을 수 없습니다.")); // 나즁에 커스텀 예외 처리
+
+        clothesAttributeRepository.deleteByClothes(clothes);
+        clothesRepository.delete(clothes);
+    }
+
+    @Override
     public List<ClothesDto> getClothes() {
         return List.of();
     }

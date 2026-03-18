@@ -28,12 +28,18 @@ public class ClothesController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @PatchMapping("/api/{clothesId}")
+    @PatchMapping("/{clothesId}")
     public ResponseEntity<ClothesDto> update(
             @PathVariable UUID clothesId,
             @RequestBody @Valid ClothesUpdateRequest request
     ) {
         ClothesDto response = clothesService.update(clothesId, request);
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{clothesId}")
+    public ResponseEntity<Void> delete(@PathVariable UUID clothesId) {
+        clothesService.delete(clothesId);
+        return ResponseEntity.noContent().build();
     }
 }

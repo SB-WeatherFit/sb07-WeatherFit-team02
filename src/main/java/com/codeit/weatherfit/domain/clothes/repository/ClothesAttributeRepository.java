@@ -16,4 +16,5 @@ public interface ClothesAttributeRepository extends JpaRepository <ClothesAttrib
     );
     List<ClothesAttribute> findByClothes(Clothes clothes);
 
+    void deleteByClothes(Clothes clothes);
 }
