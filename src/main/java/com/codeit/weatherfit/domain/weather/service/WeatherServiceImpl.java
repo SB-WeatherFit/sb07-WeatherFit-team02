@@ -7,6 +7,7 @@ import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class WeatherServiceImpl implements WeatherService {
 
     private final WeatherApiCallService weatherApiCallService;
@@ -37,6 +39,8 @@ public class WeatherServiceImpl implements WeatherService {
     public List<WeatherResponse> create(WeatherRequest request, Instant time) {
         KakaoLocationResponse kaKaoResponse = locationApiCallService.getKaKaoResponse(request);
         var document = kaKaoResponse.documents().getFirst();
+        log.info("longitude: {}",document.x());
+        log.info("latitude: {}",document.y());
         double longitude = Double.parseDouble(document.x());
         double latitude =Double.parseDouble( document.y());
         List<String> address = List.of(document.region_1depth_name(), document.region_2depth_name(), document.region_3depth_name());

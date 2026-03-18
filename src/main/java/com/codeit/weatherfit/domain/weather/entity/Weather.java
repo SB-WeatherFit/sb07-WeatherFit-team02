@@ -123,6 +123,9 @@ public class Weather extends BaseEntity {
         newWeather.probability = precipitation.getProbability();
         newWeather.type = precipitation.getType();
 
+
+        newWeather.skyStatus = skyStatus;
+
         //location
         newWeather.latitude = location.getLatitude();
         newWeather.longitude = location.getLongitude();
@@ -160,6 +163,7 @@ public class Weather extends BaseEntity {
         newWeather.probability = dto.precipitation().probability();
         newWeather.type = dto.precipitation().type();
 
+        newWeather.skyStatus = dto.skyStatus();
         //location
         newWeather.latitude = dto.location().latitude();
         newWeather.longitude = dto.location().longitude();
