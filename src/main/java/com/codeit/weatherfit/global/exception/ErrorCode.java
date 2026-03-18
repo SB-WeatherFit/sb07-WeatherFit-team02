@@ -33,8 +33,14 @@ public enum ErrorCode {
     // Feed
     FEED_NOT_EXIST(HttpStatus.NOT_FOUND, "피드를 찾을 수 없습니다.", "FE-001"),
 
+    // Auth
+    INVALID_SIGN_IN_REQUEST(HttpStatus.BAD_REQUEST, "이메일과 비밀번호는 필수입니다.", "A-001"),
+    SIGN_IN_FAILED(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.", "A-002"),
+    SIGN_OUT_FAILED(HttpStatus.UNAUTHORIZED, "로그아웃할 인증 정보가 올바르지 않습니다.", "A-003"),
+
     // Global
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001");
+
 
 
     final HttpStatus httpStatus;
