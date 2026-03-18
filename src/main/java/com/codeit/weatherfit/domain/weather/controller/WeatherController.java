@@ -52,12 +52,17 @@ public class WeatherController {
         return ResponseEntity.ok().body(response);
     }
 
-    @GetMapping("/test/scheduler")
-    public ResponseEntity<List<WeatherResponse>> testScheduler(){
+    @GetMapping("/test/scheduler/update")
+    public ResponseEntity<List<WeatherResponse>> testUpdateScheduler(){
         List<WeatherResponse> response = weatherScheduler.updateWeather();
         return ResponseEntity.ok().body(response);
     }
 
+    @GetMapping("/test/scheduler/delete")
+    public ResponseEntity<List<WeatherResponse>> testDeleteScheduler(){
+        List<WeatherResponse> response = weatherScheduler.deleteWeather();
+        return ResponseEntity.ok().body(response);
+    }
 
 
 

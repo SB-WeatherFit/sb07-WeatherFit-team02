@@ -12,6 +12,7 @@ import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.StepContribution;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.infrastructure.repeat.RepeatStatus;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -46,6 +47,7 @@ public class WeatherUpdateTasklet implements Tasklet {
                 ));
 
         weatherRepository.deleteAll();
+        deleteAllWeatherCache();
 
         List<CompletableFuture<Void>> futures = locationData.entrySet().stream()
                 .map(entry -> CompletableFuture.runAsync(() -> {
@@ -61,5 +63,10 @@ public class WeatherUpdateTasklet implements Tasklet {
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
         return RepeatStatus.FINISHED;
+    }
+
+    @CacheEvict(value="weathers",allEntries = true)
+    public void deleteAllWeatherCache(){
+
     }
 }

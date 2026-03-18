@@ -6,11 +6,7 @@ import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.Instant;
 import java.util.List;
@@ -26,9 +22,10 @@ public class WeatherScheduler {
     private final WeatherRepository weatherRepository;
     private final WeatherApiCallService weatherApiCallService;
     private final Executor weatherUpdateTaskExecutor;
+    private final Executor weatherDeleteTaskExecutor;
 
 
-    @Transactional
+
     public List<WeatherResponse> updateWeather() {
         List<Weather> allData = weatherRepository.findAll();
 
@@ -65,6 +62,17 @@ public class WeatherScheduler {
     @CacheEvict(value="weathers",allEntries = true)
     public void deleteAllWeatherCache(){
 
+    }
+
+    public List<WeatherResponse> deleteWeather(){
+        Instant targetTime = Instant.now();
+        List<Weather> allData = weatherRepository.findAll();
+        CompletableFuture.runAsync(()->allData.stream()
+                .filter(weather-> weather.getForecastAt().isBefore(targetTime))
+                .forEach(weatherRepository::delete),weatherDeleteTaskExecutor);
+        return weatherRepository.findAll().stream()
+                .map(x-> WeatherResponse.from(x))
+                .toList();
     }
 
 }
