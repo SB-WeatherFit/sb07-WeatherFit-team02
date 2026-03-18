@@ -58,18 +58,18 @@ public class FeedServiceImpl implements FeedService {
     @Override
     public FeedGetResponse getFeedsByCursor(FeedGetRequest request) {
         List<Feed> feeds = feedRepository.findWithCursor(request);
-        Feed nextFeed = null;
+        Feed lastFeed = null;
         if (feeds.size() == request.limit() + 1) {
-            nextFeed = feeds.getLast();
             feeds = feeds.subList(0, request.limit());
+            lastFeed = feeds.getLast();
         }
-        boolean hasNext = nextFeed != null;
+        boolean hasNext = lastFeed != null;
         return new FeedGetResponse(
                 feeds.stream()
                         .map(this::toFeedDto)
                         .toList(),
-                hasNext? nextFeed.getCreatedAt() : null,
-                hasNext? nextFeed.getId() : null,
+                hasNext? lastFeed.getCreatedAt() : null,
+                hasNext? lastFeed.getId() : null,
                 hasNext,
                 feeds.size(),
                 request.sortBy(),
