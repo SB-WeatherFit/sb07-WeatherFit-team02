@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.clothes.dto.response;
 
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesAttribute;
 import com.codeit.weatherfit.domain.clothes.entity.ClothesType;
 
 import java.util.List;
@@ -14,14 +15,25 @@ public record ClothesDto (
         ClothesType type,
         List<ClothesAttributeDto> attributes
 ) {
-    public static ClothesDto from(Clothes clothes) {
+    public static ClothesDto from(Clothes clothes,
+                                  List<ClothesAttribute> attributes) {
+
+        List<ClothesAttributeDto> attributesDtos = attributes.stream()
+                .map(attr -> new ClothesAttributeDto(
+                        attr.getOption()
+                                .getClothesAttributeType()
+                                .getId(),
+                        attr.getOption()
+                                .getOption()
+                )).toList();
+
         return new ClothesDto(
                 clothes.getId(),
                 clothes.getOwner().getId(),
                 clothes.getName(),
                 clothes.getImageUrl(),
                 clothes.getType(),
-                List.of()
+                attributesDtos
         );
     }
 }

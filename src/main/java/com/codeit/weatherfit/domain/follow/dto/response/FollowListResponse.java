@@ -13,4 +13,12 @@ public record FollowListResponse(
         SortBy sortBy,
         SortDirection sortDirection
 ) {
+    public FollowListResponse(List<FollowDto> data,
+                              Instant nextCursor,
+                              UUID nextIdAfter,
+                              boolean hasNext,
+                              long totalCount){
+        this(data, nextCursor, nextIdAfter, hasNext, totalCount,
+                SortBy.CREATED_AT, SortDirection.DESCENDING);
+    }
 }

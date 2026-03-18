@@ -1,15 +1,18 @@
 package com.codeit.weatherfit.domain.feed.controller;
 
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequestDto;
+import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
+import com.codeit.weatherfit.domain.feed.dto.request.FeedGetRequest;
+import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
+import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
 import com.codeit.weatherfit.domain.feed.service.FeedService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,10 +20,28 @@ import org.springframework.web.bind.annotation.RestController;
 public class FeedController {
     private final FeedService feedService;
 
+    @GetMapping
+    public ResponseEntity<FeedGetResponse> get(@RequestBody @Valid FeedGetRequest request) {
+        return ResponseEntity.ok(feedService.getFeedsByCursor(request));
+    }
+
     @PostMapping
-    public ResponseEntity<FeedDto> createFeed(@RequestBody FeedCreateRequestDto request){
+    public ResponseEntity<FeedDto> createFeed(@RequestBody @Valid FeedCreateRequest request){
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 feedService.create(request)
         );
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<FeedDto> update(@PathVariable UUID id, @RequestBody @Valid FeedUpdateRequest request) {
+        return ResponseEntity.ok(feedService.update(id, request));
+    }
+
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        feedService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }

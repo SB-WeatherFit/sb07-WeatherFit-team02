@@ -21,4 +21,6 @@ public class ClothesAttribute extends BaseEntity {
     @ManyToOne
     private SelectableValue option;
 
+    public void changeOption(SelectableValue option) { this.option = option; }
+
 }

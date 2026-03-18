@@ -13,6 +13,8 @@ public interface ClothesService {
 
     ClothesDto update(UUID clothesId, ClothesUpdateRequest request);
 
+    void delete(UUID clothesId);
+
     List<ClothesDto> getClothes();
 
     ClothesDto getClothes(UUID clothesId);

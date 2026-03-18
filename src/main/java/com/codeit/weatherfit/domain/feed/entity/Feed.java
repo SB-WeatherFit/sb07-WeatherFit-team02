@@ -33,4 +33,7 @@ public class Feed extends BaseEntity {
         return feed;
     }
 
+    public void update(String content) {
+        this.content = content;
+    }
 }

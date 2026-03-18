@@ -1,12 +1,13 @@
 package com.codeit.weatherfit.domain.follow.controller;
 
 import com.codeit.weatherfit.domain.follow.dto.request.FollowCreateRequest;
-import com.codeit.weatherfit.domain.follow.dto.request.FolloweeSearchCondition;
 import com.codeit.weatherfit.domain.follow.dto.request.FollowerSearchCondition;
+import com.codeit.weatherfit.domain.follow.dto.request.FolloweeSearchCondition;
 import com.codeit.weatherfit.domain.follow.dto.response.FollowDto;
 import com.codeit.weatherfit.domain.follow.dto.response.FollowListResponse;
 import com.codeit.weatherfit.domain.follow.dto.response.FollowSummaryDto;
 import com.codeit.weatherfit.domain.follow.service.FollowService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,7 @@ public class FollowController {
 
     @PostMapping
     public ResponseEntity<FollowDto> createFollow(
-            @RequestBody FollowCreateRequest createRequest) {
+            @Valid @RequestBody FollowCreateRequest createRequest) {
         FollowDto result = followService.follow(createRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(result);
@@ -31,22 +32,25 @@ public class FollowController {
 
     @GetMapping("/summary")
     public ResponseEntity<FollowSummaryDto> getFollowSummary(
-            @RequestParam UUID useId){
-        FollowSummaryDto followSummary = followService.getFollowSummary(useId);
+            @RequestParam UUID useId
+//            @AuthenticationPrincipal    myId
+    ){
+        UUID myId = UUID.randomUUID(); // todo: Authentication 에서 아이디 가져오는 코드로 변경
+        FollowSummaryDto followSummary = followService.getFollowSummary(useId, myId);
         return ResponseEntity.ok(followSummary);
     }
 
     @GetMapping("/followings")
     public ResponseEntity<FollowListResponse> getFollowings(
-            @ModelAttribute FollowerSearchCondition condition){
-        FollowListResponse result = followService.getFollowings(condition);
+            @Valid @ModelAttribute FolloweeSearchCondition condition){
+        FollowListResponse result = followService.getFollowees(condition);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/followers")
     public ResponseEntity<FollowListResponse> getFollowers(
-            @ModelAttribute FolloweeSearchCondition condition){
-        FollowListResponse result = followService.getFollowees(condition);
+            @Valid @ModelAttribute FollowerSearchCondition condition){
+        FollowListResponse result = followService.getFollowers(condition);
         return ResponseEntity.ok(result);
     }
 

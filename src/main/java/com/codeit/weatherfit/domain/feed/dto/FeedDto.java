@@ -2,7 +2,7 @@ package com.codeit.weatherfit.domain.feed.dto;
 
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
-import com.codeit.weatherfit.domain.user.entity.User;
+import com.codeit.weatherfit.domain.user.dto.response.UserDto;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 
 import java.time.Instant;
@@ -13,12 +13,12 @@ public record FeedDto(
         UUID id,
         Instant createdAt,
         Instant updatedAt,
-        User author, // TODO 추후 UserDto로 수정
+        UserDto author,
         Weather weather, // TODO 추후 WeatherDto로 수정
         List<FeedClothesDto> ootds,
         String content,
-        long likeCount,
-        long commentCount,
+        Long likeCount,
+        Long commentCount,
         boolean likedByMe
 ) {
     public static FeedDto from(Feed feed, List<FeedClothes> ootds, Long likeCount, Long commentCount, boolean likedByMe){
@@ -26,7 +26,7 @@ public record FeedDto(
                 feed.getId(),
                 feed.getCreatedAt(),
                 feed.getUpdatedAt(),
-                feed.getAuthor(),
+                UserDto.from(feed.getAuthor()),
                 feed.getWeather(),
                 ootds.stream().map(FeedClothesDto::from).toList(),
                 feed.getContent(),

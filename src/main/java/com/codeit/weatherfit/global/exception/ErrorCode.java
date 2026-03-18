@@ -28,6 +28,11 @@ public enum ErrorCode {
     INVALID_PROFILE_GENDER(HttpStatus.BAD_REQUEST, "성별은 필수입니다.", "P-003"),
     INVALID_PROFILE_TEMPERATURE_SENSITIVITY(HttpStatus.BAD_REQUEST, "온도 민감도는 1 이상 5 이하여야 합니다.", "P-004"),
 
+    // Feed
+    FEED_NOT_EXIST(HttpStatus.NOT_FOUND, "피드를 찾을 수 없습니다.", "FE-001"),
+
+    // Global
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001");
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001"),
 
     //Weather
