@@ -34,7 +34,9 @@ create table weathers
     type                               varchar(20)              NOT NULL,
     forecast_at                        timestamp with time zone,
     forecasted_at                      timestamp with time zone,
-    address                            varchar(255),
+    address_first                            varchar(255),
+    address_second                           varchar(255),
+    address_third                            varchar(255)
 
     constraint check_weather_as_word check ( as_word IN ('WEAK', 'MODERATE', 'STRONG')),
     constraint check_weather_sky_status check (sky_status IN ('CLEAR', 'MOSTLY_CLOUDY', 'CLOUDY')),
