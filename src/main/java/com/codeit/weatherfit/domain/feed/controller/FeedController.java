@@ -2,7 +2,9 @@ package com.codeit.weatherfit.domain.feed.controller;
 
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
+import com.codeit.weatherfit.domain.feed.dto.request.FeedGetRequest;
 import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
+import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
 import com.codeit.weatherfit.domain.feed.service.FeedService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,11 @@ import java.util.UUID;
 @RequestMapping("/api/feeds")
 public class FeedController {
     private final FeedService feedService;
+
+    @GetMapping
+    public ResponseEntity<FeedGetResponse> get(@RequestBody @Valid FeedGetRequest request) {
+        return ResponseEntity.ok(feedService.getFeedsByCursor(request));
+    }
 
     @PostMapping
     public ResponseEntity<FeedDto> createFeed(@RequestBody @Valid FeedCreateRequest request){
