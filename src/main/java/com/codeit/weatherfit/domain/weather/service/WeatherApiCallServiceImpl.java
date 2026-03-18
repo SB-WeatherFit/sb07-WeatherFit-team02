@@ -1,12 +1,15 @@
 package com.codeit.weatherfit.domain.weather.service;
 
 import com.codeit.weatherfit.domain.profile.entity.Location;
+import com.codeit.weatherfit.domain.weather.dto.request.WeatherApiTestRequest;
 import com.codeit.weatherfit.domain.weather.dto.request.WeatherRequest;
-import com.codeit.weatherfit.domain.weather.dto.response.WeatherResponse;
+import com.codeit.weatherfit.domain.weather.dto.response.*;
 import com.codeit.weatherfit.domain.weather.dto.response.weatherAdministrationApi.WeatherAdministration;
 import com.codeit.weatherfit.domain.weather.dto.response.weatherAdministrationApi.WeatherAdministrationTime;
 import com.codeit.weatherfit.domain.weather.dto.response.weatherAdministrationApi.WeatherCategoryType;
 import com.codeit.weatherfit.domain.weather.entity.*;
+import com.codeit.weatherfit.domain.weather.exception.WeatherCategoryNotFoundException;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +18,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,76 +36,207 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
     @Value("${open-administration-map.api-key}")
     private String administrationApiKey;
 
-
-    public WeatherResponse getWeatherFromAdministration(WeatherRequest request, Instant time) throws InterruptedException {
-
+    @Override
+    public List<WeatherResponse> getWeatherLisFromAdministration(WeatherRequest request, Instant time,List<String> address) {
         long before = System.currentTimeMillis();
+
         LocalDateTime kst = LocalDateTime.ofInstant(time, KST);
 
         String baseDate = getBaseDate(kst);
         String yesterdayDate = getBaseDate(kst.minusDays(1));
-
-
+        String tomorrowDate = getBaseDate(kst.plusDays(1));
+        String secondDayDate = getBaseDate(kst.plusDays(2));
+        String thirdDayDate = getBaseDate(kst.plusDays(3));
         String baseTime = getBaseTime(kst.toLocalTime());
+        String baseTimeFor3Day = getBaseTimeFor3Day(kst.toLocalTime());
         String currentTime = getCurrentTime(time);
-        int nx = convertToGrid(request)[0];
-        int ny = convertToGrid(request)[1];
-        log.info("currentTime: {}",currentTime);
-
-        Location location = Location.create(request.latitude(), request.longitude(), 0, 0, List.of("서울특별"));
-        WeatherAdministration todayData = getWeatherFromApi(baseDate, baseTime, nx, ny, 13 * 24);
-        WeatherAdministration yesterdayData = getWeatherFromApi(yesterdayDate, "0500", nx, ny, 13 * 24 * 2);
 
 
-        List<WeatherAdministrationTime> todayItems = todayData
+        Instant forecastedAt = getForecastedAt(time);
+        LocationResponse tmpLocation = new LocationResponse(
+                request.latitude(),
+                request.longitude(),
+                (int) request.latitude(),
+                (int) request.longitude(),
+                address
+        );
+
+        int[] convert = convertToGrid(request.latitude(), request.longitude());
+        int nx = convert[0];
+        int ny = convert[1];
+
+        List<WeatherAdministrationTime> forecastedData = getWeatherFromApi(baseDate, baseTime, nx, ny, 13 * 24 * 4)
                 .response()
-                .body()
-                .items()
-                .item()
-                .stream()
-                .filter(x -> x.fcstDate().equals(baseDate) && x.fcstTime().equals(currentTime))
-                .toList();
-        List<WeatherAdministrationTime> yesterdayItems = yesterdayData.response()
                 .body()
                 .items()
                 .item();
 
-        String tmx = yesterdayItems.stream()
-                .filter(item -> item.category().equals(WeatherCategoryType.TMX.name()))
-                .filter(item -> item.fcstDate().equals(baseDate))
-                .map(WeatherAdministrationTime::fcstValue)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No TMX"));
+        List<WeatherAdministrationTime> yesterdayForecastedData = getWeatherFromApi(yesterdayDate, "0200", nx, ny, 13*24*2)
+                .response()
+                .body()
+                .items()
+                .item();
+        Map<String, Map<String, String>> weatherMap = forecastedData.stream().collect(Collectors.groupingBy(
+                item -> item.fcstDate() + item.fcstTime(),
+                Collectors.toMap(
+                        WeatherAdministrationTime::category,
+                        WeatherAdministrationTime::fcstValue,
+                        (a, b) -> a
+                )
 
-        String tmn = yesterdayItems.stream()
-                .filter(item -> item.category().equals(WeatherCategoryType.TMN.name()))
-                .filter(item -> item.fcstDate().equals(baseDate)) // baseDate 이후 날짜
-                .map(WeatherAdministrationTime::fcstValue)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No TMN"));
+        ));
 
-        Instant forecastedAt = getForecastedAt(time);
-        Instant forecastAt = forecastedAt.plus(Duration.ofHours(1));
+        Map<String, Map<String, String>> yesterDayWeatherMap = yesterdayForecastedData.stream().collect(Collectors.groupingBy(
+                item -> item.fcstDate() + item.fcstTime(),
+                Collectors.toMap(
+                        WeatherAdministrationTime::category,
+                        WeatherAdministrationTime::fcstValue,
+                        (a, b) -> a
+                )
 
-        Temperature temperature = getTemperature(todayItems, yesterdayItems, yesterdayDate, currentTime, tmn, tmx);
-        WindSpeed windSpeed = getWindSpeed(todayItems, currentTime);
-        Precipitation precipitation = getPrecipitation(todayItems, currentTime);
-        SkyStatus skyStatus = getSkyStatus(todayItems, currentTime);
-        Humidity humidity = getHumidity(todayItems, yesterdayItems, yesterdayDate, currentTime);
+        ));
 
-        Weather weather = Weather.create(
-                temperature,
-                windSpeed,
-                precipitation,
-                skyStatus,
-                humidity,
+
+        WeatherResponse todayResponse = getSingleWeatherResponseDto(
+                weatherMap,
+                yesterDayWeatherMap,
+                baseDate,
+                currentTime,
+                yesterdayDate,
+                forecastedAt,
+                forecastedAt,
+                tmpLocation
+
+        );
+        WeatherResponse tomorrowResponse = getSingleWeatherResponseDto(
+                weatherMap,
+                tomorrowDate,
+                currentTime,
+                baseDate,
+                forecastedAt,
+                forecastedAt.plus(1,ChronoUnit.DAYS),
+                tmpLocation
+
+        );
+
+        WeatherResponse secondResponse = getSingleWeatherResponseDto(
+                weatherMap,
+                secondDayDate,
+                currentTime,
+                tomorrowDate,
+                forecastedAt,
+                forecastedAt.plus(2,ChronoUnit.DAYS),
+                tmpLocation
+
+        );
+
+        WeatherResponse thirdResponse = getSingleWeatherResponseDto(
+                weatherMap,
+                thirdDayDate,
+                baseTimeFor3Day,
+                secondDayDate,
+                forecastedAt,
+                forecastedAt.plus(3,ChronoUnit.DAYS),
+                tmpLocation
+
+        );
+
+        long after = System.currentTimeMillis();
+        log.info("spending time to call list:{} seconds", (after - before) / 1000.0);
+
+        return List.of(todayResponse, tomorrowResponse, secondResponse, thirdResponse);
+    }
+    private String getValue(Map<String, Map<String, String>> map,
+                            String date, String time, WeatherCategoryType  category) {
+
+        return Optional.ofNullable(map.get(date + time))
+                .map(m -> m.get(category.name()))
+                .orElseThrow(() -> new WeatherCategoryNotFoundException(
+                       category));
+    }
+
+    public WeatherResponse getSingleWeatherResponseDto(
+                Map<String,Map<String,String>> weatherMap,
+                String date, String time,
+                String yesterdayDate,
+                Instant forecastedAt,
+                Instant forecastAt,
+                LocationResponse location
+    ) {
+        log.info("forecastAt: {}",forecastAt);
+        String tmp = getValue(weatherMap, date, time, WeatherCategoryType.TMP);
+        String yesterdayTmp = getValue(weatherMap,yesterdayDate,time,WeatherCategoryType.TMP);
+
+        String humidity = getValue(weatherMap, date, time, WeatherCategoryType.REH);
+        String yesterdayHumidity = getValue(weatherMap,yesterdayDate,time,WeatherCategoryType.REH);
+        String windSpeed = getValue(weatherMap, date, time, WeatherCategoryType.WSD);
+        String rainProbability = getValue(weatherMap, date, time, WeatherCategoryType.POP);
+        String rainAmount = getValue(weatherMap, date, time, WeatherCategoryType.PCP);
+        String skyCondition = getValue(weatherMap, date, time, WeatherCategoryType.SKY);
+        String rainStatus = getValue(weatherMap, date, time, WeatherCategoryType.PTY);
+        String max = getValue(weatherMap, date, "1500", WeatherCategoryType.TMX);
+        String min = getValue(weatherMap, date, "0600", WeatherCategoryType.TMN);
+
+        HumidityResponse humidityDto = getHumidity(humidity, yesterdayHumidity);
+        WindSpeedResponse windSpeedDto = getWindSpeed(windSpeed);
+        SkyStatus skyStatus = getSkyStatus(skyCondition);
+        PrecipitaionResponse precipitationDto = getPrecipitation(rainAmount, rainProbability, rainStatus);
+        TemperatureResponse temperatureDto = getTemperature(tmp, yesterdayTmp, min, max);
+        return new WeatherResponse(
+                null,
                 forecastedAt,
                 forecastAt,
-                location
+                location,
+                skyStatus,
+                precipitationDto,
+                humidityDto,
+                temperatureDto,
+                windSpeedDto
         );
-        long after = System.currentTimeMillis();
-        log.info("Spending time: {}",(after-before)/1000.0);
-        return WeatherResponse.from(weather);
+
+    }
+
+    public WeatherResponse getSingleWeatherResponseDto(
+            Map<String,Map<String,String>> weatherMap,
+            Map<String, Map<String,String>> yesterdayWeatherMap,
+            String date, String time,
+            String yesterdayDate,
+            Instant forecastedAt,
+            Instant forecastAt,
+            LocationResponse location
+    ) {
+        log.info("forecastAt: {}",forecastAt);
+        log.info("yesterdayWeatherMap: {}",yesterdayWeatherMap.toString());
+        String tmp = getValue(yesterdayWeatherMap, date, time, WeatherCategoryType.TMP);
+        String yesterdayTmp = getValue(yesterdayWeatherMap,yesterdayDate,time,WeatherCategoryType.TMP);
+
+        String humidity = getValue(weatherMap, date, time, WeatherCategoryType.REH);
+        String yesterdayHumidity = getValue(yesterdayWeatherMap,yesterdayDate,time,WeatherCategoryType.REH);
+        String windSpeed = getValue(weatherMap, date, time, WeatherCategoryType.WSD);
+        String rainProbability = getValue(weatherMap, date, time, WeatherCategoryType.POP);
+        String rainAmount = getValue(weatherMap, date, time, WeatherCategoryType.PCP);
+        String skyCondition = getValue(weatherMap, date, time, WeatherCategoryType.SKY);
+        String rainStatus = getValue(weatherMap, date, time, WeatherCategoryType.PTY);
+        String max = getValue(yesterdayWeatherMap, date, "1500", WeatherCategoryType.TMX);
+        String min = getValue(yesterdayWeatherMap, date, "0600", WeatherCategoryType.TMN);
+
+        HumidityResponse humidityDto = getHumidity(humidity, yesterdayHumidity);
+        WindSpeedResponse windSpeedDto = getWindSpeed(windSpeed);
+        SkyStatus skyStatus = getSkyStatus(skyCondition);
+        PrecipitaionResponse precipitationDto = getPrecipitation(rainAmount, rainProbability, rainStatus);
+        TemperatureResponse temperatureDto = getTemperature(tmp, yesterdayTmp, min, max);
+        return new WeatherResponse(
+                null,
+                forecastedAt,
+                forecastAt,
+                location,
+                skyStatus,
+                precipitationDto,
+                humidityDto,
+                temperatureDto,
+                windSpeedDto
+        );
+
     }
 
     public WeatherAdministration getWeatherFromApi(String baseDate, String baseTime, int nx, int ny, int numOfRows) {
@@ -119,6 +257,46 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 .block();
     }
 
+
+    public List<WeatherAdministrationTime> getWeatherFromFatApi(String baseDate, String baseTime, int nx, int ny, int numOfRows) {
+        WeatherAdministration result1 = weatherAdministrationClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/getVilageFcst")
+                        .queryParam("serviceKey", administrationApiKey)
+                        .queryParam("pageNo", 1)
+                        .queryParam("numOfRows", numOfRows)
+                        .queryParam("dataType", "JSON")
+                        .queryParam("base_date", baseDate)
+                        .queryParam("base_time", baseTime)
+                        .queryParam("nx", nx)
+                        .queryParam("ny", ny)
+                        .build())
+                .retrieve()
+                .bodyToMono(WeatherAdministration.class)
+                .block();
+
+        WeatherAdministration result2 = weatherAdministrationClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/getVilageFcst")
+                        .queryParam("serviceKey", administrationApiKey)
+                        .queryParam("pageNo", 2)
+                        .queryParam("numOfRows", numOfRows)
+                        .queryParam("dataType", "JSON")
+                        .queryParam("base_date", baseDate)
+                        .queryParam("base_time", baseTime)
+                        .queryParam("nx", nx)
+                        .queryParam("ny", ny)
+                        .build())
+                .retrieve()
+                .bodyToMono(WeatherAdministration.class)
+                .block();
+
+        List<WeatherAdministrationTime> item1 = result1.response().body().items().item();
+        List<WeatherAdministrationTime> item2 = result2.response().body().items().item();
+        item1.addAll(item2);
+        return item1;
+    }
+
     private String getBaseDate(LocalDateTime targetDate) {
         return targetDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
     }
@@ -126,7 +304,7 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
     private String getCurrentTime(Instant time) {
         ZonedDateTime zdt = time.atZone(KST);
         int hour = zdt.getHour();
-        return String.format("%02d00", hour+1);
+        return String.format("%02d00", hour + 1);
     }
 
     private Instant getForecastedAt(Instant targetTime) {
@@ -159,10 +337,27 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
         return "2300";
     }
 
-    private int[] convertToGrid(WeatherRequest request) {
+    private String getBaseTimeFor3Day(LocalTime now) {
 
-        double latitude = request.latitude();
-        double longitude = request.longitude();
+        if (now.isAfter(LocalTime.of(21, 0))) return "2100";
+        if (now.isAfter(LocalTime.of(18, 0))) return "1800";
+        if (now.isAfter(LocalTime.of(15, 0))) return "1500";
+        if (now.isAfter(LocalTime.of(12, 0))) return "1200";
+        if (now.isAfter(LocalTime.of(9, 0))) return "0900";
+        if (now.isAfter(LocalTime.of(6, 0))) return "0600";
+        if (now.isAfter(LocalTime.of(3, 0))) return "0300";
+        if (now.isAfter(LocalTime.of(0, 0))) return "0000";
+
+        return "1200";
+    }
+
+
+
+
+    private int[] convertToGrid(double latitudeValue, double longitudeValue) {
+
+        double latitude = latitudeValue;
+        double longitude = longitudeValue;
 
         double RE = 6371.00877;
         double GRID = 5.0;
@@ -207,33 +402,12 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
         return new int[]{nx, ny};
     }
 
-    private Temperature getTemperature(List<WeatherAdministrationTime> todayItem,
-                                       List<WeatherAdministrationTime> yesterdayItem,
-                                       String yesterdayDate,
-                                       String currentTime,
-                                       String min,
-                                       String max) {
+    private TemperatureResponse getTemperature(String temperature,String yesterdayTemperature,String min,String max) {
 
 
-        List<WeatherAdministrationTime> tempLis = todayItem.stream()
-                .filter(x -> x.category().equals(WeatherCategoryType.TMP.name()))
-                .toList();
-
-        String yesterdayTemperatureData = yesterdayItem.stream()
-                .filter(x -> x.category().equals(WeatherCategoryType.TMP.name()))
-                .filter(x -> x.fcstDate().equals(yesterdayDate) && x.fcstTime().equals(currentTime))
-                .map(x -> x.fcstValue())
-                .findFirst()
-                .orElseThrow();
-        Double yesterDayTemperature = Double.parseDouble(yesterdayTemperatureData);
-        Double temperature = tempLis.stream()
-                .map(item -> Double.parseDouble(item.fcstValue()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No temperature"));
-
-        return new Temperature(
-                temperature,
-                temperature - yesterDayTemperature,
+        return new TemperatureResponse(
+                Double.parseDouble(temperature),
+                Double.parseDouble(temperature)- Double.parseDouble(yesterdayTemperature),
                 Double.parseDouble(min),
                 Double.parseDouble(max)
         );
@@ -241,14 +415,8 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
 
     }
 
-    private WindSpeed getWindSpeed(List<WeatherAdministrationTime> itemLis, String currentTime) {
-        List<WeatherAdministrationTime> windLis = itemLis.stream()
-                .filter(x -> x.category().equals(WeatherCategoryType.SKY.name()))
-                .toList();
-        String windSpeed = windLis.stream()
-                .map(WeatherAdministrationTime::fcstValue)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No windspeed"));
+    private WindSpeedResponse getWindSpeed(String windSpeed) {
+
         Double speed = Double.parseDouble(windSpeed);
         AsWord asWord;
         if (speed > 0 && speed < 4.0) asWord = AsWord.WEAK;
@@ -256,20 +424,12 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
         else if (speed >= 9.0) asWord = AsWord.STRONG;
 
         else {
-            log.info("speed: {}", speed);
             throw new IllegalArgumentException("Invalid speed");
         }
-        return new WindSpeed(asWord, speed);
+        return new WindSpeedResponse(speed, asWord);
     }
 
-    private SkyStatus getSkyStatus(List<WeatherAdministrationTime> itemLis, String currentTime) {
-        String skyStatus = itemLis.stream()
-                .filter(
-                        x -> x.category().equals(WeatherCategoryType.SKY.name())
-                )
-                .map(WeatherAdministrationTime::fcstValue)
-                .findFirst()
-                .orElseThrow();
+    private SkyStatus getSkyStatus(String skyStatus) {
         int idx = Integer.parseInt(skyStatus);
 
         switch (idx) {
@@ -289,57 +449,22 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
 
     }
 
-    private Humidity getHumidity(List<WeatherAdministrationTime> todayItemLis,
-                                 List<WeatherAdministrationTime> yesterdayItemLis,
-                                 String yesterdayDate,
-                                 String currentTime) {
-        String humidityData = todayItemLis.stream().filter(
-                        x -> x.category().equals(WeatherCategoryType.REH.name())
-                )
-                .map(WeatherAdministrationTime::fcstValue)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No humidity"));
-        String yesterdayHumidityData = yesterdayItemLis.stream()
-                .filter(x -> x.category().equals(WeatherCategoryType.REH.name()))
-                .filter(x -> x.fcstTime().equals(currentTime) && x.fcstDate().equals(yesterdayDate))
-                .map(WeatherAdministrationTime::fcstValue)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No humidity"));
 
-        Double todayHumidity = Double.parseDouble(humidityData);
-        Double yesterdayHumidity = Double.parseDouble(yesterdayHumidityData);
 
-        return new Humidity(
-                todayHumidity,
-                todayHumidity - yesterdayHumidity
+
+    private HumidityResponse getHumidity(String humidity,String yesterdayHumidity) {
+
+        Double today = Double.parseDouble(humidity);
+        Double yesterday = Double.parseDouble(yesterdayHumidity);
+        return new HumidityResponse(
+                today,
+                today - yesterday
         );
     }
 
-    private Precipitation getPrecipitation(List<WeatherAdministrationTime> itemLis, String currentTime) {
-        String ptyValue = itemLis.stream().filter(x ->
-                        x.category().equals(WeatherCategoryType.PTY.name())
-                )
-                .map(WeatherAdministrationTime::fcstValue)
-                .findFirst()
-                .orElseThrow();
+    private PrecipitaionResponse getPrecipitation(String rainAmount,String rainProbability, String rainStatus) {
 
-
-        String popValue = itemLis.stream().filter(x ->
-                        x.category().equals(WeatherCategoryType.POP.name())
-
-                )
-                .map(WeatherAdministrationTime::fcstValue)
-                .findFirst()
-                .orElseThrow();
-
-        String pcpValue = itemLis.stream().filter(x ->
-                        x.category().equals(WeatherCategoryType.PCP.name())
-                )
-                .map(WeatherAdministrationTime::fcstValue)
-                .findFirst()
-                .orElseThrow();
-
-        int ptyIdx = Integer.parseInt(ptyValue);
+        int ptyIdx = Integer.parseInt(rainStatus);
         PrecipitationType type = switch (ptyIdx) {
             case 0 -> PrecipitationType.NONE;
             case 1 -> PrecipitationType.RAIN;
@@ -350,16 +475,49 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
         };
         Double amount;
         Double probability;
+        amount= parsePcp(rainAmount);
+        probability = Double.parseDouble(rainProbability);
 
-        if (pcpValue.equals(NO_RAIN_AMOUNT)) amount = 0.0;
-        else amount = Double.parseDouble(pcpValue);
-        probability = Double.parseDouble(popValue);
-
-        return new Precipitation(
+        return new PrecipitaionResponse(
                 type,
                 amount,
                 probability
         );
     }
 
+    public List<WeatherAdministrationTime> apiTest(WeatherApiTestRequest request) {
+
+
+        int[] convert = convertToGrid(request.latitude(), request.longitude());
+        int nx = convert[0];
+        int ny = convert[1];
+
+        WeatherAdministration result = weatherAdministrationClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/getVilageFcst")
+                        .queryParam("serviceKey", administrationApiKey)
+                        .queryParam("pageNo", 1)
+                        .queryParam("numOfRows", request.numOfRows())
+                        .queryParam("dataType", "JSON")
+                        .queryParam("base_date", request.baseDate())
+                        .queryParam("base_time", request.baseTime())
+                        .queryParam("nx", nx)
+                        .queryParam("ny", ny)
+                        .build())
+                .retrieve()
+                .bodyToMono(WeatherAdministration.class)
+                .block();
+        return result.response().body().items().item();
+
+    }
+
+    private double parsePcp(String value) {
+        if (value.equals("강수없음")) return 0.0;
+        if (value.contains("미만")) return 0.5;
+        if (value.contains("~")) {
+            String[] split = value.replace("mm", "").split("~");
+            return (Double.parseDouble(split[0]) + Double.parseDouble(split[1])) / 2;
+        }
+        return Double.parseDouble(value.replace("mm", ""));
+    }
 }

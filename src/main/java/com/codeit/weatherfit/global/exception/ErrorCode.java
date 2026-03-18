@@ -10,7 +10,6 @@ public enum ErrorCode {
     INVALID_FOLLOW_ARGUMENT(HttpStatus.BAD_REQUEST, "팔로워와 팔로이는 반드시 존재해야 합니다.", "F-002"),
     ALREADY_FOLLOW_EXCEPTION(HttpStatus.BAD_REQUEST, "팔로우는 한 번만 할 수 있습니다", "F-003"),
     NOT_EXIST_FOLLOW(HttpStatus.BAD_REQUEST, "팔로우하지 않았습니다.", "F-004"),
-
     //Message
     NOT_SEND_SELF_MESSAGE(HttpStatus.BAD_REQUEST, "자신에게 메시지를 보낼 수 없습니다", "M-001"),
     INVALID_MESSAGE_ARGUMENT(HttpStatus.BAD_REQUEST, "발신자와 수신자는 반드시 존재해야 합니다.", "M-002"),
@@ -34,8 +33,11 @@ public enum ErrorCode {
     FEED_NOT_EXIST(HttpStatus.NOT_FOUND, "피드를 찾을 수 없습니다.", "FE-001"),
 
     // Global
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001"),
 
+    //Weather
+    WEATHER_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND,"날씨 정보를 불러오는데 실패했습니다","W-001"),
+    WEATHER_NOT_FOUND(HttpStatus.NOT_FOUND,"날씨 정보를 DB에서 찾을 수 없습니다","W-002");
 
     final HttpStatus httpStatus;
     final String message;
