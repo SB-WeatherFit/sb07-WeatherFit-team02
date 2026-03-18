@@ -20,8 +20,8 @@ public class WeatherRepositoryImpl implements WeatherRepositoryCustom {
 
         return factory
                 .selectFrom(QWeather.weather)
-                .where(QWeather.weather.location.latitude.eq(latitude),
-                        QWeather.weather.location.longitude.eq(longitude),
+                .where(QWeather.weather.latitude.eq(latitude),
+                        QWeather.weather.longitude.eq(longitude),
                         QWeather.weather.forecastedAt.eq(forecastedAt)
                     )
                 .fetch();

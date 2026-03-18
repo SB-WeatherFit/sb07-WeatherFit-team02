@@ -58,7 +58,7 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 request.longitude(),
                 (int) request.latitude(),
                 (int) request.longitude(),
-                List.of("서울특별시")
+                List.of("서울특별시","반포동","서초구")
         );
 
         int[] convert = convertToGrid(request.latitude(), request.longitude());
@@ -71,7 +71,7 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 .items()
                 .item();
 
-        List<WeatherAdministrationTime> yesterdayForecastedData = getWeatherFromApi(yesterdayDate, "1100", nx, ny, 13*24*2)
+        List<WeatherAdministrationTime> yesterdayForecastedData = getWeatherFromApi(yesterdayDate, "0200", nx, ny, 13*24*2)
                 .response()
                 .body()
                 .items()
@@ -163,6 +163,7 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 Instant forecastAt,
                 LocationResponse location
     ) {
+        log.info("forecastAt: {}",forecastAt);
         String tmp = getValue(weatherMap, date, time, WeatherCategoryType.TMP);
         String yesterdayTmp = getValue(weatherMap,yesterdayDate,time,WeatherCategoryType.TMP);
 
@@ -204,7 +205,8 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
             Instant forecastAt,
             LocationResponse location
     ) {
-
+        log.info("forecastAt: {}",forecastAt);
+        log.info("yesterdayWeatherMap: {}",yesterdayWeatherMap.toString());
         String tmp = getValue(yesterdayWeatherMap, date, time, WeatherCategoryType.TMP);
         String yesterdayTmp = getValue(yesterdayWeatherMap,yesterdayDate,time,WeatherCategoryType.TMP);
 
