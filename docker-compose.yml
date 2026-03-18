@@ -1,5 +1,3 @@
-# docker-compose-redis.yml
-# https://developer.confluent.io/confluent-tutorials/kafka-on-docker/#the-docker-compose-file
 services:
   redis:
     image: redis:7.2-alpine
