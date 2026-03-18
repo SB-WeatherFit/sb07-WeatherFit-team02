@@ -78,16 +78,6 @@ public class FeedServiceImpl implements FeedService {
     }
 
     @Override
-    public FeedDto findById(UUID id) {
-        return null; // TODO
-    }
-
-    @Override
-    public List<FeedDto> findAllByUserId(UUID userId) {
-        return List.of(); // TODO
-    }
-
-    @Override
     @Transactional
     public FeedDto update(UUID id, FeedUpdateRequest request) {
         Feed feed = getFeedOrThrow(id);
