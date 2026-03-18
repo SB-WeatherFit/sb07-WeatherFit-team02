@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.weather.batch.job;
 
+import com.codeit.weatherfit.domain.weather.batch.JobStatus;
 import com.codeit.weatherfit.domain.weather.batch.tasklet.WeatherUpdateTasklet;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.configuration.DuplicateJobException;
@@ -24,16 +25,9 @@ public class WeatherUpdateConfig {
 
     @Bean
     public Job weatherUpdateJob() {
-
-        Job job = new JobBuilder(jobRepository)
+        return new JobBuilder(JobStatus.WEATHER_UPDATE.getJobName(),jobRepository)
                 .start(weatherUpdateStep())
                 .build();
-        try {
-            jobRegistry.register(job);
-        } catch (DuplicateJobException e) {
-            throw new RuntimeException(e);
-        }
-        return job;
     }
 
     @Bean
