@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.user.service;
 
+import com.codeit.weatherfit.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserCreateRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserLockUpdateRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserRoleUpdateRequest;
@@ -26,4 +27,6 @@ public interface UserService {
     UserDto updateRole(UUID userId, UserRoleUpdateRequest request);
 
     UserDto updateLock(UUID userId, UserLockUpdateRequest request);
+
+    void updatePassword(UUID userId, ChangePasswordRequest request);
 }

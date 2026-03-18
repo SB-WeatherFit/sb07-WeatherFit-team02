@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.user.controller;
 
+import com.codeit.weatherfit.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserCreateRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserLockUpdateRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserRoleUpdateRequest;
@@ -8,6 +9,7 @@ import com.codeit.weatherfit.domain.user.dto.response.UserDtoCursorResponse;
 import com.codeit.weatherfit.domain.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -61,5 +63,14 @@ public class UserController {
             @Valid @RequestBody UserLockUpdateRequest request
     ) {
         return userService.updateLock(userId, request);
+    }
+
+    @PatchMapping("/{userId}/password")
+    public ResponseEntity<Void> updatePassword(
+            @PathVariable UUID userId,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        userService.updatePassword(userId, request);
+        return ResponseEntity.noContent().build();
     }
 }
