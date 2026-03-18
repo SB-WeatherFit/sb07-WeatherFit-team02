@@ -21,12 +21,18 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/sign-in",
                                 "/api/auth/sign-out",
+                                "/api/auth/refresh",
+                                "/api/auth/reset-password",
                                 "/api/auth/csrf-token"
                         ).permitAll()
                         .anyRequest().permitAll()
                 )
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
                 .csrf(csrf -> csrf
+                        .ignoringRequestMatchers(
+                                "/api/users/**",
+                                "/api/auth/**"
+                        )
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 )
                 .httpBasic(Customizer.withDefaults())

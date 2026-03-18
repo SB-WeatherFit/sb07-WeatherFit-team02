@@ -36,7 +36,9 @@ public enum ErrorCode {
     INVALID_SIGN_IN_REQUEST(HttpStatus.BAD_REQUEST, "이메일과 비밀번호는 필수입니다.", "A-001"),
     SIGN_IN_FAILED(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.", "A-002"),
     SIGN_OUT_FAILED(HttpStatus.UNAUTHORIZED, "로그아웃할 인증 정보가 올바르지 않습니다.", "A-003"),
-
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "리프레시 토큰이 올바르지 않습니다.", "A-004"),
+    INVALID_RESET_PASSWORD_REQUEST(HttpStatus.BAD_REQUEST, "이메일은 필수입니다.", "A-005"),
+    RESET_PASSWORD_USER_NOT_FOUND(HttpStatus.NOT_FOUND, "비밀번호를 초기화할 사용자를 찾을 수 없습니다.", "A-006"),
     // Global
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001"),
 

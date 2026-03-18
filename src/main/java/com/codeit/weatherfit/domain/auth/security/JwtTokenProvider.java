@@ -8,32 +8,67 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.UUID;
 
 @Component
 public class JwtTokenProvider {
 
     // 임시 로그인
-    private static final String SECRET_KEY = "temporary-weatherfit-secret-key-for-auth";
+    private static final String ACCESS_SECRET_KEY = "temporary-weatherfit-access-secret-key";
+    // 임시 로그인
+    private static final String REFRESH_SECRET_KEY = "temporary-weatherfit-refresh-secret-key";
     // 임시 로그인
     private static final long ACCESS_TOKEN_EXPIRE_SECONDS = 60L * 60L;
+    // 임시 로그인
+    private static final long REFRESH_TOKEN_EXPIRE_SECONDS = 60L * 60L * 24L * 7L;
 
     public String generateAccessToken(User user) {
+        return generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().name(),
+                "ACCESS",
+                ACCESS_SECRET_KEY,
+                ACCESS_TOKEN_EXPIRE_SECONDS
+        );
+    }
+
+    public String generateRefreshToken(User user) {
+        return generateToken(
+                user.getId(),
+                user.getEmail(),
+                user.getRole().name(),
+                "REFRESH",
+                REFRESH_SECRET_KEY,
+                REFRESH_TOKEN_EXPIRE_SECONDS
+        );
+    }
+
+    private String generateToken(
+            UUID userId,
+            String email,
+            String role,
+            String tokenType,
+            String secretKey,
+            long expireSeconds
+    ) {
         try {
             Instant now = Instant.now();
-            Instant expiresAt = now.plusSeconds(ACCESS_TOKEN_EXPIRE_SECONDS);
+            Instant expiresAt = now.plusSeconds(expireSeconds);
 
             String headerJson = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
             String payloadJson = "{"
-                    + "\"sub\":\"" + user.getId() + "\","
-                    + "\"email\":\"" + user.getEmail() + "\","
-                    + "\"role\":\"" + user.getRole().name() + "\","
+                    + "\"sub\":\"" + userId + "\","
+                    + "\"email\":\"" + email + "\","
+                    + "\"role\":\"" + role + "\","
+                    + "\"tokenType\":\"" + tokenType + "\","
                     + "\"iat\":" + now.getEpochSecond() + ","
                     + "\"exp\":" + expiresAt.getEpochSecond()
                     + "}";
 
             String encodedHeader = encode(headerJson);
             String encodedPayload = encode(payloadJson);
-            String signature = sign(encodedHeader + "." + encodedPayload);
+            String signature = sign(encodedHeader + "." + encodedPayload, secretKey);
 
             return encodedHeader + "." + encodedPayload + "." + signature;
         } catch (Exception exception) {
@@ -47,10 +82,10 @@ public class JwtTokenProvider {
                 .encodeToString(value.getBytes(StandardCharsets.UTF_8));
     }
 
-    private String sign(String value) throws Exception {
+    private String sign(String value, String secretKey) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
         SecretKeySpec secretKeySpec = new SecretKeySpec(
-                SECRET_KEY.getBytes(StandardCharsets.UTF_8),
+                secretKey.getBytes(StandardCharsets.UTF_8),
                 "HmacSHA256"
         );
         mac.init(secretKeySpec);
