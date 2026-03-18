@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.clothes.controller;
 
+import com.codeit.weatherfit.domain.clothes.dto.request.ClothesUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDto;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesCreateRequest;
 import com.codeit.weatherfit.domain.clothes.service.ClothesService;
@@ -10,6 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,5 +26,14 @@ public class ClothesController {
             @RequestPart(value = "image", required = false) MultipartFile image) {
         ClothesDto created = clothesService.create(request, image);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PatchMapping("/api/{clothesId}")
+    public ResponseEntity<ClothesDto> update(
+            @PathVariable UUID clothesId,
+            @RequestBody @Valid ClothesUpdateRequest request
+    ) {
+        ClothesDto response = clothesService.update(clothesId, request);
+        return ResponseEntity.ok(response);
     }
 }
