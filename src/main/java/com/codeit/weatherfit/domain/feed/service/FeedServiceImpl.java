@@ -4,7 +4,9 @@ import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
+import com.codeit.weatherfit.domain.feed.dto.request.FeedGetRequest;
 import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
+import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import com.codeit.weatherfit.domain.feed.exception.FeedNotExistException;
@@ -39,18 +41,40 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
-    public FeedDto create(FeedCreateRequest requestDto) {
-        User author = getUserOrThrow(requestDto.userId());
-        Weather weather = getWeatherOrThrow(requestDto.weatherId());
-        List<Clothes> clothes = getClothesOrThrow(requestDto.clothesIds());
+    public FeedDto create(FeedCreateRequest request) {
+        User author = getUserOrThrow(request.userId());
+        Weather weather = getWeatherOrThrow(request.weatherId());
+        List<Clothes> clothes = getClothesOrThrow(request.clothesIds());
 
-        Feed feed = Feed.create(author, weather, requestDto.content());
+        Feed feed = Feed.create(author, weather, request.content());
         Feed saved = feedRepository.save(feed);
         List<FeedClothes> coords = clothes.stream()
                 .map(c -> FeedClothes.create(saved, c.getName(), c.getImageUrl()))
                 .toList();
         feedClothesRepository.saveAll(coords);
         return toFeedDto(feed);
+    }
+
+    @Override
+    public FeedGetResponse getFeedsByCursor(FeedGetRequest request) {
+        List<Feed> feeds = feedRepository.findWithCursor(request);
+        Feed nextFeed = null;
+        if (feeds.size() == request.limit() + 1) {
+            nextFeed = feeds.getLast();
+            feeds = feeds.subList(0, request.limit());
+        }
+        boolean hasNext = nextFeed != null;
+        return new FeedGetResponse(
+                feeds.stream()
+                        .map(this::toFeedDto)
+                        .toList(),
+                hasNext? nextFeed.getCreatedAt() : null,
+                hasNext? nextFeed.getId() : null,
+                hasNext,
+                feeds.size(),
+                request.sortBy(),
+                request.sortDirection()
+        );
     }
 
     @Override
@@ -65,9 +89,9 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
-    public FeedDto update(UUID id, FeedUpdateRequest requestDto) {
+    public FeedDto update(UUID id, FeedUpdateRequest request) {
         Feed feed = getFeedOrThrow(id);
-        feed.update(requestDto.content());
+        feed.update(request.content());
         return toFeedDto(feed);
     }
 
