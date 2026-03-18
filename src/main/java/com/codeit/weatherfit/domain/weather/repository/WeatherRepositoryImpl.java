@@ -14,15 +14,15 @@ import java.util.List;
 public class WeatherRepositoryImpl implements WeatherRepositoryCustom {
 
     private final JPAQueryFactory factory;
-
+    private static final QWeather weather = QWeather.weather;
     @Override
     public List<Weather> getWeatherByLocation(double longitude, double latitude, Instant forecastedAt) {
 
         return factory
-                .selectFrom(QWeather.weather)
-                .where(QWeather.weather.latitude.eq(latitude),
-                        QWeather.weather.longitude.eq(longitude),
-                        QWeather.weather.forecastedAt.eq(forecastedAt)
+                .selectFrom(weather)
+                .where(weather.latitude.eq(latitude),
+                        weather.longitude.eq(longitude),
+                       weather.forecastedAt.eq(forecastedAt)
                     )
                 .fetch();
     }
