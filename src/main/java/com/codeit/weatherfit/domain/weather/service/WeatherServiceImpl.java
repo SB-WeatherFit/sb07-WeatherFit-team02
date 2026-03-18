@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.weather.service;
 
 import com.codeit.weatherfit.domain.weather.dto.request.WeatherRequest;
+import com.codeit.weatherfit.domain.weather.dto.response.KakaoLocationResponse;
 import com.codeit.weatherfit.domain.weather.dto.response.WeatherResponse;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
@@ -34,13 +35,20 @@ public class WeatherServiceImpl implements WeatherService {
     @Override
     @Cacheable(value = "weathers",key = "#request.latitude() +':'+ #request.longitude")
     public List<WeatherResponse> create(WeatherRequest request, Instant time) {
-        List<Weather> dbData = getWeatherAsLis(request, time);
+        KakaoLocationResponse kaKaoResponse = locationApiCallService.getKaKaoResponse(request);
+        var document = kaKaoResponse.documents().getFirst();
+        double longitude = Double.parseDouble(document.x());
+        double latitude =Double.parseDouble( document.y());
+        List<String> address = List.of(document.region_1depth_name(), document.region_2depth_name(), document.region_3depth_name());
+        WeatherRequest kakaoLocation = new WeatherRequest(longitude, latitude);
+
+        List<Weather> dbData = getWeatherAsLis(kakaoLocation, time);
         if(!dbData.isEmpty()) {
             return dbData.stream()
                     .map(weather-> WeatherResponse.from(weather))
                     .toList();
         }
-        List<WeatherResponse> dtoLis = weatherApiCallService.getWeatherLisFromAdministration(request, time);
+        List<WeatherResponse> dtoLis = weatherApiCallService.getWeatherLisFromAdministration(kakaoLocation, time,address);
         List<WeatherResponse> result = new ArrayList<>();
         for (WeatherResponse weatherResponse : dtoLis) {
             Weather weather = weatherRepository.save(Weather.create(weatherResponse));

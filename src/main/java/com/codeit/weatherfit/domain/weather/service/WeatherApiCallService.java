@@ -10,5 +10,5 @@ import java.util.List;
 public interface WeatherApiCallService {
 
 //    public WeatherResponse getWeatherFromAdministration(WeatherRequest request, Instant time);
-    public List<WeatherResponse> getWeatherLisFromAdministration(WeatherRequest request, Instant time);
+    public List<WeatherResponse> getWeatherLisFromAdministration(WeatherRequest request, Instant time,List<String> address);
 }

@@ -37,7 +37,7 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
     private String administrationApiKey;
 
     @Override
-    public List<WeatherResponse> getWeatherLisFromAdministration(WeatherRequest request, Instant time) {
+    public List<WeatherResponse> getWeatherLisFromAdministration(WeatherRequest request, Instant time,List<String> address) {
         long before = System.currentTimeMillis();
 
         LocalDateTime kst = LocalDateTime.ofInstant(time, KST);
@@ -58,7 +58,7 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 request.longitude(),
                 (int) request.latitude(),
                 (int) request.longitude(),
-                List.of("서울특별시","반포동","서초구")
+                address
         );
 
         int[] convert = convertToGrid(request.latitude(), request.longitude());
