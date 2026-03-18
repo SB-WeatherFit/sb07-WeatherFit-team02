@@ -5,6 +5,7 @@ import com.codeit.weatherfit.domain.weather.dto.response.WeatherResponse;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +40,7 @@ public class WeatherScheduler {
                 ));
 
         weatherRepository.deleteAll();
+        deleteAllWeatherCache();
 
         List<CompletableFuture<Void>> futures = locationData.entrySet().stream()
                 .map(entry -> CompletableFuture.runAsync(() -> {
@@ -57,6 +59,11 @@ public class WeatherScheduler {
                 .map(x-> WeatherResponse.from(x))
                 .toList();
 
+
+    }
+
+    @CacheEvict(value="weathers",allEntries = true)
+    public void deleteAllWeatherCache(){
 
     }
 

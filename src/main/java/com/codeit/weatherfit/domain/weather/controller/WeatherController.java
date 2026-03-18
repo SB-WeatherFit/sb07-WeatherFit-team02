@@ -31,7 +31,7 @@ public class WeatherController {
     @GetMapping
     public ResponseEntity<List<WeatherResponse>> createWeather(WeatherRequest weatherRequest) {
 
-        List<WeatherResponse> response = weatherService.create(weatherRequest, Instant.now());
+        List<WeatherResponse> response = weatherService.create(weatherRequest);
         return ResponseEntity.ok().body(response);
     }
 

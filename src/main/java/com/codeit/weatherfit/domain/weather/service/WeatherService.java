@@ -11,7 +11,7 @@ import java.util.UUID;
 public interface WeatherService {
 
 
-    public List<WeatherResponse> create(WeatherRequest request, Instant time);
+    public List<WeatherResponse> create(WeatherRequest request);
     public void delete(UUID id);
     public WeatherResponse getWeather(UUID id);
     public List<WeatherResponse> getWeather(WeatherRequest request,Instant time);
