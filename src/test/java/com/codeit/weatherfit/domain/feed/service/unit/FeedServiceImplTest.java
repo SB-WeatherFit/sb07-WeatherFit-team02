@@ -4,7 +4,11 @@ import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
+import com.codeit.weatherfit.domain.feed.dto.request.FeedGetRequest;
 import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
+import com.codeit.weatherfit.domain.feed.dto.request.SortBy;
+import com.codeit.weatherfit.domain.feed.dto.request.SortDirection;
+import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
@@ -27,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -125,13 +130,16 @@ class FeedServiceImplTest {
             @DisplayName("옷이 존재해야한다")
             void clothes() {
                 // given
-                FeedCreateRequest request = Instancio.create(FeedCreateRequest.class);
+                List<UUID> clothesIds = List.of(UUID.randomUUID(), UUID.randomUUID());
+                FeedCreateRequest request = new FeedCreateRequest(
+                        UUID.randomUUID(), UUID.randomUUID(), clothesIds, "내용"
+                );
                 when(userRepository.findById(any()))
                         .thenReturn(Optional.of(Instancio.create(User.class)));
                 when(weatherRepository.findById(any(UUID.class)))
                         .thenReturn(Optional.of(Instancio.create(Weather.class)));
                 when(clothesRepository.findAllById(any()))
-                        .thenReturn(Instancio.ofList(Clothes.class).size(Math.max(0, request.clothesIds().size() - 1)).create());
+                        .thenReturn(List.of(Instancio.create(Clothes.class))); // 2개 요청, 1개만 반환
 
                 // when & then
                 assertThatThrownBy(() -> feedService.create(request))
@@ -183,6 +191,82 @@ class FeedServiceImplTest {
             }
         }
 
+    }
+
+    @Nested
+    @DisplayName("커서 조회")
+    class getFeedsByCursor {
+        @Test
+        @DisplayName("성공 - 다음 페이지가 있는 경우")
+        void successWithNextPage() {
+            // given
+            int limit = 3;
+            FeedGetRequest request = new FeedGetRequest(
+                    null, null, limit, SortBy.createdAt, SortDirection.DESCENDING,
+                    null, null, null, null
+            );
+            List<Feed> feeds = Instancio.ofList(Feed.class)
+                    .size(limit + 1)
+                    .set(all(Instant.class), Instant.now().minus(1, ChronoUnit.DAYS))
+                    .create();
+            when(feedRepository.findWithCursor(request)).thenReturn(feeds);
+            stubToFeedDto();
+
+            // when
+            FeedGetResponse response = feedService.getFeedsByCursor(request);
+
+            // then
+            Feed expectedLastFeed = feeds.get(limit - 1);
+            assertThat(response.hasNext()).isTrue();
+            assertThat(response.data()).hasSize(limit);
+            assertThat(response.nextCursor()).isEqualTo(expectedLastFeed.getCreatedAt());
+            assertThat(response.nextIdAfter()).isEqualTo(expectedLastFeed.getId());
+            verify(feedRepository).findWithCursor(request);
+        }
+
+        @Test
+        @DisplayName("성공 - 다음 페이지가 없는 경우")
+        void successWithoutNextPage() {
+            // given
+            int limit = 3;
+            FeedGetRequest request = new FeedGetRequest(
+                    null, null, limit, SortBy.createdAt, SortDirection.DESCENDING,
+                    null, null, null, null
+            );
+            List<Feed> feeds = Instancio.ofList(Feed.class)
+                    .size(limit)
+                    .set(all(Instant.class), Instant.now().minus(1, ChronoUnit.DAYS))
+                    .create();
+            when(feedRepository.findWithCursor(request)).thenReturn(feeds);
+            stubToFeedDto();
+
+            // when
+            FeedGetResponse response = feedService.getFeedsByCursor(request);
+
+            // then
+            assertThat(response.hasNext()).isFalse();
+            assertThat(response.data()).hasSize(limit);
+            assertThat(response.nextCursor()).isNull();
+            assertThat(response.nextIdAfter()).isNull();
+        }
+
+        @Test
+        @DisplayName("성공 - 결과가 없는 경우")
+        void successEmpty() {
+            // given
+            FeedGetRequest request = new FeedGetRequest(
+                    null, null, 10, SortBy.createdAt, SortDirection.DESCENDING,
+                    null, null, null, null
+            );
+            when(feedRepository.findWithCursor(request)).thenReturn(List.of());
+
+            // when
+            FeedGetResponse response = feedService.getFeedsByCursor(request);
+
+            // then
+            assertThat(response.hasNext()).isFalse();
+            assertThat(response.data()).isEmpty();
+        }
     }
 
     @Nested
