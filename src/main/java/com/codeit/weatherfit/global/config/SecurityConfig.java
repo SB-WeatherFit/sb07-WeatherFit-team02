@@ -19,6 +19,7 @@ public class SecurityConfig {
         DefaultSecurityFilterChain chain = http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
+                                "/h2-console/**",
                                 "/api/auth/sign-in",
                                 "/api/auth/sign-out",
                                 "/api/auth/refresh",
@@ -27,9 +28,12 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().permitAll()
                 )
-                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+                .headers(headers -> headers
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
+                )
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(
+                                "/h2-console/**",
                                 "/api/users/**",
                                 "/api/auth/**"
                         )
