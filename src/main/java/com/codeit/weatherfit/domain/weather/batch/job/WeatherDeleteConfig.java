@@ -1,10 +1,9 @@
 package com.codeit.weatherfit.domain.weather.batch.job;
 
 import com.codeit.weatherfit.domain.weather.batch.JobStatus;
+import com.codeit.weatherfit.domain.weather.batch.tasklet.WeatherDeleteTasklet;
 import com.codeit.weatherfit.domain.weather.batch.tasklet.WeatherUpdateTasklet;
 import lombok.RequiredArgsConstructor;
-import org.springframework.batch.core.configuration.DuplicateJobException;
-import org.springframework.batch.core.configuration.JobRegistry;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
@@ -12,19 +11,20 @@ import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @RequiredArgsConstructor
-public class WeatherUpdateConfig {
+public class WeatherDeleteConfig {
 
-    private final WeatherUpdateTasklet weatherUpdateTasklet;
+    private final WeatherDeleteTasklet weatherDeleteTasklet;
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
 
     @Bean
     public Job weatherUpdateJob() {
-        return new JobBuilder(JobStatus.WEATHER_UPDATE.getJobName(),jobRepository)
+        return new JobBuilder(JobStatus.WEATHER_DELETE.getJobName(),jobRepository)
                 .start(weatherUpdateStep())
                 .build();
     }
@@ -32,7 +32,7 @@ public class WeatherUpdateConfig {
     @Bean
     public Step weatherUpdateStep() {
         return new StepBuilder(jobRepository)
-                .tasklet(weatherUpdateTasklet,transactionManager)
+                .tasklet(weatherDeleteTasklet,transactionManager)
                 .build();
     }
 }

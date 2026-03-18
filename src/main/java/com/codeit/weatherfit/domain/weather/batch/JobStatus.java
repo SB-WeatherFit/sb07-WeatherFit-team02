@@ -2,7 +2,8 @@ package com.codeit.weatherfit.domain.weather.batch;
 
 public enum JobStatus {
 
-    WEATHER_UPDATE("weatherUpdateJob","weatherUpdateStep");
+    WEATHER_UPDATE("weatherUpdateJob","weatherUpdateStep"),
+    WEATHER_DELETE("weatherDeleteJob","weatherDeleteStep");
     private final String jobName;
     private final String stepName;
 
