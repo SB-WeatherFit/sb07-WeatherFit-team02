@@ -2,6 +2,7 @@ package com.codeit.weatherfit.domain.weather.service;
 
 import com.codeit.weatherfit.domain.weather.dto.request.WeatherRequest;
 import com.codeit.weatherfit.domain.weather.dto.response.KakaoLocationResponse;
+import com.codeit.weatherfit.domain.weather.dto.response.LocationResponse;
 import com.codeit.weatherfit.domain.weather.dto.response.WeatherResponse;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
@@ -62,6 +63,15 @@ public class WeatherServiceImpl implements WeatherService {
         return result;
     }
 
+    @Override
+    public LocationResponse getWeatherLocation(WeatherRequest request) {
+        Weather weather = weatherRepository.getSingleWeatherByLocation(
+                request.longitude(),
+                request.latitude()
+        );
+        if (weather==null) return null;
+        return WeatherResponse.from(weather).location();
+    }
 
     @Override
     public void delete(UUID id) {

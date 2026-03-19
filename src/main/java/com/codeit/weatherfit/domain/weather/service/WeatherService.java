@@ -12,6 +12,7 @@ public interface WeatherService {
 
 
     public List<WeatherResponse> create(WeatherRequest request);
+    public LocationResponse getWeatherLocation(WeatherRequest request);
     public void delete(UUID id);
     public WeatherResponse getWeather(UUID id);
     public List<WeatherResponse> getWeather(WeatherRequest request,Instant time);

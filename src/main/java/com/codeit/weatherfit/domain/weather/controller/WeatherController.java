@@ -3,6 +3,7 @@ package com.codeit.weatherfit.domain.weather.controller;
 import com.codeit.weatherfit.domain.weather.dto.request.WeatherApiTestRequest;
 import com.codeit.weatherfit.domain.weather.dto.request.WeatherRequest;
 import com.codeit.weatherfit.domain.weather.dto.response.KakaoLocationResponse;
+import com.codeit.weatherfit.domain.weather.dto.response.LocationResponse;
 import com.codeit.weatherfit.domain.weather.dto.response.WeatherResponse;
 import com.codeit.weatherfit.domain.weather.dto.response.weatherAdministrationApi.WeatherAdministrationTime;
 import com.codeit.weatherfit.domain.weather.service.LocationApiCallServiceImpl;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -36,8 +36,10 @@ public class WeatherController {
     }
 
     @GetMapping("/location")
-    public void getWeatherLocation(WeatherRequest weatherRequest) {
+    public ResponseEntity<LocationResponse> getWeatherLocation(WeatherRequest weatherRequest) {
 
+        LocationResponse response = weatherService.getWeatherLocation(weatherRequest);
+        return ResponseEntity.ok().body(response);
     }
 
     @GetMapping("/test")

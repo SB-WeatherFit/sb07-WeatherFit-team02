@@ -27,5 +27,17 @@ public class WeatherRepositoryImpl implements WeatherRepositoryCustom {
                 .fetch();
     }
 
+    @Override
+    public Weather getSingleWeatherByLocation(double longitude, double latitude) {
+
+        return factory
+                .selectFrom(weather)
+                .where(weather.latitude.eq(latitude),
+                        weather.longitude.eq(longitude)
+                )
+
+                .fetchFirst();
+    }
+
 
 }
