@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.UUID;
 
-public record NotificationsSearchCondition(
+public record NotificationSearchCondition(
         Instant cursor,
         UUID idAfter,
         @NotNull int limit

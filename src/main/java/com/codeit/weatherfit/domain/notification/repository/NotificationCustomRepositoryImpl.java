@@ -1,6 +1,6 @@
 package com.codeit.weatherfit.domain.notification.repository;
 
-import com.codeit.weatherfit.domain.notification.dto.request.NotificationsSearchCondition;
+import com.codeit.weatherfit.domain.notification.dto.request.NotificationSearchCondition;
 import com.codeit.weatherfit.domain.notification.entity.Notification;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -19,12 +19,12 @@ public class NotificationCustomRepositoryImpl implements NotificationCustomRepos
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<Notification> searchCursor(NotificationsSearchCondition condition) {
+    public List<Notification> searchCursor(NotificationSearchCondition condition) {
        return queryFactory.selectFrom(notification)
                 .where(
                         cursorInstant(condition.cursor())
                 )
-                .orderBy(notification.createdAt.asc())
+                .orderBy(notification.createdAt.desc())
                 .limit(condition.limit() + 1)
                 .fetch();
     }
@@ -33,6 +33,6 @@ public class NotificationCustomRepositoryImpl implements NotificationCustomRepos
         if (cursor == null) {
             return null;
         }
-        return notification.createdAt.gt(cursor);
+        return notification.createdAt.lt(cursor);
     }
 }
