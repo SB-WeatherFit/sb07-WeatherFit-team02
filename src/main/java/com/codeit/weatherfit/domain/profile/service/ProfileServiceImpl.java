@@ -4,6 +4,7 @@ import com.codeit.weatherfit.domain.profile.dto.request.ProfileUpdateRequest;
 import com.codeit.weatherfit.domain.profile.dto.response.ProfileDto;
 import com.codeit.weatherfit.domain.profile.entity.Location;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
+import com.codeit.weatherfit.domain.profile.location.ProfileLocationResolver;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
@@ -22,6 +23,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
+    private final ProfileLocationResolver profileLocationResolver;
 
     @Override
     @Transactional(readOnly = true)
@@ -47,12 +49,9 @@ public class ProfileServiceImpl implements ProfileService {
 
         Location location = request.location() == null
                 ? null
-                : Location.create(
+                : profileLocationResolver.resolve(
                 request.location().latitude(),
-                request.location().longitude(),
-                request.location().x(),
-                request.location().y(),
-                request.location().locationNames()
+                request.location().longitude()
         );
 
         profile.updateGender(request.gender());
