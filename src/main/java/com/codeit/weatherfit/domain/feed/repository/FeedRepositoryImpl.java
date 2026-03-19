@@ -73,7 +73,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
     private BooleanExpression precipitationTypeEq(PrecipitationType precipitationType) {
         if (precipitationType == null)
             return null;
-        return feed.weather.precipitation.type.eq(precipitationType);
+        return feed.weather.type.eq(precipitationType);
     }
 
     private BooleanExpression authorIdEq(UUID authorId) {

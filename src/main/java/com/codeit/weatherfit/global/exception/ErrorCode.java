@@ -10,7 +10,6 @@ public enum ErrorCode {
     INVALID_FOLLOW_ARGUMENT(HttpStatus.BAD_REQUEST, "팔로워와 팔로이는 반드시 존재해야 합니다.", "F-002"),
     ALREADY_FOLLOW_EXCEPTION(HttpStatus.BAD_REQUEST, "팔로우는 한 번만 할 수 있습니다", "F-003"),
     NOT_EXIST_FOLLOW(HttpStatus.BAD_REQUEST, "팔로우하지 않았습니다.", "F-004"),
-
     //Message
     NOT_SEND_SELF_MESSAGE(HttpStatus.BAD_REQUEST, "자신에게 메시지를 보낼 수 없습니다", "M-001"),
     INVALID_MESSAGE_ARGUMENT(HttpStatus.BAD_REQUEST, "발신자와 수신자는 반드시 존재해야 합니다.", "M-002"),
@@ -33,8 +32,19 @@ public enum ErrorCode {
     // Feed
     FEED_NOT_EXIST(HttpStatus.NOT_FOUND, "피드를 찾을 수 없습니다.", "FE-001"),
 
+    // Auth
+    INVALID_SIGN_IN_REQUEST(HttpStatus.BAD_REQUEST, "이메일과 비밀번호는 필수입니다.", "A-001"),
+    SIGN_IN_FAILED(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.", "A-002"),
+    SIGN_OUT_FAILED(HttpStatus.UNAUTHORIZED, "로그아웃할 인증 정보가 올바르지 않습니다.", "A-003"),
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "리프레시 토큰이 올바르지 않습니다.", "A-004"),
+    INVALID_RESET_PASSWORD_REQUEST(HttpStatus.BAD_REQUEST, "이메일은 필수입니다.", "A-005"),
+    RESET_PASSWORD_USER_NOT_FOUND(HttpStatus.NOT_FOUND, "비밀번호를 초기화할 사용자를 찾을 수 없습니다.", "A-006"),
     // Global
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001");
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001"),
+
+    //Weather
+    WEATHER_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND,"날씨 정보를 불러오는데 실패했습니다","W-001"),
+    WEATHER_NOT_FOUND(HttpStatus.NOT_FOUND,"날씨 정보를 DB에서 찾을 수 없습니다","W-002");
 
 
     final HttpStatus httpStatus;

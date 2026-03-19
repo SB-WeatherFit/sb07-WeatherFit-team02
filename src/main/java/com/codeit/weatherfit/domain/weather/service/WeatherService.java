@@ -5,11 +5,16 @@ import com.codeit.weatherfit.domain.weather.dto.response.LocationResponse;
 import com.codeit.weatherfit.domain.weather.dto.response.WeatherResponse;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 public interface WeatherService {
 
-    WeatherResponse getWeather(WeatherRequest request, Instant time) throws InterruptedException;
-    public LocationResponse getWeatherLocation(WeatherRequest weatherRequest);
 
+    public List<WeatherResponse> create(WeatherRequest request);
+    public LocationResponse getWeatherLocation(WeatherRequest request);
+    public void delete(UUID id);
+    public WeatherResponse getWeather(UUID id);
+    public List<WeatherResponse> getWeather(WeatherRequest request,Instant time);
 
 }

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 
-public interface WeatherRepository extends JpaRepository<Weather, UUID> {
+public interface WeatherRepository extends JpaRepository<Weather, UUID> ,WeatherRepositoryCustom {
 
 
 }
