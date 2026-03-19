@@ -16,6 +16,6 @@ public record MessageGetRequest(
 
         @NotNull
         @Min(1)
-        int limit
+        Integer limit
 ) {
 }

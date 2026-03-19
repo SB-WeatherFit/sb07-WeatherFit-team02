@@ -55,19 +55,29 @@ public class MessageServiceImpl implements MessageService{
     @Override
     public MessageGetResponse getByCursor(MessageGetRequest request) {
         List<Message> messages = messageRepository.getByCursor(request);
+
         Message lastMessage = null;
         if (messages.size() == request.limit() + 1) {
             messages = messages.subList(0, request.limit());
             lastMessage = messages.getLast();
         }
         boolean hasNext = lastMessage != null;
+
+        User sender = null;
+        User receiver = null;
+        if (!messages.isEmpty()) {
+            sender = messages.getFirst().getSender();
+            receiver = messages.getFirst().getReceiver();
+        }
+        UserSummary senderSummary = getUserSummary(sender);
+        UserSummary receiverSummary = getUserSummary(receiver);
+
         return new MessageGetResponse(
                 messages.stream()
                         .map(m -> DirectMessageDto.from(
                                 m,
-                                getUserSummary(m.getSender()),
-                                getUserSummary(m.getReceiver())
-
+                                senderSummary,
+                                receiverSummary
                         )).toList(),
                 hasNext? lastMessage.getCreatedAt() : null,
                 hasNext? lastMessage.getId() : null,
@@ -75,7 +85,6 @@ public class MessageServiceImpl implements MessageService{
                 messages.size(),
                 SortBy.createdAt,
                 SortDirection.DESCENDING
-
         );
 
     }

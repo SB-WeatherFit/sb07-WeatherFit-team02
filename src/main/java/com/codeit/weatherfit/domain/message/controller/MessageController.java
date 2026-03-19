@@ -6,10 +6,7 @@ import com.codeit.weatherfit.domain.message.service.MessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/direct-messages")
@@ -19,7 +16,7 @@ public class MessageController {
     private final MessageService messageService;
 
     @GetMapping
-    public ResponseEntity<MessageGetResponse> getMessage(@RequestBody @Valid MessageGetRequest request) {
+    public ResponseEntity<MessageGetResponse> getMessage(@ModelAttribute @Valid MessageGetRequest request) {
         return ResponseEntity.ok(messageService.getByCursor(request));
     }
 }
