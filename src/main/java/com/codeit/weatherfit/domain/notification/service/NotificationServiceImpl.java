@@ -1,6 +1,6 @@
 package com.codeit.weatherfit.domain.notification.service;
 
-import com.codeit.weatherfit.domain.notification.dto.request.NotificationsSearchCondition;
+import com.codeit.weatherfit.domain.notification.dto.request.NotificationSearchCondition;
 import com.codeit.weatherfit.domain.notification.dto.response.NotificationCursorResponse;
 import com.codeit.weatherfit.domain.notification.dto.response.NotificationDto;
 import com.codeit.weatherfit.domain.notification.entity.Notification;
@@ -55,8 +55,9 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public NotificationCursorResponse search(NotificationsSearchCondition condition) {
+    public NotificationCursorResponse search(NotificationSearchCondition condition, UUID userId) {
         List<Notification> notifications = notificationRepository.searchCursor(condition);
+        long totalCount = notificationRepository.countByReceiverId(userId);
 
         Instant nextCursor = null;
         UUID nextIdAfter = null;
@@ -69,7 +70,10 @@ public class NotificationServiceImpl implements NotificationService {
             nextIdAfter = notifications.getLast().getId();
         }
 
-       ;
-        return null;
+        List<NotificationDto> data = notifications.stream()
+                .map(NotificationDto::create)
+                .toList();
+
+        return new NotificationCursorResponse(data, nextCursor, nextIdAfter, hasNext,  totalCount);
     }
 }

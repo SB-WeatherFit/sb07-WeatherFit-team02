@@ -1,6 +1,6 @@
 package com.codeit.weatherfit.domain.notification.controller;
 
-import com.codeit.weatherfit.domain.notification.dto.request.NotificationsSearchCondition;
+import com.codeit.weatherfit.domain.notification.dto.request.NotificationSearchCondition;
 import com.codeit.weatherfit.domain.notification.dto.response.NotificationCursorResponse;
 import com.codeit.weatherfit.domain.notification.service.NotificationService;
 import jakarta.validation.Valid;
@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/notifications")
@@ -20,10 +22,12 @@ public class NotificationController {
 
     @GetMapping
     public ResponseEntity<NotificationCursorResponse> findNotifications(
-            @ModelAttribute @Valid NotificationsSearchCondition condition
+            @ModelAttribute @Valid NotificationSearchCondition condition
+//            @Authentication
             ){
-
-        NotificationCursorResponse result = notificationService.search(condition);
+        // todo: 인증 정보에서 아이디 가져오기
+        UUID randomUUID = UUID.randomUUID();
+        NotificationCursorResponse result = notificationService.search(condition, randomUUID);
         return ResponseEntity.ok().body(result);
     }
 }

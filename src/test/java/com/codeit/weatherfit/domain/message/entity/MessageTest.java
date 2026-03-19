@@ -16,8 +16,8 @@ class MessageTest {
 
     @Test
     void create() {
-        User user = UserFixture.create("test1@gmail.com");
-        User user2 = UserFixture.create("test2@gmail.com");
+        User user = UserFixture.createUser("test1@gmail.com");
+        User user2 = UserFixture.createUser("test2@gmail.com");
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
         ReflectionTestUtils.setField(user2, "id", UUID.randomUUID());
         String content = "이건 내용";
@@ -31,8 +31,8 @@ class MessageTest {
 
     @Test
     void createFail_UserIdNull() {
-        User user = UserFixture.create("test1@gmail.com");
-        User user2 = UserFixture.create("test2@gmail.com");
+        User user = UserFixture.createUser("test1@gmail.com");
+        User user2 = UserFixture.createUser("test2@gmail.com");
         String content = "이건 내용";
 
         assertThatThrownBy(() -> Message.create(user, user2, content))
@@ -41,7 +41,7 @@ class MessageTest {
 
     @Test
     void createFail_SendSelfMessage() {
-        User user = UserFixture.create("test1@gmail.com");
+        User user = UserFixture.createUser("test1@gmail.com");
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
         String content = "이건 내용";
 
@@ -57,8 +57,8 @@ class MessageTest {
 
     @Test
     void createFail_ContentNull() {
-        User user = UserFixture.create("test1@gmail.com");
-        User user2 = UserFixture.create("test2@gmail.com");
+        User user = UserFixture.createUser("test1@gmail.com");
+        User user2 = UserFixture.createUser("test2@gmail.com");
         ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
         ReflectionTestUtils.setField(user2, "id", UUID.randomUUID());
         String content = null;
