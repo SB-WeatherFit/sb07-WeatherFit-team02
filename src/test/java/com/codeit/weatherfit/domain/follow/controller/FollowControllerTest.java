@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 @WebMvcTest(FollowController.class)
 @Import(SecurityConfig.class)
@@ -49,7 +50,10 @@ class FollowControllerTest {
         String json = objectMapper.writeValueAsString(followCreateRequest);
 
         assertThat(
-                mvcTester.post().uri("/api/follows").contentType(MediaType.APPLICATION_JSON)
+                mvcTester.post()
+                        .uri("/api/follows")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .satisfies(result -> {
                     System.out.println("### Response Body: " + result.getResponse().getContentAsString());
@@ -125,7 +129,9 @@ class FollowControllerTest {
     @Test
     void unFollow() {
         assertThat(
-                mvcTester.delete().uri("/api/follows/{followId}", UUID.randomUUID())
+                mvcTester.delete()
+                        .uri("/api/follows/{followId}", UUID.randomUUID())
+                        .with(csrf())
         )
                 .hasStatus(HttpStatus.NO_CONTENT);
 

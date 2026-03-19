@@ -1,4 +1,4 @@
-package com.codeit.weatherfit.domain.follow.dto.response;
+package com.codeit.weatherfit.domain.notification.dto;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
