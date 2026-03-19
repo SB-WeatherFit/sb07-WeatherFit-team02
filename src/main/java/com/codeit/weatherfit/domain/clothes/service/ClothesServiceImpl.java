@@ -4,10 +4,8 @@ import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefUpdat
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDto;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesCreateRequest;
-import com.codeit.weatherfit.domain.clothes.entity.Clothes;
-import com.codeit.weatherfit.domain.clothes.entity.ClothesAttribute;
-import com.codeit.weatherfit.domain.clothes.entity.ClothesAttributeType;
-import com.codeit.weatherfit.domain.clothes.entity.SelectableValue;
+import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDtoCursorResponse;
+import com.codeit.weatherfit.domain.clothes.entity.*;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeTypeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
@@ -15,10 +13,14 @@ import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepository
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -93,12 +95,56 @@ public class ClothesServiceImpl implements ClothesService {
     }
 
     @Override
-    public List<ClothesDto> getClothes() {
-        return List.of();
-    }
+    public ClothesDtoCursorResponse search(UUID ownerId, String cursor, UUID idAfter, ClothesType type, int size) {
 
-    @Override
-    public ClothesDto getClothes(UUID clothesId) {
-        return null;
+        Pageable pageable = PageRequest.of(0, size + 1);
+
+        List<Clothes> clothesList;
+
+        if (cursor == null) {
+            clothesList = clothesRepository
+                    .findByOwner_IdOrderByCreatedAtDescIdDesc(ownerId, pageable);
+        } else {
+            Instant cursorTime = Instant.parse(cursor);
+
+            clothesList = clothesRepository.search(
+                    ownerId,
+                    cursorTime,
+                    idAfter,
+                    type,
+                    size
+            );
+        }
+
+        boolean hasNext = clothesList.size() > size;
+
+        List<Clothes> page = hasNext
+                ? clothesList.subList(0, size)
+                : clothesList;
+
+        List<ClothesDto> data = page.stream()
+                .map(clothes -> {
+                    List<ClothesAttribute> attributes =
+                            clothesAttributeRepository.findByClothes(clothes);
+                    return ClothesDto.from(clothes, attributes);
+                })
+                .toList();
+
+        Clothes last = page.isEmpty() ? null : page.get(page.size() - 1);
+
+        String nextCursor = last != null ? last.getCreatedAt().toString() : null;
+        UUID nextIdAfter = last != null ? last.getId() : null;
+
+        int totalCount = (int) clothesRepository.countByOwner_Id(ownerId);
+
+        return new ClothesDtoCursorResponse(
+                data,
+                nextCursor,
+                nextIdAfter,
+                hasNext,
+                totalCount,
+                "createdAt",
+                "DESCENDING"
+        );
     }
 }
