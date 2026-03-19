@@ -22,7 +22,7 @@ public class MessageRepositoryCustomImpl implements MessageRepositoryCustom{
         return queryFactory.selectFrom(message)
                 .where(cursorCondition(request.cursor(), request.idAfter()))
                 .orderBy(message.createdAt.desc())
-                .limit(request.limit())
+                .limit(request.limit() + 1)
                 .fetch();
     }
 
