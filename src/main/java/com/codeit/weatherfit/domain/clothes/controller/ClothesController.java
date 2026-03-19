@@ -3,6 +3,8 @@ package com.codeit.weatherfit.domain.clothes.controller;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDto;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesCreateRequest;
+import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDtoCursorResponse;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesType;
 import com.codeit.weatherfit.domain.clothes.service.ClothesService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +24,7 @@ public class ClothesController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ClothesDto> create(
-            @Valid @RequestPart("data") ClothesCreateRequest request,
+            @RequestPart("data") ClothesCreateRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image) {
         ClothesDto created = clothesService.create(request, image);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -41,5 +43,15 @@ public class ClothesController {
     public ResponseEntity<Void> delete(@PathVariable UUID clothesId) {
         clothesService.delete(clothesId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    public ClothesDtoCursorResponse getClothes(
+            @RequestParam UUID ownerId,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) UUID idAfter,
+            @RequestParam(required = false)ClothesType type,
+            @RequestParam(defaultValue = "20") int size) {
+        return clothesService.search(ownerId, cursor, idAfter, type, size);
     }
 }

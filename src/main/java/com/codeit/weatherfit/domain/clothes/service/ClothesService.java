@@ -3,6 +3,8 @@ package com.codeit.weatherfit.domain.clothes.service;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDto;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesCreateRequest;
+import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDtoCursorResponse;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -15,7 +17,11 @@ public interface ClothesService {
 
     void delete(UUID clothesId);
 
-    List<ClothesDto> getClothes();
-
-    ClothesDto getClothes(UUID clothesId);
+    ClothesDtoCursorResponse search(
+            UUID ownerId,
+            String cursor,
+            UUID idAfter,
+            ClothesType type,
+            int size
+    );
 }
