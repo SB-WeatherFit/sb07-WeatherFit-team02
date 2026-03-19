@@ -29,7 +29,7 @@ public class AsyncConfig {
         return createExecutor("message-", 20, 40, 200);
     }
 
-    @Bean(name = "NotificationTaskExecutor")
+    @Bean(name = "notificationTaskExecutor")
     public Executor notificationTaskExecutor() {return  createExecutor("notification-", 10, 20, 100);}
 
     private ThreadPoolTaskExecutor createExecutor(String prefix, int core, int max, int queue) {
