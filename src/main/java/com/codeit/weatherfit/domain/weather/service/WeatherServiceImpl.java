@@ -41,8 +41,6 @@ public class WeatherServiceImpl implements WeatherService {
         Instant time = Instant.now();
         KakaoLocationResponse kaKaoResponse = locationApiCallService.getKaKaoResponse(request);
         var document = kaKaoResponse.documents().getFirst();
-        log.info("longitude: {}",document.x());
-        log.info("latitude: {}",document.y());
         double longitude = Double.parseDouble(document.x());
         double latitude =Double.parseDouble( document.y());
         List<String> address = List.of(document.region_1depth_name(), document.region_2depth_name(), document.region_3depth_name());
@@ -57,6 +55,11 @@ public class WeatherServiceImpl implements WeatherService {
         List<WeatherResponse> dtoLis = weatherApiCallService.getWeatherLisFromAdministration(kakaoLocation, time,address);
         List<WeatherResponse> result = new ArrayList<>();
         for (WeatherResponse weatherResponse : dtoLis) {
+            weatherRepository.deleteOldForecast(
+                    weatherResponse.location().longitude(),
+                    weatherResponse.location().latitude(),
+                    weatherResponse.forecastAt()
+            );
             Weather weather = weatherRepository.save(Weather.create(weatherResponse));
             result.add(WeatherResponse.from(weather));
         }

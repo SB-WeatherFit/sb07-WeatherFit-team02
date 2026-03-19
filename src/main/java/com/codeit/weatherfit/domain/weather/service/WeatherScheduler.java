@@ -18,6 +18,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toList;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -47,10 +49,22 @@ public class WeatherScheduler {
                             weatherApiCallService.getWeatherLisFromAdministration(
                                     entry.getKey(),
                                     Instant.now(),
-                                    entry.getValue());
-                    response.forEach(x -> weatherRepository.save(Weather.create(x)));
+                                    entry.getValue()
+                            );
+
+                    response.forEach(x -> {
+                        weatherRepository.deleteOldForecast(
+                                x.location().longitude(),
+                                x.location().latitude(),
+                                x.forecastAt()
+                        );
+
+                        weatherRepository.save(Weather.create(x));
+                    });
+
                 }, weatherUpdateTaskExecutor))
                 .toList();
+
 
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 

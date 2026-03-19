@@ -57,14 +57,27 @@ public class WeatherRepositoryImpl implements WeatherRepositoryCustom {
                 .fetchFirst();
     }
 
-    public List<UUID> getUserIdsByLocation(double longitude, double latitude) {
-
+    @Override
+    public List<Weather> getWeatherByLocationAndForecastAt(double longitude, double latitude, Instant forecastAt) {
         return factory
-                .select(user.id)
-                .from(profile)
-                .join(profile.user,user)
-                .where(profile.location.latitude.eq(latitude),
-                        profile.location.longitude.eq(longitude))
+                .selectFrom(weather)
+                .where(weather.latitude.eq(latitude),
+                        weather.longitude.eq(longitude),
+                        weather.forecastAt.eq(forecastAt.truncatedTo(ChronoUnit.MICROS))
+                )
                 .fetch();
+    }
+
+    @Override
+    public void deleteOldForecast(double longitude, double latitude, Instant forecastAt) {
+        factory.
+                delete(weather)
+                .where(
+                        weather.longitude.eq(longitude),
+                        weather.longitude.eq(latitude),
+                        weather.forecastAt.eq(forecastAt.truncatedTo(ChronoUnit.MICROS))
+
+                )
+                .execute();
     }
 }
