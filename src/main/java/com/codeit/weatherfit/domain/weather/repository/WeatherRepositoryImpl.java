@@ -8,6 +8,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -17,12 +18,11 @@ public class WeatherRepositoryImpl implements WeatherRepositoryCustom {
     private static final QWeather weather = QWeather.weather;
     @Override
     public List<Weather> getWeatherByLocation(double longitude, double latitude, Instant forecastedAt) {
-
         return factory
                 .selectFrom(weather)
                 .where(weather.latitude.eq(latitude),
                         weather.longitude.eq(longitude),
-                       weather.forecastedAt.eq(forecastedAt)
+                       weather.forecastedAt.eq(forecastedAt.truncatedTo(ChronoUnit.MICROS))
                     )
                 .fetch();
     }

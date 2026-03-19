@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 @Table(name = "weathers")
 @Getter
@@ -133,8 +134,8 @@ public class Weather extends BaseEntity {
         newWeather.addressSecond = location.getLocationNames().get(1);
         newWeather.addressThird= location.getLocationNames().get(2);
 
-        newWeather.forecastedAt = forecastedAt;
-        newWeather.forecastAt = forecastAt;
+        newWeather.forecastedAt = forecastedAt.truncatedTo(ChronoUnit.MICROS);
+        newWeather.forecastAt = forecastAt.truncatedTo(ChronoUnit.MICROS);
         return newWeather;
 
     }
@@ -170,8 +171,8 @@ public class Weather extends BaseEntity {
         newWeather.addressFirst = dto.location().locationNames().get(0);
         newWeather.addressSecond = dto.location().locationNames().get(1);
         newWeather.addressThird= dto.location().locationNames().get(2);
-        newWeather.forecastedAt = dto.forecastedAt();
-        newWeather.forecastAt = dto.forecastAt();
+        newWeather.forecastedAt = dto.forecastedAt().truncatedTo(ChronoUnit.MICROS);
+        newWeather.forecastAt = dto.forecastAt().truncatedTo(ChronoUnit.MICROS);
         return newWeather;
 
     }
