@@ -9,8 +9,11 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
@@ -25,7 +28,6 @@ public class WeatherScheduler {
     private final Executor weatherDeleteTaskExecutor;
 
 
-
     public List<WeatherResponse> updateWeather() {
         List<Weather> allData = weatherRepository.findAll();
 
@@ -36,7 +38,6 @@ public class WeatherScheduler {
                         (existing, replacement) -> existing
                 ));
 
-        weatherRepository.deleteAll();
         deleteAllWeatherCache();
 
         List<CompletableFuture<Void>> futures = locationData.entrySet().stream()
@@ -61,7 +62,6 @@ public class WeatherScheduler {
 
     @CacheEvict(value="weathers",allEntries = true)
     public void deleteAllWeatherCache(){
-
     }
 
     public List<WeatherResponse> deleteWeather(){
@@ -73,6 +73,33 @@ public class WeatherScheduler {
         return weatherRepository.findAll().stream()
                 .map(x-> WeatherResponse.from(x))
                 .toList();
+    }
+
+    public void weatherTemperatureNotification(){
+        Instant currentTime = Instant.now();
+        Instant oneHourBefore = currentTime.minus(1, ChronoUnit.HOURS);
+        List<Weather> allData = weatherRepository.findAll();
+        Set<WeatherRequest> locationSet =new HashSet<>();
+        allData.stream()
+                .forEach(
+                        data-> locationSet.add(
+                                new WeatherRequest(data.getLongitude()
+                                        , data.getLatitude()))
+                );
+        locationSet.stream()
+                .forEach(
+
+                        location->{
+                            Weather currentWeather = weatherRepository.getSingleWeather(location.longitude(), location.latitude(), currentTime);
+                            Weather beforeWeather = weatherRepository.getSingleWeather(location.longitude(), location.latitude(), oneHourBefore);
+
+                            double deltaTemperature = Math.abs(currentWeather.getTemperatureCurrent() - beforeWeather.getTemperatureCurrent());
+                            if(deltaTemperature>5.0){
+
+                            }
+                        }
+                );
+
     }
 
 }
