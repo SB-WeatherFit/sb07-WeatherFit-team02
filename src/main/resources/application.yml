@@ -3,6 +3,9 @@ spring:
     name: WeatherFit
   profiles:
     default: dev
+  batch:
+    job:
+      enabled: false
 
 open-administration-map:
   api-key: ${WEATHER_ADMINISTRATION_API_KEY:-}

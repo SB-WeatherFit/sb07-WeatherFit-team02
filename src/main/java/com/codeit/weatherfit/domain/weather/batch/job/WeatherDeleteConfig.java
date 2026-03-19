@@ -23,14 +23,14 @@ public class WeatherDeleteConfig {
     private final PlatformTransactionManager transactionManager;
 
     @Bean
-    public Job weatherUpdateJob() {
+    public Job weatherDeleteJob() {
         return new JobBuilder(JobStatus.WEATHER_DELETE.getJobName(),jobRepository)
-                .start(weatherUpdateStep())
+                .start(weatherDeleteStep())
                 .build();
     }
 
     @Bean
-    public Step weatherUpdateStep() {
+    public Step weatherDeleteStep() {
         return new StepBuilder(jobRepository)
                 .tasklet(weatherDeleteTasklet,transactionManager)
                 .build();
