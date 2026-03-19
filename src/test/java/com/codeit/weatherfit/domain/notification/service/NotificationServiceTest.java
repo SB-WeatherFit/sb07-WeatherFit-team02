@@ -24,6 +24,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Transactional
@@ -63,7 +64,7 @@ class NotificationServiceTest {
             User user = UserFixture.createUser("test@gmail.com" + i);
             User saved = userRepository.save(user);
             targetUserIds.add(saved.getId());
-            if(i==0){
+            if (i == 0) {
                 firstUserId = saved.getId();
             }
         }
@@ -108,5 +109,24 @@ class NotificationServiceTest {
         assertThat(result2.nextIdAfter()).isNull();
         assertThat(result2.totalCount()).isEqualTo(40);
         assertThat(result2.data().getFirst().createdAt()).isAfter(result2.data().getLast().createdAt());
+    }
+
+    @Test
+    void delete() {
+        User user = UserFixture.createUser();
+        User saved = userRepository.save(user);
+
+        Notification notification = Notification.create(user, "title" , "content", NotificationLevel.INFO);
+        Notification save = notificationRepository.save(notification);
+
+        em.flush();
+        em.clear();
+
+        notificationService.delete(save.getId());
+
+        em.flush();
+        em.clear();
+
+        assertThat(notificationRepository.findById(save.getId()).isPresent()).isFalse();
     }
 }

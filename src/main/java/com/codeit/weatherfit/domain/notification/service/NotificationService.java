@@ -15,4 +15,6 @@ public interface NotificationService {
     List<NotificationDto> broadcast(String title, String content, NotificationLevel level, Set<UUID> targetUserIds);
 
     NotificationCursorResponse search(NotificationSearchCondition condition, UUID userId);
+
+    void delete(UUID notificationId);
 }
