@@ -76,4 +76,12 @@ public class NotificationServiceImpl implements NotificationService {
 
         return new NotificationCursorResponse(data, nextCursor, nextIdAfter, hasNext,  totalCount);
     }
+
+    @Override
+    @Transactional
+    public void delete(UUID notificationId) {
+        Notification notification = notificationRepository.findById(notificationId).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 알림입니다."));
+
+        notificationRepository.delete(notification);
+    }
 }

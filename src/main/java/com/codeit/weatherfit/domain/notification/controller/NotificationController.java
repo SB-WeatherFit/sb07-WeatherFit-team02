@@ -5,11 +5,9 @@ import com.codeit.weatherfit.domain.notification.dto.response.NotificationCursor
 import com.codeit.weatherfit.domain.notification.service.NotificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -29,5 +27,12 @@ public class NotificationController {
         UUID randomUUID = UUID.randomUUID();
         NotificationCursorResponse result = notificationService.search(condition, randomUUID);
         return ResponseEntity.ok().body(result);
+    }
+
+    @DeleteMapping("/{notificationId}")
+    public ResponseEntity<Void> deleteNotification(
+            @PathVariable UUID notificationId) {
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
