@@ -14,4 +14,8 @@ public class WeatherNotFoundException extends WeatherException{
             }
         });
     }
+
+    public WeatherNotFoundException() {
+        super(ErrorCode.WEATHER_NOT_FOUND, new HashMap<>()) ;
+    }
 }

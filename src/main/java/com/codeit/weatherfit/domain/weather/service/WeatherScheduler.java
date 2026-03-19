@@ -4,8 +4,10 @@ import com.codeit.weatherfit.domain.notification.entity.NotificationLevel;
 import com.codeit.weatherfit.domain.weather.dto.request.WeatherRequest;
 import com.codeit.weatherfit.domain.weather.dto.response.WeatherResponse;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
+import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WeatherScheduler {
@@ -88,8 +91,19 @@ public class WeatherScheduler {
                 .forEach(
 
                         location->{
+
                             Weather currentWeather = weatherRepository.getSingleWeather(location.longitude(), location.latitude(), currentTime);
                             Weather beforeWeather = weatherRepository.getSingleWeather(location.longitude(), location.latitude(), oneHourBefore);
+                            if(currentWeather== null) {
+
+                                log.warn("경도: {} 위도: {} 시간: {} data가 존재하지 않습니다.",location.longitude(), location.latitude(), currentTime.toString());
+                                return;
+                            }
+                            if(beforeWeather== null) {
+
+                                log.warn("경도: {} 위도: {} 시간: {} data가 존재하지 않습니다.",location.longitude(), location.latitude(), oneHourBefore.toString());
+                                return;
+                            }
 
                             double deltaTemperature = Math.abs(currentWeather.getTemperatureCurrent() - beforeWeather.getTemperatureCurrent());
                             if(deltaTemperature>5.0){
@@ -122,6 +136,16 @@ public class WeatherScheduler {
                             Weather currentWeather = weatherRepository.getSingleWeather(location.longitude(), location.latitude(), currentTime);
                             Weather beforeWeather = weatherRepository.getSingleWeather(location.longitude(), location.latitude(), oneHourBefore);
 
+                            if(currentWeather== null) {
+
+                                log.warn("경도: {} 위도: {} 시간: {} data가 존재하지 않습니다.",location.longitude(), location.latitude(), currentTime.toString());
+                                return;
+                            }
+                            if(beforeWeather== null) {
+
+                                log.warn("경도: {} 위도: {} 시간: {} data가 존재하지 않습니다.",location.longitude(), location.latitude(), oneHourBefore.toString());
+                                return;
+                            }
                             double deltaPrecipitation = currentWeather.getAmount() - beforeWeather.getAmount();
                             if(deltaPrecipitation>5.0){
                                 List<UUID> ids; //todo 해당 위치 유저id 긁어오는 내용 추가
