@@ -1,6 +1,5 @@
-package com.codeit.weatherfit.domain.message.event;
+package com.codeit.weatherfit.domain.message.service.event;
 
-import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,10 +16,8 @@ import static org.mockito.Mockito.*;
 class MessageEventListenerTest {
     @Autowired
     PlatformTransactionManager transactionManager;
-
     @Autowired
     ApplicationEventPublisher eventPublisher;
-
     @MockitoBean
     SimpMessagingTemplate messagingTemplate;
 

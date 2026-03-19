@@ -32,8 +32,8 @@ class MessageServiceTest {
 
     @Test
     void send() {
-        User sender = userRepository.save(UserFixture.create());
-        User receiver = userRepository.save(UserFixture.create("test2@gmail.com"));
+        User sender = userRepository.save(UserFixture.createUser());
+        User receiver = userRepository.save(UserFixture.createUser("test2@gmail.com"));
         MessageCreateRequest request = new MessageCreateRequest(
                 sender.getId(),
                 receiver.getId(),

@@ -34,10 +34,10 @@ class FollowCustomRepositoryTest {
 
     @Test
     void searchFollowees() {
-        User user = UserFixture.create();
+        User user = UserFixture.createUser();
         User saved = userRepository.save(user);
         for (int i = 0; i < 50; i++) {
-            User userI = UserFixture.create("test@gmail.com" + i);
+            User userI = UserFixture.createUser("test@gmail.com" + i);
             userRepository.save(userI);
             Follow follow = Follow.create(new FollowCreateParam(userI, user));
             followRepository.save(follow);
@@ -73,10 +73,10 @@ class FollowCustomRepositoryTest {
 
     @Test
     void searchFollowers() {
-        User user = UserFixture.create();
+        User user = UserFixture.createUser();
         User saved = userRepository.save(user);
         for (int i = 0; i < 50; i++) {
-            User userI = UserFixture.create("test@gmail.com" + i);
+            User userI = UserFixture.createUser("test@gmail.com" + i);
             userRepository.save(userI);
             Follow follow = Follow.create(new FollowCreateParam(user, userI));
             followRepository.save(follow);
