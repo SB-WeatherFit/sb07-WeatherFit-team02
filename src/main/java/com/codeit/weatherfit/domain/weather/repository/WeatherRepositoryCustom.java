@@ -12,4 +12,5 @@ import java.util.List;
 public interface WeatherRepositoryCustom {
 
     List<Weather> getWeatherByLocation(double longitude, double latitude, Instant forecastedAt);
+    Weather getSingleWeatherByLocation(double longitude, double latitude);
 }
