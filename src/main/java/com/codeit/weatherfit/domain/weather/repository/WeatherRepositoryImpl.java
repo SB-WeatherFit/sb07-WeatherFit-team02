@@ -80,4 +80,13 @@ public class WeatherRepositoryImpl implements WeatherRepositoryCustom {
                 )
                 .execute();
     }
+
+    @Override
+    public void deleteOlderThen(Instant forecastAt) {
+        factory
+                .delete(weather)
+                .where(weather.forecastedAt.lt(forecastAt))
+                .execute();
+
+    }
 }

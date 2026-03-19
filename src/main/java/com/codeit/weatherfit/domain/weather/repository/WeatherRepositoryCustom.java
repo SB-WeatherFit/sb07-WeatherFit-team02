@@ -15,5 +15,6 @@ public interface WeatherRepositoryCustom {
     Weather getSingleWeatherByLocation(double longitude, double latitude);
     Weather getSingleWeather(double longitude, double latitude,Instant time);
     void deleteOldForecast(double longitude, double latitude, Instant forecastAt);
+    void deleteOlderThen(Instant forecastAt);
     List<Weather> getWeatherByLocationAndForecastAt(double longitude, double latitude, Instant forecastedAt);
 }

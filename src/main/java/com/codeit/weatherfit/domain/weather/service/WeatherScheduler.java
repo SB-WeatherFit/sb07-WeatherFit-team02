@@ -79,15 +79,13 @@ public class WeatherScheduler {
     public void deleteAllWeatherCache(){
     }
 
-    public List<WeatherResponse> deleteWeather(){
-        Instant targetTime = Instant.now();
-        List<Weather> allData = weatherRepository.findAll();
-        CompletableFuture.runAsync(()->allData.stream()
-                .filter(weather-> weather.getForecastAt().isBefore(targetTime.minus(1, ChronoUnit.HOURS)))// 알람 보내려면 1시간 전 데이터 가 필요해서 1시간 전 데이터 남겨둠
-                .forEach(weatherRepository::delete),weatherDeleteTaskExecutor);
-        return weatherRepository.findAll().stream()
-                .map(x-> WeatherResponse.from(x))
-                .toList();
+    public void deleteWeather(){
+        Instant targetTime = Instant.now().minus(1, ChronoUnit.HOURS);
+        CompletableFuture.runAsync(()->
+                weatherRepository.deleteOlderThen(targetTime)
+                ,weatherDeleteTaskExecutor);
+
+        return ;
     }
 
     public void weatherTemperatureNotification(){
