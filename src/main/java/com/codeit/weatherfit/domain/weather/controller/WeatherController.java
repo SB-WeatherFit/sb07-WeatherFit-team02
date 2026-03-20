@@ -30,20 +30,19 @@ public class WeatherController {
     private final LocationApiCallServiceImpl locationApiCallService;
     private final WeatherScheduler weatherScheduler;
 
-    @GetMapping
-    public ResponseEntity<List<WeatherResponse>> createWeather(WeatherRequest weatherRequest) {
+    @GetMapping(params = {"latitude", "longitude"})
+    public ResponseEntity<List<WeatherResponse>> createWeather(WeatherRequest weatherRequest, @AuthenticationPrincipal UserDetails userDetails) {
 
         List<WeatherResponse> response = weatherService.create(weatherRequest);
         return ResponseEntity.ok().body(response);
     }
-
     @GetMapping
     public ResponseEntity<List<WeatherResponse>> getWeather(@AuthenticationPrincipal UserDetails userDetails){
 
         //todo 현재 접속중인 유저 id 조회
+
         List<WeatherResponse> response = weatherService.getDefaultOrUserWeather(null);
         return ResponseEntity.ok().body(response);
-
 
     }
 
