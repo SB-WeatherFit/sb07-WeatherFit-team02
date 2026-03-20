@@ -39,7 +39,7 @@ public class FeedController {
 
     @PostMapping("/{id}/comments")
     public ResponseEntity<CommentDto> createComment(@PathVariable UUID id, @RequestBody @Valid CommentCreateRequest request) {
-        return ResponseEntity.ok(feedService.createComment(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(feedService.createComment(request));
     }
 
     @PatchMapping("/{id}")
