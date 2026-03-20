@@ -1,5 +1,7 @@
 package com.codeit.weatherfit.domain.weather.service;
 
+import com.codeit.weatherfit.domain.profile.entity.Profile;
+import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.weather.dto.request.WeatherRequest;
 import com.codeit.weatherfit.domain.weather.dto.response.KakaoLocationResponse;
 import com.codeit.weatherfit.domain.weather.dto.response.LocationResponse;
@@ -19,6 +21,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -30,29 +33,31 @@ public class WeatherServiceImpl implements WeatherService {
     private final WeatherApiCallService weatherApiCallService;
     private final WeatherRepository weatherRepository;
     private final LocationApiCallService locationApiCallService;
+    private static final double DEFAULT_LONGITUDE = 127.000749; // 디폴트 위치 값 (서울특별시 서초구 반포동)
+    private static final double DEFAULT_LATITUDE = 37.503974;
+    private final ProfileRepository profileRepository;
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
 
-
     @Override
-    @Cacheable(value = "weathers",key = "#request.latitude() +':'+ #request.longitude")
+    @Cacheable(value = "weathers", key = "#request.latitude() +':'+ #request.longitude")
     public List<WeatherResponse> create(WeatherRequest request) {
         Instant time = Instant.now();
         KakaoLocationResponse kaKaoResponse = locationApiCallService.getKaKaoResponse(request);
         var document = kaKaoResponse.documents().getFirst();
         double longitude = Double.parseDouble(document.x());
-        double latitude =Double.parseDouble( document.y());
+        double latitude = Double.parseDouble(document.y());
         List<String> address = List.of(document.region_1depth_name(), document.region_2depth_name(), document.region_3depth_name());
         WeatherRequest kakaoLocation = new WeatherRequest(longitude, latitude);
 
         List<Weather> dbData = getWeatherAsLis(kakaoLocation, time);
-        if(!dbData.isEmpty()) {
+        if (!dbData.isEmpty()) {
             return dbData.stream()
-                    .map(weather-> WeatherResponse.from(weather))
+                    .map(weather -> WeatherResponse.from(weather))
                     .toList();
         }
-        List<WeatherResponse> dtoLis = weatherApiCallService.getWeatherLisFromAdministration(kakaoLocation, time,address);
+        List<WeatherResponse> dtoLis = weatherApiCallService.getWeatherLisFromAdministration(kakaoLocation, time, address);
         List<WeatherResponse> result = new ArrayList<>();
         for (WeatherResponse weatherResponse : dtoLis) {
             weatherRepository.deleteOldForecast(
@@ -72,13 +77,13 @@ public class WeatherServiceImpl implements WeatherService {
                 request.longitude(),
                 request.latitude()
         );
-        if (weather==null) return null;
+        if (weather == null) return null;
         return WeatherResponse.from(weather).location();
     }
 
     @Override
     public void delete(UUID id) {
-        if(!weatherRepository.existsById(id)) throw new WeatherNotFoundException(id);
+        if (!weatherRepository.existsById(id)) throw new WeatherNotFoundException(id);
         weatherRepository.deleteById(id);
     }
 
@@ -91,9 +96,9 @@ public class WeatherServiceImpl implements WeatherService {
     @Override
     public List<WeatherResponse> getWeather(WeatherRequest request, Instant time) {
 
-        List<Weather> weatherLis = getWeatherAsLis(request,time);
+        List<Weather> weatherLis = getWeatherAsLis(request, time);
         return weatherLis.stream()
-                .map(weather->WeatherResponse.from(weather))
+                .map(weather -> WeatherResponse.from(weather))
                 .toList();
     }
 
@@ -121,5 +126,25 @@ public class WeatherServiceImpl implements WeatherService {
         List<Weather> weatherLis = weatherRepository.getWeatherByLocation(longitude, latitude, forecastedAt);
 
         return weatherLis;
+    }
+
+    @Override
+    public List<WeatherResponse> getDefaultOrUserWeather(UUID userId) {
+        if (userId == null) {
+
+            List<WeatherResponse> response = create(new WeatherRequest(
+                    DEFAULT_LONGITUDE,
+                    DEFAULT_LATITUDE
+
+            ));
+            return response;
+        }
+        Profile profile = profileRepository.findByUserId(userId).orElseThrow();
+        return create(
+                new WeatherRequest(
+                        profile.getLocation().getLongitude(),
+                        profile.getLocation().getLatitude()
+                )
+        );
     }
 }

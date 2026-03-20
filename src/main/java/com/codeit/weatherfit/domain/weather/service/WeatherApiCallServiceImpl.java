@@ -94,7 +94,11 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 )
 
         ));
-
+        double yesterdayTemperature = getMeanTemperature(yesterDayWeatherMap, yesterdayDate);
+        double todayTemperature = getMeanTemperature(yesterDayWeatherMap, baseDate);
+        double tomorrowTemperature = getMeanTemperature(weatherMap,tomorrowDate);
+        double secondTemperature = getMeanTemperature(weatherMap,secondDayDate);
+        double thirdTemperature = getMeanTemperature(weatherMap,thirdDayDate);
 
         WeatherResponse todayResponse = getSingleWeatherResponseDto(
                 weatherMap,
@@ -104,7 +108,9 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 yesterdayDate,
                 forecastedAt,
                 forecastedAt,
-                tmpLocation
+                tmpLocation,
+                todayTemperature,
+                yesterdayTemperature
 
         );
         WeatherResponse tomorrowResponse = getSingleWeatherResponseDto(
@@ -114,7 +120,9 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 baseDate,
                 forecastedAt,
                 forecastedAt.plus(1,ChronoUnit.DAYS),
-                tmpLocation
+                tmpLocation,
+                tomorrowTemperature,
+                todayTemperature
 
         );
 
@@ -125,7 +133,9 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 tomorrowDate,
                 forecastedAt,
                 forecastedAt.plus(2,ChronoUnit.DAYS),
-                tmpLocation
+                tmpLocation,
+                secondTemperature,
+                tomorrowTemperature
 
         );
 
@@ -136,7 +146,9 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
                 secondDayDate,
                 forecastedAt,
                 forecastedAt.plus(3,ChronoUnit.DAYS),
-                tmpLocation
+                tmpLocation,
+                thirdTemperature,
+                secondTemperature
 
         );
 
@@ -156,16 +168,16 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
 
     public WeatherResponse getSingleWeatherResponseDto(
                 Map<String,Map<String,String>> weatherMap,
-                String date, String time,
+                String date,
+                String time,
                 String yesterdayDate,
                 Instant forecastedAt,
                 Instant forecastAt,
-                LocationResponse location
+                LocationResponse location,
+                double tmp,
+                double yesterdayTmp
     ) {
         log.info("forecastAt: {}",forecastAt);
-        String tmp = getValue(weatherMap, date, time, WeatherCategoryType.TMP);
-        String yesterdayTmp = getValue(weatherMap,yesterdayDate,time,WeatherCategoryType.TMP);
-
         String humidity = getValue(weatherMap, date, time, WeatherCategoryType.REH);
         String yesterdayHumidity = getValue(weatherMap,yesterdayDate,time,WeatherCategoryType.REH);
         String windSpeed = getValue(weatherMap, date, time, WeatherCategoryType.WSD);
@@ -202,12 +214,11 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
             String yesterdayDate,
             Instant forecastedAt,
             Instant forecastAt,
-            LocationResponse location
+            LocationResponse location,
+            double tmp,
+            double yesterdayTmp
     ) {
         log.info("forecastAt: {}",forecastAt);
-        log.info("yesterdayWeatherMap: {}",yesterdayWeatherMap.toString());
-        String tmp = getValue(yesterdayWeatherMap, date, time, WeatherCategoryType.TMP);
-        String yesterdayTmp = getValue(yesterdayWeatherMap,yesterdayDate,time,WeatherCategoryType.TMP);
 
         String humidity = getValue(weatherMap, date, time, WeatherCategoryType.REH);
         String yesterdayHumidity = getValue(yesterdayWeatherMap,yesterdayDate,time,WeatherCategoryType.REH);
@@ -401,12 +412,12 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
         return new int[]{nx, ny};
     }
 
-    private TemperatureResponse getTemperature(String temperature,String yesterdayTemperature,String min,String max) {
+    private TemperatureResponse getTemperature(double temperature,double yesterdayTemperature,String min,String max) {
 
 
         return new TemperatureResponse(
-                Double.parseDouble(temperature),
-                Double.parseDouble(temperature)- Double.parseDouble(yesterdayTemperature),
+                temperature,
+                temperature- yesterdayTemperature,
                 Double.parseDouble(min),
                 Double.parseDouble(max)
         );
@@ -518,5 +529,17 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
             return (Double.parseDouble(split[0]) + Double.parseDouble(split[1])) / 2;
         }
         return Double.parseDouble(value.replace("mm", ""));
+    }
+    private double getMeanTemperature( Map<String,Map<String,String>> weatherMap,
+                                       String date){
+        List<String> timeLis = List.of("0300", "0600", "0900", "1200", "1500", "1800", "2100");
+        double meanTemp = 0;
+        for(String time: timeLis){
+            log.info("timeValue : {}" ,date+time);
+            String value = getValue(weatherMap, date, time, WeatherCategoryType.TMP);
+
+            meanTemp += Double.parseDouble(value);
+        }
+        return meanTemp/timeLis.size();
     }
 }
