@@ -17,6 +17,7 @@ import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
+import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -116,7 +117,7 @@ public class FeedServiceImpl implements FeedService {
 
     private Weather getWeatherOrThrow(UUID weatherId) {
         return weatherRepository.findById(weatherId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 id입니다.")); // TODO 커스텀 에러로 수정
+                .orElseThrow(() -> new WeatherNotFoundException(weatherId));
     }
 
     private User getUserOrThrow(UUID userId) {
