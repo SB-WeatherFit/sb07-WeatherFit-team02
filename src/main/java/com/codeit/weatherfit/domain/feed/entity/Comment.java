@@ -22,4 +22,12 @@ public class Comment extends BaseEntity {
     private Feed feed;
 
     private String content;
+
+    public static Comment create(User author, Feed feed, String content) {
+        Comment comment = new Comment();
+        comment.author = author;
+        comment.feed = feed;
+        comment.content = content;
+        return comment;
+    }
 }
