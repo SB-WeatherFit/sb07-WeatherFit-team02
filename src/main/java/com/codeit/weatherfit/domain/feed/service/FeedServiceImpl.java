@@ -2,11 +2,12 @@ package com.codeit.weatherfit.domain.feed.service;
 
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
+import com.codeit.weatherfit.domain.feed.dto.CommentDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedGetRequest;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
+import com.codeit.weatherfit.domain.feed.dto.request.*;
+import com.codeit.weatherfit.domain.feed.dto.response.CommentGetResponse;
 import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
+import com.codeit.weatherfit.domain.feed.entity.Comment;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import com.codeit.weatherfit.domain.feed.exception.FeedNotExistException;
@@ -14,6 +15,8 @@ import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
+import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
+import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
@@ -39,6 +42,7 @@ public class FeedServiceImpl implements FeedService {
     private final FeedLikeRepository feedLikeRepository;
     private final CommentRepository commentRepository;
     private final ClothesRepository clothesRepository;
+    private final ProfileRepository profileRepository;
 
     @Override
     @Transactional
@@ -69,8 +73,8 @@ public class FeedServiceImpl implements FeedService {
                 feeds.stream()
                         .map(this::toFeedDto)
                         .toList(),
-                hasNext? lastFeed.getCreatedAt() : null,
-                hasNext? lastFeed.getId() : null,
+                hasNext ? lastFeed.getCreatedAt() : null,
+                hasNext ? lastFeed.getId() : null,
                 hasNext,
                 feeds.size(),
                 request.sortBy(),
@@ -84,6 +88,39 @@ public class FeedServiceImpl implements FeedService {
         Feed feed = getFeedOrThrow(id);
         feed.update(request.content());
         return toFeedDto(feed);
+    }
+
+    @Override
+    @Transactional
+    public CommentDto createComment(CommentCreateRequest request) {
+        Comment comment = Comment.create(
+                getUserOrThrow(request.authorId()),
+                getFeedOrThrow(request.feedId()),
+                request.content()
+        );
+        Comment saved = commentRepository.save(comment);
+        return CommentDto.from(saved, getUserSummary(saved.getAuthor()));
+    }
+
+    @Override
+    public CommentGetResponse getCommentsByCursor(CommentGetRequest request) {
+        List<Comment> comments = commentRepository.getCommentsByCursor(request);
+
+        Comment last = null;
+        if (comments.size() == request.limit() + 1) {
+            comments = comments.subList(0, request.limit());
+            last = comments.getLast();
+        }
+        boolean hasNext = last != null;
+        return new CommentGetResponse(
+                comments.stream()
+                        .map(c -> CommentDto.from(c, getUserSummary(c.getAuthor())))
+                        .toList(),
+                hasNext? last.getCreatedAt() : null,
+                hasNext? last.getId() : null,
+                hasNext,
+                comments.size()
+        );
     }
 
     @Override
@@ -123,5 +160,10 @@ public class FeedServiceImpl implements FeedService {
     private User getUserOrThrow(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 id입니다.")); // TODO 커스텀 에러로 수정
+    }
+
+    private UserSummary getUserSummary(User user) {
+        return UserSummary.from(user, profileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("유저 프로필이 존재하지 않습니다."))); // TODO : 추후 커스텀 예외로);
     }
 }
