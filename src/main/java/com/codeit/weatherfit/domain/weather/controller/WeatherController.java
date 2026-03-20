@@ -12,6 +12,8 @@ import com.codeit.weatherfit.domain.weather.service.WeatherScheduler;
 import com.codeit.weatherfit.domain.weather.service.WeatherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,6 +37,16 @@ public class WeatherController {
         return ResponseEntity.ok().body(response);
     }
 
+    @GetMapping
+    public ResponseEntity<List<WeatherResponse>> getWeather(@AuthenticationPrincipal UserDetails userDetails){
+
+        //todo 현재 접속중인 유저 id 조회
+        List<WeatherResponse> response = weatherService.getDefaultOrUserWeather(null);
+        return ResponseEntity.ok().body(response);
+
+
+    }
+
     @GetMapping("/location")
     public ResponseEntity<LocationResponse> getWeatherLocation(WeatherRequest weatherRequest) {
 
@@ -53,6 +65,8 @@ public class WeatherController {
         KakaoLocationResponse response = locationApiCallService.getKaKaoResponse(request);
         return ResponseEntity.ok().body(response);
     }
+
+
 
     @GetMapping("/test/scheduler/update")
     public ResponseEntity<List<WeatherResponse>> testUpdateScheduler(){
