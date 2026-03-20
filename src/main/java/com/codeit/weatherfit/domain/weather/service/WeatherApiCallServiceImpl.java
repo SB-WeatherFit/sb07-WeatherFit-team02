@@ -51,7 +51,6 @@ public class WeatherApiCallServiceImpl implements WeatherApiCallService {
         String baseTimeFor3Day = getBaseTimeFor3Day(kst.toLocalTime());
         String currentTime = getCurrentTime(time);
 
-
         Instant forecastedAt = getForecastedAt(time);
         LocationResponse tmpLocation = new LocationResponse(
                 request.latitude(),

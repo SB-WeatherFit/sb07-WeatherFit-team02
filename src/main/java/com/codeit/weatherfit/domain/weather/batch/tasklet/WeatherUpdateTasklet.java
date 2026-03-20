@@ -37,6 +37,16 @@ public class WeatherUpdateTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
 
+        updateWeather();
+        return RepeatStatus.FINISHED;
+    }
+
+    @CacheEvict(value="weathers",allEntries = true)
+    public void deleteAllWeatherCache(){
+
+    }
+
+    public void updateWeather() {
         List<Weather> allData = weatherRepository.findAll();
 
         Map<WeatherRequest, List<String>> locationData = allData.stream()
@@ -46,7 +56,6 @@ public class WeatherUpdateTasklet implements Tasklet {
                         (existing, replacement) -> existing
                 ));
 
-        weatherRepository.deleteAll();
         deleteAllWeatherCache();
 
         List<CompletableFuture<Void>> futures = locationData.entrySet().stream()
@@ -55,18 +64,27 @@ public class WeatherUpdateTasklet implements Tasklet {
                             weatherApiCallService.getWeatherLisFromAdministration(
                                     entry.getKey(),
                                     Instant.now(),
-                                    entry.getValue());
-                    response.forEach(x -> weatherRepository.save(Weather.create(x)));
+                                    entry.getValue()
+                            );
+
+                    response.forEach(x -> {
+                        weatherRepository.deleteOldForecast(
+                                x.location().longitude(),
+                                x.location().latitude(),
+                                x.forecastAt()
+                        );
+
+                        weatherRepository.save(Weather.create(x));
+                    });
+
                 }, weatherUpdateTaskExecutor))
                 .toList();
 
+
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
-        return RepeatStatus.FINISHED;
-    }
+        return ;
 
-    @CacheEvict(value="weathers",allEntries = true)
-    public void deleteAllWeatherCache(){
 
     }
 }

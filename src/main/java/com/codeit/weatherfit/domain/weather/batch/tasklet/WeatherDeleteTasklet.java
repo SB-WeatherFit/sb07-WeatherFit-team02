@@ -11,6 +11,7 @@ import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -25,11 +26,16 @@ public class WeatherDeleteTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
 
-        Instant targetTime = Instant.now();
-        List<Weather> allData = weatherRepository.findAll();
-        CompletableFuture.runAsync(()->allData.stream()
-                .filter(weather-> weather.getForecastAt().isBefore(targetTime))
-                .forEach(weatherRepository::delete),weatherDeleteTaskExecutor);
+        deleteWeather();
         return null;
+    }
+
+    public void deleteWeather(){
+        Instant targetTime = Instant.now().minus(1, ChronoUnit.HOURS);
+        CompletableFuture.runAsync(()->
+                        weatherRepository.deleteOlderThen(targetTime)
+                ,weatherDeleteTaskExecutor);
+
+        return ;
     }
 }
