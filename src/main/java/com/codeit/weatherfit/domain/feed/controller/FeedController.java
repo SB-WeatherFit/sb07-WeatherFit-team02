@@ -36,11 +36,13 @@ public class FeedController {
 
     @PostMapping("/{id}/like")
     public ResponseEntity<Void> like(@PathVariable UUID id, Authentication authentication){
+        feedService.like(id, authentication);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/like")
     public ResponseEntity<Void> unlike(@PathVariable UUID id, Authentication authentication){
+        feedService.unlike(id, authentication);
         return ResponseEntity.noContent().build();
     }
 
