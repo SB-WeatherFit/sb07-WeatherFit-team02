@@ -2,9 +2,9 @@ package com.codeit.weatherfit.domain.clothes.service;
 
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefCreateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefUpdateRequest;
+import com.codeit.weatherfit.domain.clothes.dto.request.ClothesCreateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDto;
-import com.codeit.weatherfit.domain.clothes.dto.request.ClothesCreateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDtoCursorResponse;
 import com.codeit.weatherfit.domain.clothes.entity.*;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
@@ -49,27 +49,28 @@ public class ClothesServiceImpl implements ClothesService {
         if (request.attributes() != null) {
             for (ClothesAttributeDefCreateRequest attr : request.attributes()) {
 
+                UUID definitionId = UUID.fromString(attr.name());
+
                 ClothesAttributeType type =
-                        clothesAttributeTypeRepository.findByName(attr.name())
-                                .orElseThrow(() -> new IllegalArgumentException("카테고리 없음"));
+                        clothesAttributeTypeRepository.findById(definitionId)
+                                .orElseThrow(() -> new IllegalArgumentException("속성 정의 없음"));
 
-                List<SelectableValue> selectableValues =
+                // 🔥 핵심: 단일 value만 사용
+                if (attr.selectableValues() == null || attr.selectableValues().isEmpty()) {
+                    throw new IllegalArgumentException("속성 값 없음");
+                }
+
+                String value = attr.selectableValues().get(0);
+
+                SelectableValue selectableValue =
                         selectableValueRepository
-                                .findByClothesAttributeTypeAndOptionIn(
-                                        type,
-                                        attr.selectableValues()
-                                );
+                                .findByClothesAttributeTypeAndOption(type, value)
+                                .orElseThrow(() -> new IllegalArgumentException("잘못된 옵션"));
 
-                if (selectableValues.size() != attr.selectableValues().size()) {
-                    throw new IllegalArgumentException("잘못된 옵션 포함");
-                }
+                ClothesAttribute clothesAttribute =
+                        ClothesAttribute.create(clothes, selectableValue);
 
-                for (SelectableValue selectableValue : selectableValues) {
-                    ClothesAttribute clothesAttribute =
-                            ClothesAttribute.create(clothes, selectableValue);
-
-                    clothesAttributeRepository.save(clothesAttribute);
-                }
+                clothesAttributeRepository.save(clothesAttribute);
             }
         }
 
@@ -92,19 +93,26 @@ public class ClothesServiceImpl implements ClothesService {
         );
 
         for (ClothesAttributeDefUpdateRequest attr : request.attributes()) {
-            ClothesAttributeType type = clothesAttributeTypeRepository.findByName(attr.name())
-                    .orElseThrow(() -> new IllegalArgumentException("옷 타입을 찾을 수 없습니다."));
-            List<SelectableValue> options =
-                    selectableValueRepository.findByClothesAttributeTypeAndOptionIn(
-                            type, attr.selectableValues()
-                    );
-            ClothesAttribute attribute = clothesAttributeRepository
-                    .findByClothesAndOption_ClothesAttributeType(
-                            clothes,
-                            type
-                    ).orElseThrow(() -> new IllegalArgumentException("옷 속성을 찾을 수 없습니다"));
+            UUID definitionId = UUID.fromString(attr.name());
+            ClothesAttributeType type = clothesAttributeTypeRepository.findById(definitionId)
+                    .orElseThrow(() -> new IllegalArgumentException("옷 속성 값을 찾을 수 없습니다"));
+            if (attr.selectableValues() == null || attr.selectableValues().size() != 1) {
+                throw new IllegalArgumentException("속성 값은 하나만 허용됩니다");
+            }
 
-            attribute.changeOption(options.getFirst());
+            String value = attr.selectableValues().get(0);
+
+            SelectableValue selectableValue =
+                    selectableValueRepository
+                            .findByClothesAttributeTypeAndOption(type, value)
+                            .orElseThrow(() -> new IllegalArgumentException("잘못된 옵션"));
+
+            ClothesAttribute attribute =
+                    clothesAttributeRepository
+                            .findByClothesAndOption_ClothesAttributeType(clothes, type)
+                            .orElseThrow(() -> new IllegalArgumentException("옷 속성 없음"));
+
+            attribute.changeOption(selectableValue);
         }
 
         List<ClothesAttribute> attributes =
