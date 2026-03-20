@@ -2,7 +2,6 @@ package com.codeit.weatherfit.domain.clothes.repository;
 
 import com.codeit.weatherfit.domain.clothes.entity.ClothesAttributeType;
 import com.codeit.weatherfit.domain.clothes.entity.SelectableValue;
-import org.hibernate.mapping.Selectable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -14,4 +13,8 @@ public interface SelectableValueRepository extends JpaRepository<SelectableValue
             ClothesAttributeType type,
             List<String> options
     );
+
+    List<SelectableValue> findByClothesAttributeType(ClothesAttributeType type);
+
+    Optional<SelectableValue> findByClothesAttributeTypeAndOption(ClothesAttributeType type, String value);
 }
