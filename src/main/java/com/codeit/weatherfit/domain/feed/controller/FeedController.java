@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -30,6 +31,17 @@ public class FeedController {
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 feedService.create(request)
         );
+    }
+
+
+    @PostMapping("/{id}/like")
+    public ResponseEntity<Void> like(@PathVariable UUID id, Authentication authentication){
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/like")
+    public ResponseEntity<Void> unlike(@PathVariable UUID id, Authentication authentication){
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}")
