@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ClothesAttributeType extends BaseEntity {
+    // 색상, 사이즈, 소재...
 
     private String name;
 

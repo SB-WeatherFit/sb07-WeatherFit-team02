@@ -13,8 +13,9 @@ import lombok.NoArgsConstructor;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SelectableValue extends BaseEntity {
+    // 빨주노초파남보
 
     @ManyToOne
-    private ClothesAttributeType clothesAttributeType;
-    private String option;
+    private ClothesAttributeType clothesAttributeType; // 색상
+    private String option; // 빨강
 }

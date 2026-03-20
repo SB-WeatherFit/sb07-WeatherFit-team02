@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.clothes.service;
 
+import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefCreateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDto;
@@ -20,9 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -46,6 +45,35 @@ public class ClothesServiceImpl implements ClothesService {
                 request.type()
         );
         clothesRepository.save(clothes);
+
+        if (request.attributes() != null) {
+            for (ClothesAttributeDefCreateRequest attr : request.attributes()) {
+
+                ClothesAttributeType type =
+                        clothesAttributeTypeRepository.findByName(attr.name())
+                                .orElseThrow(() -> new IllegalArgumentException("카테고리 없음"));
+
+                List<SelectableValue> selectableValues =
+                        selectableValueRepository
+                                .findByClothesAttributeTypeAndOptionIn(
+                                        type,
+                                        attr.selectableValues()
+                                );
+
+                if (selectableValues.size() != attr.selectableValues().size()) {
+                    throw new IllegalArgumentException("잘못된 옵션 포함");
+                }
+
+                for (SelectableValue selectableValue : selectableValues) {
+                    ClothesAttribute clothesAttribute =
+                            ClothesAttribute.create(clothes, selectableValue);
+
+                    clothesAttributeRepository.save(clothesAttribute);
+                }
+            }
+        }
+
+        // 조회용
         List<ClothesAttribute> attributes =
                 clothesAttributeRepository.findByClothes(clothes);
 
@@ -76,7 +104,7 @@ public class ClothesServiceImpl implements ClothesService {
                             type
                     ).orElseThrow(() -> new IllegalArgumentException("옷 속성을 찾을 수 없습니다"));
 
-            attribute.changeOption(options.get(0));
+            attribute.changeOption(options.getFirst());
         }
 
         List<ClothesAttribute> attributes =
@@ -86,6 +114,7 @@ public class ClothesServiceImpl implements ClothesService {
     }
 
     @Override
+    @Transactional
     public void delete(UUID clothesId) {
         Clothes clothes = clothesRepository.findById(clothesId)
                 .orElseThrow(() -> new IllegalArgumentException("옷을 찾을 수 없습니다.")); // 나즁에 커스텀 예외 처리
@@ -95,6 +124,7 @@ public class ClothesServiceImpl implements ClothesService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ClothesDtoCursorResponse search(UUID ownerId, String cursor, UUID idAfter, ClothesType type, int size) {
 
         Pageable pageable = PageRequest.of(0, size + 1);
@@ -130,7 +160,7 @@ public class ClothesServiceImpl implements ClothesService {
                 })
                 .toList();
 
-        Clothes last = page.isEmpty() ? null : page.get(page.size() - 1);
+        Clothes last = page.isEmpty() ? null : page.getLast();
 
         String nextCursor = last != null ? last.getCreatedAt().toString() : null;
         UUID nextIdAfter = last != null ? last.getId() : null;
