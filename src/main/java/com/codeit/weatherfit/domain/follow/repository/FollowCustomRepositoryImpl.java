@@ -44,7 +44,7 @@ public class FollowCustomRepositoryImpl implements FollowCustomRepository {
                         follow.followee.id.eq(condition.followeeId()),
                         cursorCondition(condition.cursor()),
                         nameLike(condition.nameLike()))
-                .orderBy(follow.createdAt.asc())
+                .orderBy(follow.createdAt.asc(), follow.id.asc())
                 .limit(condition.limit() + 1)
                 .fetch();
     }
