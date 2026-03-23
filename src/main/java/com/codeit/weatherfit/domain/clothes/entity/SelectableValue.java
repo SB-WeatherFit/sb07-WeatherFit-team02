@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.clothes.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
+import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepositoryCustom;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -18,4 +19,12 @@ public class SelectableValue extends BaseEntity {
     @ManyToOne
     private ClothesAttributeType clothesAttributeType; // 색상
     private String option; // 빨강
+
+    public static SelectableValue create(ClothesAttributeType type,String option){
+        SelectableValue selectableValue = new SelectableValue();
+        selectableValue.clothesAttributeType = type;
+        selectableValue.option = option;
+        return selectableValue;
+
+    }
 }

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface SelectableValueRepository extends JpaRepository<SelectableValue, UUID> {
+public interface SelectableValueRepository extends JpaRepository<SelectableValue, UUID>,SelectableValueRepositoryCustom {
     List<SelectableValue> findByClothesAttributeTypeAndOptionIn(
             ClothesAttributeType type,
             List<String> options
