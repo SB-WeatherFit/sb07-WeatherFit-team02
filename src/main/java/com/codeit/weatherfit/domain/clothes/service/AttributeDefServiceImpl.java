@@ -6,12 +6,12 @@ import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefUpdat
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesAttributeDefDto;
 import com.codeit.weatherfit.domain.clothes.dto.response.SortBy;
 import com.codeit.weatherfit.domain.clothes.dto.response.SortDirection;
-import com.codeit.weatherfit.domain.clothes.entity.ClothesAttribute;
 import com.codeit.weatherfit.domain.clothes.entity.ClothesAttributeType;
 import com.codeit.weatherfit.domain.clothes.entity.SelectableValue;
+import com.codeit.weatherfit.domain.clothes.exception.ClothesAttributeDefInUseException;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeTypeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepository;
-import jakarta.validation.constraints.NotBlank;
+import com.codeit.weatherfit.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +28,9 @@ public class AttributeDefServiceImpl implements AttributeDefService {
 
     @Override
     public void deleteAttributeDef(UUID defId) {
-        //todo : customException 작업
+        if (typeRepository.existsById(defId)){
+            throw new ClothesAttributeDefInUseException(ErrorCode.CLOTHES_ATTRIBUTE_DEF_IN_USE);
+        }
         typeRepository.deleteById(defId);
     }
 
