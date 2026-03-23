@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.user.repository;
 
+import com.codeit.weatherfit.domain.profile.entity.QProfile;
 import com.codeit.weatherfit.domain.user.entity.QUser;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.entity.UserRole;
@@ -59,6 +60,22 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
                 .fetchOne();
 
         return count == null ? 0L : count;
+    }
+
+    @Override
+    public List<UUID> getUserIdsByLocation(double longitude, double latitude) {
+        QProfile profile = QProfile.profile;
+        QUser user = QUser.user;
+
+        return queryFactory
+                .select(user.id)
+                .from(profile)
+                .join(profile.user, user)
+                .where(
+                        profile.location.latitude.eq(latitude),
+                        profile.location.longitude.eq(longitude)
+                )
+                .fetch();
     }
 
     private BooleanExpression emailLikeContains(String emailLike) {

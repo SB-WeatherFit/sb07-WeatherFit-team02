@@ -32,11 +32,11 @@ public class FollowController {
 
     @GetMapping("/summary")
     public ResponseEntity<FollowSummaryDto> getFollowSummary(
-            @RequestParam UUID useId
+            @RequestParam UUID userId
 //            @AuthenticationPrincipal    myId
     ){
         UUID myId = UUID.randomUUID(); // todo: Authentication 에서 아이디 가져오는 코드로 변경
-        FollowSummaryDto followSummary = followService.getFollowSummary(useId, myId);
+        FollowSummaryDto followSummary = followService.getFollowSummary(userId, myId);
         return ResponseEntity.ok(followSummary);
     }
 
