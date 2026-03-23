@@ -7,12 +7,16 @@ import com.codeit.weatherfit.domain.clothes.dto.request.ClothesUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDto;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDtoCursorResponse;
 import com.codeit.weatherfit.domain.clothes.entity.*;
+import com.codeit.weatherfit.domain.clothes.exception.ClothesAttributeTypeNotFoundException;
+import com.codeit.weatherfit.domain.clothes.exception.ClothesAttributeValueMissingException;
+import com.codeit.weatherfit.domain.clothes.exception.ClothesNotFoundException;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeTypeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -53,11 +57,10 @@ public class ClothesServiceImpl implements ClothesService {
 
                 ClothesAttributeType type =
                         clothesAttributeTypeRepository.findById(definitionId)
-                                .orElseThrow(() -> new IllegalArgumentException("속성 정의 없음"));
+                                .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND));
 
-                // 🔥 핵심: 단일 value만 사용
                 if (attr.selectableValues() == null || attr.selectableValues().isEmpty()) {
-                    throw new IllegalArgumentException("속성 값 없음");
+                    throw new ClothesAttributeValueMissingException(ErrorCode.CLOTHES_ATTRIBUTE_VALUE_MISSING);
                 }
 
                 String value = attr.selectableValues().get(0);
@@ -85,7 +88,7 @@ public class ClothesServiceImpl implements ClothesService {
     @Transactional
     public ClothesDto update(UUID clothesId, ClothesUpdateRequest request) {
         Clothes clothes = clothesRepository.findById(clothesId)
-                .orElseThrow(() -> new IllegalArgumentException("옷을 찾을 수 없습니다.")); // 나즁에 커스텀 예외
+                .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
 
         clothes.update(
                 request.name(),
