@@ -1,9 +1,9 @@
 package com.codeit.weatherfit.domain.feed.controller;
 
+import com.codeit.weatherfit.domain.feed.dto.CommentDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedGetRequest;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
+import com.codeit.weatherfit.domain.feed.dto.request.*;
+import com.codeit.weatherfit.domain.feed.dto.response.CommentGetResponse;
 import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
 import com.codeit.weatherfit.domain.feed.service.FeedService;
 import jakarta.validation.Valid;
@@ -30,6 +30,16 @@ public class FeedController {
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 feedService.create(request)
         );
+    }
+
+    @GetMapping("/{id}/comments")
+    public ResponseEntity<CommentGetResponse> getComment(@ModelAttribute @Valid CommentGetRequest request) {
+        return ResponseEntity.ok(feedService.getCommentsByCursor(request));
+    }
+
+    @PostMapping("/{id}/comments")
+    public ResponseEntity<CommentDto> createComment(@PathVariable UUID id, @RequestBody @Valid CommentCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(feedService.createComment(request));
     }
 
     @PatchMapping("/{id}")

@@ -14,7 +14,7 @@ public class WeatherCategoryNotFoundException extends WeatherException {
     public WeatherCategoryNotFoundException(WeatherCategoryType type) {
         super(ErrorCode.WEATHER_CATEGORY_NOT_FOUND, new HashMap<>() {
             {
-                put(type.name(), type.name());
+                put("MissingCategory", type.name());
             }
         });
         log.info(type.name());

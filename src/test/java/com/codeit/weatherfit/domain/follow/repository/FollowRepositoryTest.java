@@ -33,9 +33,9 @@ class FollowRepositoryTest {
 
     @Test
     void existsByFolloweeIdAndFollowerId() {
-        User user = UserFixture.create();
+        User user = UserFixture.createUser();
         User saved = userRepository.save(user);
-        User user2 = UserFixture.create("test2@gmail.com");
+        User user2 = UserFixture.createUser("test2@gmail.com");
         User saved2 = userRepository.save(user2);
         Follow follow = Follow.create(new FollowCreateParam(user2, user));
         followRepository.save(follow);
@@ -50,10 +50,10 @@ class FollowRepositoryTest {
 
     @Test
     void getFollowingCount() {
-        User user = UserFixture.create();
+        User user = UserFixture.createUser();
         User saved = userRepository.save(user);
         for (int i = 0; i < 50; i++) {
-            User userI = UserFixture.create("test@gmail.com" + i);
+            User userI = UserFixture.createUser("test@gmail.com" + i);
             userRepository.save(userI);
             Follow follow = Follow.create(new FollowCreateParam(userI, saved));
             followRepository.save(follow);
@@ -70,10 +70,10 @@ class FollowRepositoryTest {
 
     @Test
     void getFollowerCount() {
-        User user = UserFixture.create();
+        User user = UserFixture.createUser();
         User saved = userRepository.save(user);
         for (int i = 0; i < 50; i++) {
-            User userI = UserFixture.create("test@gmail.com" + i);
+            User userI = UserFixture.createUser("test@gmail.com" + i);
             User savedI = userRepository.save(userI);
             Follow follow = Follow.create(new FollowCreateParam(saved, savedI));
             followRepository.save(follow);
@@ -92,9 +92,9 @@ class FollowRepositoryTest {
 
     @Test
     void findByFolloweeIdAndFollowerId() {
-        User user = UserFixture.create();
+        User user = UserFixture.createUser();
         User saved = userRepository.save(user);
-        User userI = UserFixture.create("test@gmail.com2");
+        User userI = UserFixture.createUser("test@gmail.com2");
         User savedI = userRepository.save(userI);
         Follow follow = Follow.create(new FollowCreateParam(saved, savedI));
         Follow savedFollow = followRepository.save(follow);
@@ -110,10 +110,10 @@ class FollowRepositoryTest {
 
     @Test
     void countByFollowerId() {
-        User user = UserFixture.create();
+        User user = UserFixture.createUser();
         User saved = userRepository.save(user);
         for (int i = 0; i < 50; i++) {
-            User userI = UserFixture.create("test@gmail.com" + i);
+            User userI = UserFixture.createUser("test@gmail.com" + i);
             User savedI = userRepository.save(userI);
             Follow follow = Follow.create(new FollowCreateParam(saved, savedI));
             followRepository.save(follow);

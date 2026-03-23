@@ -2,8 +2,8 @@ package com.codeit.weatherfit.domain.weather.dto.response.weatherAdministrationA
 
 public enum WeatherCategoryType {
     TMP, //기온
-    POP, // 강수량
-    PCP, //강수확률
+    POP, // 강수확률
+    PCP, //강수량
     PTY,//강수형태
     REH, //습도
     SKY, //하늘상태
