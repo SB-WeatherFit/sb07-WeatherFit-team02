@@ -86,7 +86,7 @@ class FollowControllerTest {
         var response = assertThat(
                 mvcTester.get()
                         .uri("/api/follows/summary")
-                        .param("userId", userId.toString()))
+                        .param("useId", userId.toString()))
                 .hasStatusOk()
                 .bodyJson();
 
