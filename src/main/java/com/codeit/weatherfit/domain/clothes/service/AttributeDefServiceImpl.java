@@ -1,8 +1,12 @@
 package com.codeit.weatherfit.domain.clothes.service;
 
+import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefCreateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefGetRequest;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesAttributeDefDto;
+import com.codeit.weatherfit.domain.clothes.dto.response.SortBy;
+import com.codeit.weatherfit.domain.clothes.dto.response.SortDirection;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesAttribute;
 import com.codeit.weatherfit.domain.clothes.entity.ClothesAttributeType;
 import com.codeit.weatherfit.domain.clothes.entity.SelectableValue;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeTypeRepository;
@@ -46,26 +50,31 @@ public class AttributeDefServiceImpl implements AttributeDefService {
         return ClothesAttributeDefDto.from(attributeType, savedSelectableValues);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<ClothesAttributeDefDto> getAll() {
-        return typeRepository.findAll().stream()
-                .map(type -> {
-
-                    List<SelectableValue> values =
-                            valueRepository.findByClothesAttributeType(type);
-
-                    return ClothesAttributeDefDto.from(type, values);
-                })
-                .toList();
-    }
 
     @Override
     @Transactional(readOnly = true)
     public List<ClothesAttributeDefDto> getAttributeDefs(ClothesAttributeDefGetRequest request) {
-
-        return List.of();
+        SortBy sortBy = request.sortBy();
+        SortDirection sortDirection = request.sortDirection();
+        String keyword = request.keyword();
+        List<ClothesAttributeDefDto> attributeDefDtos;
+        if(keyword == null) attributeDefDtos =typeRepository.getAttributeDefs(sortBy, sortDirection);
+        else attributeDefDtos = typeRepository.getAttributeDefs(sortBy, sortDirection, keyword);
+        return attributeDefDtos;
     }
 
+    @Override
+    public ClothesAttributeDefDto createAttributeDef(ClothesAttributeDefCreateRequest request) {
+        String name = request.name();
+        List<String> stringList = request.selectableValues();
 
+        ClothesAttributeType savedType = typeRepository.save(ClothesAttributeType.create(name));
+        List<SelectableValue> selectableValueList = stringList.stream()
+                .map(x -> SelectableValue.create(savedType, x))
+                .toList();
+        List<SelectableValue> savedSelectableValues = valueRepository.saveAll(selectableValueList);
+
+        return ClothesAttributeDefDto.from(savedType, savedSelectableValues);
+
+    }
 }

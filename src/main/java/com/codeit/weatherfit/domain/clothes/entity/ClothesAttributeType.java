@@ -20,4 +20,10 @@ public class ClothesAttributeType extends BaseEntity {
         this.name=name;
     }
 
+    public static ClothesAttributeType create(String name){
+        ClothesAttributeType attributeType = new ClothesAttributeType();
+        attributeType.name = name;
+        return attributeType;
+    }
+
 }

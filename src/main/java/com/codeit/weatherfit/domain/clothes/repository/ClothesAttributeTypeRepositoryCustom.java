@@ -9,7 +9,11 @@ import java.util.List;
 
 public interface ClothesAttributeTypeRepositoryCustom {
 
-    List<ClothesAttributeType> getAttributeDefs(SortBy sortBy,
+    List<ClothesAttributeDefDto> getAttributeDefs(SortBy sortBy,
                                                 SortDirection sortDirection,
                                                 String keyword);
+    List<ClothesAttributeDefDto> getAttributeDefs(SortBy sortBy,
+                                                SortDirection sortDirection)
+                                                ;
+
 }
