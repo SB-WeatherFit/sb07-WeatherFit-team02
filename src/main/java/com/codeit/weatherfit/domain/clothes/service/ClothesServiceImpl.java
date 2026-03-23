@@ -10,6 +10,7 @@ import com.codeit.weatherfit.domain.clothes.entity.*;
 import com.codeit.weatherfit.domain.clothes.exception.ClothesAttributeTypeNotFoundException;
 import com.codeit.weatherfit.domain.clothes.exception.ClothesAttributeValueMissingException;
 import com.codeit.weatherfit.domain.clothes.exception.ClothesNotFoundException;
+import com.codeit.weatherfit.domain.clothes.exception.InvalidClothesAttributeOptionException;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeTypeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
@@ -68,7 +69,7 @@ public class ClothesServiceImpl implements ClothesService {
                 SelectableValue selectableValue =
                         selectableValueRepository
                                 .findByClothesAttributeTypeAndOption(type, value)
-                                .orElseThrow(() -> new IllegalArgumentException("잘못된 옵션"));
+                                .orElseThrow(() -> new InvalidClothesAttributeOptionException(ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION));
 
                 ClothesAttribute clothesAttribute =
                         ClothesAttribute.create(clothes, selectableValue);
@@ -98,9 +99,9 @@ public class ClothesServiceImpl implements ClothesService {
         for (ClothesAttributeDefUpdateRequest attr : request.attributes()) {
             UUID definitionId = UUID.fromString(attr.name());
             ClothesAttributeType type = clothesAttributeTypeRepository.findById(definitionId)
-                    .orElseThrow(() -> new IllegalArgumentException("옷 속성 값을 찾을 수 없습니다"));
+                    .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND));
             if (attr.selectableValues() == null || attr.selectableValues().size() != 1) {
-                throw new IllegalArgumentException("속성 값은 하나만 허용됩니다");
+                throw new InvalidClothesAttributeOptionException(ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION);
             }
 
             String value = attr.selectableValues().get(0);
@@ -108,12 +109,12 @@ public class ClothesServiceImpl implements ClothesService {
             SelectableValue selectableValue =
                     selectableValueRepository
                             .findByClothesAttributeTypeAndOption(type, value)
-                            .orElseThrow(() -> new IllegalArgumentException("잘못된 옵션"));
+                            .orElseThrow(() -> new InvalidClothesAttributeOptionException(ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION));
 
             ClothesAttribute attribute =
                     clothesAttributeRepository
                             .findByClothesAndOption_ClothesAttributeType(clothes, type)
-                            .orElseThrow(() -> new IllegalArgumentException("옷 속성 없음"));
+                            .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND));
 
             attribute.changeOption(selectableValue);
         }
@@ -128,7 +129,7 @@ public class ClothesServiceImpl implements ClothesService {
     @Transactional
     public void delete(UUID clothesId) {
         Clothes clothes = clothesRepository.findById(clothesId)
-                .orElseThrow(() -> new IllegalArgumentException("옷을 찾을 수 없습니다.")); // 나즁에 커스텀 예외 처리
+                .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
 
         clothesAttributeRepository.deleteByClothes(clothes);
         clothesRepository.delete(clothes);

@@ -49,7 +49,8 @@ public enum ErrorCode {
     // Clothes
     CLOTHES_NOT_FOUND(HttpStatus.NOT_FOUND, "옷을 찾을 수 없습니다.", "C-001"),
     CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND,"속성 정의를 찾을 수 없습니다.", "C-002"),
-    CLOTHES_ATTRIBUTE_VALUE_MISSING(HttpStatus.NOT_FOUND, "속성 값을 찾을 수 없습니다.", "C-003");
+    CLOTHES_ATTRIBUTE_VALUE_MISSING(HttpStatus.NOT_FOUND, "속성 값을 찾을 수 없습니다.", "C-003"),
+    INVALID_CLOTHES_ATTRIBUTE_OPTION(HttpStatus.BAD_REQUEST, "잘못된 옵션입니다.", "C-004");
 
 
     final HttpStatus httpStatus;
