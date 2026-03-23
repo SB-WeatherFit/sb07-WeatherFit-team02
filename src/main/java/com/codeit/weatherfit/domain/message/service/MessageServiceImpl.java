@@ -55,7 +55,7 @@ public class MessageServiceImpl implements MessageService {
         List<Message> messages = messageRepository.searchMessages(request, myId);
         Profile receiverProfile = profileRepository.findWithUser(request.userId()).orElseThrow();
         Profile senderProfile = profileRepository.findWithUser(myId).orElseThrow();
-        long totalCount = messageRepository.countBySenderAndReceiver(senderProfile.getUser(), receiverProfile.getUser());
+        long totalCount = messageRepository.countMessage(senderProfile.getUser().getId(), receiverProfile.getUser().getId());
 
         boolean hasNext = false;
         if (messages.size() == request.limit() + 1) {

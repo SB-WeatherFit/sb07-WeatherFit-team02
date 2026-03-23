@@ -74,8 +74,7 @@ class FollowControllerTest {
         UUID userId = UUID.randomUUID();
         assertThat(
                 mvcTester.get().uri("/api/follows/summary")
-                        .param("useId", userId.toString())
-
+                        .param("userId", userId.toString())
         )
                 .satisfies(result -> {
                     System.out.println("Response Body: " + result.getResponse().getContentAsString());
