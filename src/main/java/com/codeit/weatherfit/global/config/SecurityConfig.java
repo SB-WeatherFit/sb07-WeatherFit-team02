@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
-import org.springframework.security.web.DefaultSecurityFilterChain;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -20,8 +19,6 @@ public class SecurityConfig {
             HttpSecurity http,
             ObjectProvider<JwtAuthenticationFilter> jwtAuthenticationFilterProvider
     ) throws Exception {
-        JwtAuthenticationFilter jwtAuthenticationFilter = jwtAuthenticationFilterProvider.getIfAvailable();
-
         http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
@@ -47,11 +44,11 @@ public class SecurityConfig {
                 )
                 .httpBasic(Customizer.withDefaults());
 
+        JwtAuthenticationFilter jwtAuthenticationFilter = jwtAuthenticationFilterProvider.getIfAvailable();
         if (jwtAuthenticationFilter != null) {
             http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         }
 
-        DefaultSecurityFilterChain chain = http.build();
-        return chain;
+        return http.build();
     }
 }
