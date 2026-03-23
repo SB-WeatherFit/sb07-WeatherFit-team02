@@ -1,10 +1,12 @@
 package com.codeit.weatherfit.domain.message.dto.request;
 
+import jakarta.validation.constraints.NotNull;
+
 import java.util.UUID;
 
 public record MessageCreateRequest(
-        UUID receiverId,
-        UUID senderId,
-        String content
+        @NotNull UUID receiverId,
+        @NotNull UUID senderId,
+        @NotNull String content
 ) {
 }
