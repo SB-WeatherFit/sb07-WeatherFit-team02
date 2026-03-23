@@ -1,7 +1,7 @@
 package com.codeit.weatherfit.global.config;
 
 import com.codeit.weatherfit.domain.auth.security.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -13,14 +13,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
-@RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        DefaultSecurityFilterChain chain = http
+    public SecurityFilterChain filterChain(
+            HttpSecurity http,
+            ObjectProvider<JwtAuthenticationFilter> jwtAuthenticationFilterProvider
+    ) throws Exception {
+        JwtAuthenticationFilter jwtAuthenticationFilter = jwtAuthenticationFilterProvider.getIfAvailable();
+
+        http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/h2-console/**",
@@ -43,10 +45,13 @@ public class SecurityConfig {
                         )
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .httpBasic(Customizer.withDefaults())
-                .build();
+                .httpBasic(Customizer.withDefaults());
 
+        if (jwtAuthenticationFilter != null) {
+            http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        }
+
+        DefaultSecurityFilterChain chain = http.build();
         return chain;
     }
 }
