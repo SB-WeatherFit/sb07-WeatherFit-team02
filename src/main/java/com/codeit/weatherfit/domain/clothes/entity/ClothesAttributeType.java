@@ -16,4 +16,8 @@ public class ClothesAttributeType extends BaseEntity {
 
     private String name;
 
+    public void updateName(String name){
+        this.name=name;
+    }
+
 }

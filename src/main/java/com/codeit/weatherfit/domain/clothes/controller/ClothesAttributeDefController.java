@@ -1,7 +1,9 @@
 package com.codeit.weatherfit.domain.clothes.controller;
 
+import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefGetRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesAttributeDefDto;
 import com.codeit.weatherfit.domain.clothes.service.AttributeDefService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +42,15 @@ public class ClothesAttributeDefController {
 //                        Instant.now()
 //                )
 //        );
-         return attributeDefService.getAll();
+        return attributeDefService.getAll();
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ClothesAttributeDefDto>> getAttributeDefs(
+           @ModelAttribute @Valid ClothesAttributeDefGetRequest request
+    ) {
+        List<ClothesAttributeDefDto> response = attributeDefService.getAttributeDefs(request);
+        return ResponseEntity.ok().body(response);
     }
 
     @PatchMapping("/{definitionId}")
