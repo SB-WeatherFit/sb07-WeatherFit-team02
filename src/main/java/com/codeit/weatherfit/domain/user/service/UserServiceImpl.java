@@ -15,6 +15,7 @@ import com.codeit.weatherfit.domain.user.repository.UserSearchCondition;
 import com.codeit.weatherfit.global.exception.ErrorCode;
 import com.codeit.weatherfit.global.exception.WeatherFitException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UserDto create(UserCreateRequest request) {
@@ -39,7 +41,7 @@ public class UserServiceImpl implements UserService {
                 request.email(),
                 request.name(),
                 UserRole.USER,
-                request.password()
+                passwordEncoder.encode(request.password())
         );
 
         User savedUser = userRepository.save(user);
@@ -132,7 +134,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
 
-        user.updatePassword(request.password());
+        user.updatePassword(passwordEncoder.encode(request.password()));
     }
 
     private UserRole parseRole(String roleEqual) {
