@@ -92,7 +92,7 @@ class FollowControllerTest {
 
         response.extractingPath("$.followeeId").asString().isEqualTo(followeeId.toString());
         response.extractingPath("$.followerCount").isEqualTo(5);
-        response.extractingPath("$.followeeCount").isEqualTo(5);
+        response.extractingPath("$.followingCount").isEqualTo(5);
         response.extractingPath("$.followedByMe").isEqualTo(false);
         response.extractingPath("$.followedByMeId").isNull();
         response.extractingPath("$.followingMe").isEqualTo(false);
