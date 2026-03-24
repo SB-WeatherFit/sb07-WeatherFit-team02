@@ -9,15 +9,14 @@ import com.codeit.weatherfit.domain.follow.dto.response.FollowSummaryDto;
 import com.codeit.weatherfit.domain.follow.entity.Follow;
 import com.codeit.weatherfit.domain.follow.entity.FollowCreateParam;
 import com.codeit.weatherfit.domain.follow.exception.AlreadyFollowException;
-import com.codeit.weatherfit.domain.follow.exception.FollowProfileNotExistException;
 import com.codeit.weatherfit.domain.follow.exception.FollowUserNotExistException;
 import com.codeit.weatherfit.domain.follow.exception.NotExistFollowException;
 import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
 import com.codeit.weatherfit.domain.notification.event.follow.FollowerCreatedEvent;
-import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.domain.user.service.UserService;
 import com.codeit.weatherfit.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -26,10 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +37,7 @@ public class FollowServiceImpl implements FollowService {
     private final ProfileRepository profileRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserService userService;
 
     @Override
     @Transactional
@@ -55,12 +53,9 @@ public class FollowServiceImpl implements FollowService {
         Follow follow = Follow.create(new FollowCreateParam(followee, follower));
         Follow save = followRepository.save(follow);
 
-        Profile followeeProfile = profileRepository.findWithUser(createRequest.followeeId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
-        Profile followerProfile = profileRepository.findWithUser(createRequest.followerId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
-
         eventPublisher.publishEvent(new FollowerCreatedEvent(followee.getId(), follower.getName()));
 
-        return FollowDto.create(save.getId(), followeeProfile, followerProfile);
+        return FollowDto.create(save.getId(), userService.getUserSummary(followee), userService.getUserSummary(follower));
     }
 
     @Override
@@ -109,18 +104,10 @@ public class FollowServiceImpl implements FollowService {
 
         nextIdAfter = follows.getLast().getFollowee().getId();
 
-        List<UUID> ids = follows.stream().map(follow -> follow.getFollowee().getId()).toList();
-        Map<UUID, Profile> collect = profileRepository.findByUserIds(ids).stream()
-                .collect(Collectors.toMap(
-                        p -> p.getUser().getId(),
-                        p -> p
-                ));
-        Profile profile = profileRepository.findByUserId(condition.followerId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
-
         List<FollowDto> data = follows.stream()
                 .map(follow -> FollowDto.create(follow.getId(),
-                        collect.get(follow.getFollowee().getId()),
-                        profile)
+                        userService.getUserSummary(follow.getFollowee()),
+                        userService.getUserSummary(follow.getFollower()))
                 )
                 .toList();
 
@@ -145,17 +132,18 @@ public class FollowServiceImpl implements FollowService {
         nextIdAfter = follows.getLast().getFollowee().getId();
 
         List<UUID> ids = follows.stream().map(follow -> follow.getFollower().getId()).toList();
-        Map<UUID, Profile> collect = profileRepository.findByUserIds(ids).stream()
-                .collect(Collectors.toMap(
-                        p -> p.getUser().getId(),
-                        p -> p
-                ));
-        Profile profile = profileRepository.findByUserId(condition.followeeId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
+//        Map<UUID, Profile> collect = profileRepository.findByUserIds(ids).stream()
+//                .collect(Collectors.toMap(
+//                        p -> p.getUser().getId(),
+//                        p -> p
+//                ));
+//        Profile profile = profileRepository.findByUserId(condition.followeeId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
 
+        // TODO : N + 1 문제 해결 필요
         List<FollowDto> data = follows.stream()
                 .map(follow -> FollowDto.create(follow.getId(),
-                        profile,
-                        collect.get(follow.getFollower().getId()))
+                        userService.getUserSummary(follow.getFollowee()),
+                        userService.getUserSummary(follow.getFollower()))
                 )
                 .toList();
 

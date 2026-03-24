@@ -17,9 +17,9 @@ import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
-import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.domain.user.service.UserService;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
@@ -46,6 +46,7 @@ public class FeedServiceImpl implements FeedService {
     private final ClothesRepository clothesRepository;
     private final ProfileRepository profileRepository;
     private final S3Service s3Service;
+    private final UserService userService;
 
     @Override
     @Transactional
@@ -105,7 +106,7 @@ public class FeedServiceImpl implements FeedService {
                 request.content()
         );
         Comment saved = commentRepository.save(comment);
-        return CommentDto.from(saved, getUserSummary(saved.getAuthor()));
+        return CommentDto.from(saved, userService.getUserSummary(saved.getAuthor()));
     }
 
     @Override
@@ -120,7 +121,7 @@ public class FeedServiceImpl implements FeedService {
         boolean hasNext = last != null;
         return new CommentGetResponse(
                 comments.stream()
-                        .map(c -> CommentDto.from(c, getUserSummary(c.getAuthor())))
+                        .map(c -> CommentDto.from(c, userService.getUserSummary(c.getAuthor())))
                         .toList(),
                 hasNext? last.getCreatedAt() : null,
                 hasNext? last.getId() : null,
@@ -173,8 +174,4 @@ public class FeedServiceImpl implements FeedService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 id입니다.")); // TODO 커스텀 에러로 수정
     }
 
-    private UserSummary getUserSummary(User user) {
-        return UserSummary.from(user, profileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("유저 프로필이 존재하지 않습니다."))); // TODO : 추후 커스텀 예외로);
-    }
 }
