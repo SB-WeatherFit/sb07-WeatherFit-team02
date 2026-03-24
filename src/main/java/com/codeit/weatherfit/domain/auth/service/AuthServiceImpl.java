@@ -12,6 +12,7 @@ import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.global.exception.ErrorCode;
 import com.codeit.weatherfit.global.exception.WeatherFitException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ public class AuthServiceImpl implements AuthService {
     private final InMemoryAuthTokenStore inMemoryAuthTokenStore;
     private final TemporaryPasswordGenerator temporaryPasswordGenerator;
     private final PasswordResetMailSender passwordResetMailSender;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public AuthTokenResult signIn(SignInRequest request) {
@@ -39,15 +41,12 @@ public class AuthServiceImpl implements AuthService {
             throw new WeatherFitException(ErrorCode.SIGN_IN_FAILED);
         }
 
-        if (!user.getPassword().equals(request.password())) {
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new WeatherFitException(ErrorCode.SIGN_IN_FAILED);
         }
 
-        // 임시 로그인
         String accessToken = jwtTokenProvider.generateAccessToken(user);
-        // 임시 로그인
         String refreshToken = jwtTokenProvider.generateRefreshToken(user);
-        // 임시 로그인
         inMemoryAuthTokenStore.register(user.getId(), accessToken, refreshToken);
 
         JwtDto jwtDto = JwtDto.of(UserDto.from(user), accessToken);
@@ -63,7 +62,6 @@ public class AuthServiceImpl implements AuthService {
             throw new WeatherFitException(ErrorCode.SIGN_OUT_FAILED);
         }
 
-        // 임시 로그인
         inMemoryAuthTokenStore.revoke(accessToken, refreshToken);
     }
 
@@ -81,14 +79,10 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.INVALID_REFRESH_TOKEN));
 
-        // 임시 로그인
         String newAccessToken = jwtTokenProvider.generateAccessToken(user);
-        // 임시 로그인
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(user);
 
-        // 임시 로그인
         inMemoryAuthTokenStore.revoke(null, refreshToken);
-        // 임시 로그인
         inMemoryAuthTokenStore.register(user.getId(), newAccessToken, newRefreshToken);
 
         JwtDto jwtDto = JwtDto.of(UserDto.from(user), newAccessToken);
@@ -105,7 +99,9 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.RESET_PASSWORD_USER_NOT_FOUND));
 
         String temporaryPassword = temporaryPasswordGenerator.generate();
-        user.updatePassword(temporaryPassword);
+        String encodedTemporaryPassword = passwordEncoder.encode(temporaryPassword);
+
+        user.updatePassword(encodedTemporaryPassword);
 
         passwordResetMailSender.send(user.getEmail(), temporaryPassword);
     }
