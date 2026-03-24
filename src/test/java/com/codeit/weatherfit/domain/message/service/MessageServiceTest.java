@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import static com.codeit.weatherfit.domain.message.entity.UserFixture.createUser;
-import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
@@ -53,6 +52,10 @@ class MessageServiceTest {
     void send() {
         User sender = userRepository.save(UserFixture.createUser());
         User receiver = userRepository.save(UserFixture.createUser("test2@gmail.com"));
+        Profile profile = ProfileFixture.createProfile(sender);
+        Profile profile2 = ProfileFixture.createProfile(receiver);
+        profileRepository.save(profile);
+        profileRepository.save(profile2);
         MessageCreateRequest request = new MessageCreateRequest(
                 sender.getId(),
                 receiver.getId(),
@@ -65,7 +68,7 @@ class MessageServiceTest {
         List<MessageCreatedEvent> events = applicationEvents.stream(MessageCreatedEvent.class)
                 .toList();
         assertThat(events).hasSize(1);
-        assertThat(events.getFirst().content()).isEqualTo("hello");
+        assertThat(events.getFirst().dmDto().content()).isEqualTo("hello");
     }
 
     @Test
