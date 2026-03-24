@@ -40,7 +40,8 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                                 "/h2-console/**",
                                 "/api/users/**",
-                                "/api/auth/**"
+                                "/api/auth/**",
+                                "/api/**"
                         )
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 )
