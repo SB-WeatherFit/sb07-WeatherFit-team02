@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  cache:
+    type: redis
+    cache-name:
+      - weathers
+    redis:
+      enable-statistics: true
+      time-to-live: 6000  #ttl 10분
+      cache-null-values: false
+    data:
+      redis:
+        host: ${REDIS_HOST:localhost}
+        port: ${REDIS_PORT:6379}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_batch_fetch_size: 50
+        show_sql: false
+    open-in-view: false
+
+
+logging:
+  level:
+    root: info
+    org.hibernate.SQL: off
