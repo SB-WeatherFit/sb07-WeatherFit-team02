@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @EnableBatchProcessing
 public class BatchConfig {
 
+
     @Bean
     public JobRegistry jobRegistry() {
         return new MapJobRegistry();
