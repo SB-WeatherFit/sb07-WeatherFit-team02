@@ -3,6 +3,7 @@ package com.codeit.weatherfit.domain.feed.service;
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.feed.dto.CommentDto;
+import com.codeit.weatherfit.domain.feed.dto.FeedClothesDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.*;
 import com.codeit.weatherfit.domain.feed.dto.response.CommentGetResponse;
@@ -22,6 +23,7 @@ import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
+import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -43,6 +45,7 @@ public class FeedServiceImpl implements FeedService {
     private final CommentRepository commentRepository;
     private final ClothesRepository clothesRepository;
     private final ProfileRepository profileRepository;
+    private final S3Service s3Service;
 
     @Override
     @Transactional
@@ -54,7 +57,10 @@ public class FeedServiceImpl implements FeedService {
         Feed feed = Feed.create(author, weather, request.content());
         Feed saved = feedRepository.save(feed);
         List<FeedClothes> coords = clothes.stream()
-                .map(c -> FeedClothes.create(saved, c.getName(), c.getImageUrl()))
+                .map(c -> {
+                    String url = c.getImageKey() == null? null : s3Service.getUrl(c.getImageKey());
+                    return FeedClothes.create(saved, c.getName(), url);
+                })
                 .toList();
         feedClothesRepository.saveAll(coords);
         return toFeedDto(feed);
@@ -131,9 +137,14 @@ public class FeedServiceImpl implements FeedService {
     }
 
     private FeedDto toFeedDto(Feed feed) {
+        feedClothesRepository.findAllByFeed(feed);
         return FeedDto.from(
                 feed,
-                feedClothesRepository.findAllByFeed(feed),
+                feedClothesRepository.findAllByFeed(feed).stream()
+                        .map(fc -> {
+                            String url = fc.getImageKey() == null? null : s3Service.getUrl(fc.getImageKey());
+                            return FeedClothesDto.from(fc, url);
+                        }).toList(),
                 feedLikeRepository.countByFeed(feed),
                 commentRepository.countByFeed(feed),
                 feedLikeRepository.existsByFeedAndUser(feed, feed.getAuthor()) // TODO 인증 구현 후 현재 로그인 유저로 변경

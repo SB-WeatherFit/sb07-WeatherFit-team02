@@ -1,4 +1,4 @@
-package com.codeit.weatherfit.global.util.s3;
+package com.codeit.weatherfit.global.s3;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
