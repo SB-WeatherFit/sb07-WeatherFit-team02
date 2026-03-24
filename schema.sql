@@ -63,7 +63,7 @@ create table clothes
     updated_at timestamp with time zone not null default CURRENT_TIMESTAMP,
     type       varchar(255)             not null,
     owner_id   uuid                     not null,
-    image_url  TEXT,
+    image_key  TEXT,
     name       varchar(255)             not null,
 
     constraint check_clothes_type check (type in
@@ -182,7 +182,7 @@ create table feed_clothes
     updated_at timestamp with time zone not null default CURRENT_TIMESTAMP,
     feed_id    uuid                     not null,
     name       varchar(255)             not null,
-    image_url  TEXT,
+    image_key  TEXT,
 
     constraint fk_feed_clothes_feeds foreign key (feed_id) references feeds (id) on DELETE cascade
 
@@ -202,7 +202,7 @@ create table profiles
     y                       integer,
     temperature_sensitivity smallint                 not null default 3,
     user_id                 uuid                     not null unique,
-    profile_image_url       text,
+    profile_image_key       text,
 
     constraint check_sensitivity_range check ((temperature_sensitivity between 1 and 5)),
     constraint check_gender check (gender in ('MALE', 'FEMALE', 'OTHER')),
