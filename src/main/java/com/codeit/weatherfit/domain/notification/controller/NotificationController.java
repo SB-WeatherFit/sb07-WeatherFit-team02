@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -20,12 +21,10 @@ public class NotificationController {
 
     @GetMapping
     public ResponseEntity<NotificationCursorResponse> findNotifications(
-            @ModelAttribute @Valid NotificationSearchCondition condition
-//            @Authentication
+            @ModelAttribute @Valid NotificationSearchCondition condition,
+            @AuthenticationPrincipal(expression = "userId") UUID myId
             ){
-        // todo: 인증 정보에서 아이디 가져오기
-        UUID randomUUID = UUID.randomUUID();
-        NotificationCursorResponse result = notificationService.search(condition, randomUUID);
+        NotificationCursorResponse result = notificationService.search(condition, myId);
         return ResponseEntity.ok().body(result);
     }
 
