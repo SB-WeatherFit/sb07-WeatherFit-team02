@@ -13,12 +13,14 @@ import com.codeit.weatherfit.domain.follow.exception.FollowProfileNotExistExcept
 import com.codeit.weatherfit.domain.follow.exception.FollowUserNotExistException;
 import com.codeit.weatherfit.domain.follow.exception.NotExistFollowException;
 import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
+import com.codeit.weatherfit.domain.notification.event.follow.FollowerCreatedEvent;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +39,7 @@ public class FollowServiceImpl implements FollowService {
     private final FollowRepository followRepository;
     private final ProfileRepository profileRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -54,6 +57,8 @@ public class FollowServiceImpl implements FollowService {
 
         Profile followeeProfile = profileRepository.findWithUser(createRequest.followeeId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
         Profile followerProfile = profileRepository.findWithUser(createRequest.followerId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
+
+        eventPublisher.publishEvent(new FollowerCreatedEvent(followee.getId(), follower.getName()));
 
         return FollowDto.create(save.getId(), followeeProfile, followerProfile);
     }

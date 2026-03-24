@@ -8,6 +8,7 @@ import com.codeit.weatherfit.domain.message.dto.response.MessageDto;
 import com.codeit.weatherfit.domain.message.entity.Message;
 import com.codeit.weatherfit.domain.message.repository.MessageRepository;
 import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
+import com.codeit.weatherfit.domain.notification.event.message.MessageSentEvent;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
@@ -53,6 +54,7 @@ public class MessageServiceImpl implements MessageService {
 
         String dmKey = generateDmKey(senderId, receiverId);
         eventPublisher.publishEvent(new MessageCreatedEvent(dmKey, messageDto));
+        eventPublisher.publishEvent(new MessageSentEvent(receiverId, sender.getName(), save.getContent()));
     }
 
     @Override
