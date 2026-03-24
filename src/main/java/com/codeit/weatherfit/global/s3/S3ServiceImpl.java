@@ -1,12 +1,11 @@
 package com.codeit.weatherfit.global.s3;
 
-import com.codeit.weatherfit.global.s3.exception.S3StorageUploadException;
+import com.codeit.weatherfit.global.s3.exception.S3UploadException;
 import com.codeit.weatherfit.global.s3.properties.S3Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -16,7 +15,6 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
-import java.io.IOException;
 import java.time.Duration;
 
 @Service
@@ -44,23 +42,22 @@ public class S3ServiceImpl implements S3Service {
     }
 
     @Override
-    public String put(MultipartFile file) {
-        String key = System.currentTimeMillis() + "-" + file.getOriginalFilename();
+    public String put(String fileName, String contentType, byte[] bytes) {
         try {
             s3Client.putObject(
                     PutObjectRequest.builder()
-                            .key(key)
+                            .key(fileName)
                             .bucket(s3Properties.bucket())
-                            .contentType(file.getContentType())
+                            .contentType(contentType)
                             .build(),
-                    RequestBody.fromBytes(file.getBytes())
+                    RequestBody.fromBytes(bytes)
             );
-        } catch (SdkClientException | IOException e) {
-            log.warn("파일 업로드에 실패함 : {}", key);
-            throw new S3StorageUploadException(key);
+        } catch (SdkClientException e) {
+            log.warn("파일 업로드에 실패함 : {}", fileName);
+            throw new S3UploadException(fileName);
         }
-        log.info("S3 파일 업로드 완료 : {}", key);
-        return key;
+        log.info("S3 파일 업로드 완료 : {}", fileName);
+        return fileName;
     }
 
     @Override

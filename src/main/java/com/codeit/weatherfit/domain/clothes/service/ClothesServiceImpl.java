@@ -19,13 +19,19 @@ import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.global.exception.ErrorCode;
 import com.codeit.weatherfit.global.s3.S3Service;
+import com.codeit.weatherfit.global.s3.event.S3ClothesPutEvent;
+import com.codeit.weatherfit.global.s3.exception.S3UploadException;
+import com.codeit.weatherfit.global.s3.util.S3KeyGenerator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -39,6 +45,7 @@ public class ClothesServiceImpl implements ClothesService {
     private final ClothesAttributeTypeRepository clothesAttributeTypeRepository;
     private final ClothesAttributeRepository clothesAttributeRepository;
     private final S3Service s3Service;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -46,19 +53,13 @@ public class ClothesServiceImpl implements ClothesService {
         User owner = userRepository.findById(request.ownerId())
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다.")); // 나중에 커스텀 예외 처리
 
-        String key = null;
-        if (!image.isEmpty()) {
-            key = s3Service.put(image);
-        }
-
         Clothes clothes = Clothes.create(
                 owner,
                 request.name(),
-                request.type(),
-                key
+                request.type()
         );
-
         clothesRepository.save(clothes);
+        clothes.updateImageKey(publishImageUploadEvent(clothes.getId(), image));
 
         if (request.attributes() != null) {
             for (ClothesAttributeDefCreateRequest attr : request.attributes()) {
@@ -101,15 +102,10 @@ public class ClothesServiceImpl implements ClothesService {
         Clothes clothes = clothesRepository.findById(clothesId)
                 .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
 
-        String key = null;
-        if(!image.isEmpty()) {
-            key = s3Service.put(image);
-        }
-
         clothes.update(
                 request.name(),
                 request.type(),
-                key
+                publishImageUploadEvent(clothes.getId(), image)
         );
 
         for (ClothesAttributeDefUpdateRequest attr : request.attributes()) {
@@ -139,7 +135,7 @@ public class ClothesServiceImpl implements ClothesService {
                 clothesAttributeRepository.findByClothes(clothes);
         String url = clothes.getImageKey() == null? null : s3Service.getUrl(clothes.getImageKey());
 
-        return ClothesDto.from(clothes, attributes, s3Service.getUrl(url));
+        return ClothesDto.from(clothes, attributes, url);
     }
 
     @Override
@@ -206,5 +202,26 @@ public class ClothesServiceImpl implements ClothesService {
                 "createdAt",
                 "DESCENDING"
         );
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void clearImageKey(UUID clothesId) {
+        Clothes clothes = clothesRepository.findById(clothesId)
+                .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
+        clothes.updateImageKey(null);
+    }
+
+    private String publishImageUploadEvent(UUID id, MultipartFile image) {
+        String key = null;
+        if (!image.isEmpty()) {
+            try {
+                key = S3KeyGenerator.generateKey(image.getOriginalFilename());
+                eventPublisher.publishEvent(new S3ClothesPutEvent(id, key, image.getContentType(), image.getBytes()));
+            } catch (IOException e) {
+                throw new S3UploadException(image.getOriginalFilename());
+            }
+        }
+        return key;
     }
 }
