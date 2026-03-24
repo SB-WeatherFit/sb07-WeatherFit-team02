@@ -40,6 +40,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
+    //Aws
+    implementation 'software.amazon.awssdk:s3:2.31.7'
+
     // QueryDSL
     implementation "com.querydsl:querydsl-jpa:5.0.0:jakarta"
 
