@@ -1,8 +1,10 @@
-package com.codeit.weatherfit.domain.notification.service;
+package com.codeit.weatherfit.domain.notification.service.event;
 
 import com.codeit.weatherfit.domain.notification.dto.response.NotificationDto;
 import com.codeit.weatherfit.domain.notification.event.PersonalNotificationEvent;
 import com.codeit.weatherfit.domain.notification.event.SystemNotificationEvent;
+import com.codeit.weatherfit.domain.notification.service.NotificationService;
+import com.codeit.weatherfit.domain.notification.service.SseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

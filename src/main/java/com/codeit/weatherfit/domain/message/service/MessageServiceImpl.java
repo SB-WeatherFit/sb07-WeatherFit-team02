@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.message.service;
 
+import com.codeit.weatherfit.domain.message.dto.DmDto;
 import com.codeit.weatherfit.domain.message.dto.request.MessageCreateRequest;
 import com.codeit.weatherfit.domain.message.dto.request.MessageGetRequest;
 import com.codeit.weatherfit.domain.message.dto.response.MessageCursorResponse;
@@ -7,6 +8,7 @@ import com.codeit.weatherfit.domain.message.dto.response.MessageDto;
 import com.codeit.weatherfit.domain.message.entity.Message;
 import com.codeit.weatherfit.domain.message.repository.MessageRepository;
 import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
+import com.codeit.weatherfit.domain.notification.event.message.MessageSentEvent;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
@@ -44,10 +46,15 @@ public class MessageServiceImpl implements MessageService {
                 .orElseThrow(); // todo
 
         Message message = Message.create(sender, receiver, content);
-        messageRepository.save(message);
+        Message save = messageRepository.save(message);
+        Profile receiverProfile = profileRepository.findWithUser(save.getReceiver().getId()).orElseThrow();
+        Profile senderProfile = profileRepository.findWithUser(save.getSender().getId()).orElseThrow();
+        DmDto messageDto = DmDto.from(save, senderProfile, receiverProfile);
+
 
         String dmKey = generateDmKey(senderId, receiverId);
-        eventPublisher.publishEvent(new MessageCreatedEvent(dmKey, content));
+        eventPublisher.publishEvent(new MessageCreatedEvent(dmKey, messageDto));
+        eventPublisher.publishEvent(new MessageSentEvent(receiverId, sender.getName(), save.getContent()));
     }
 
     @Override

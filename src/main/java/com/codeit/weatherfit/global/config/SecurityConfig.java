@@ -41,6 +41,7 @@ public class SecurityConfig {
                                 "/h2-console/**",
                                 "/api/users/**",
                                 "/api/auth/**",
+                                "/ws/**",
                                 "/api/**"
                         )
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())

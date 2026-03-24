@@ -101,7 +101,7 @@ class FollowServiceTest {
         assertThat(followSummary.followedByMeId()).isEqualTo(followDto.id());
         assertThat(followSummary.followingMe()).isFalse();
         assertThat(followSummary.followerCount()).isEqualTo(2);
-        assertThat(followSummary.followeeCount()).isEqualTo(0);
+        assertThat(followSummary.followingCount()).isEqualTo(0);
     }
 
     @Test

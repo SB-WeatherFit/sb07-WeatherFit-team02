@@ -18,7 +18,7 @@ public record FeedCommentedEvent(
 
     @Override
     public String getTitle(){
-        return commenterName+"님이 내 피드를 좋아합니다.";
+        return commenterName+"님이 댓글을 달았어요";
     }
 
     @Override

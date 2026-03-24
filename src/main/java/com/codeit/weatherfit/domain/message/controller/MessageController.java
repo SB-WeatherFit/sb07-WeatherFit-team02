@@ -21,11 +21,9 @@ public class MessageController {
 
     @GetMapping
     public ResponseEntity<MessageCursorResponse> getMessage(
-            @ModelAttribute @Valid MessageGetRequest request
-//            @AuthenticationPrincipal(expression = "userDto.id") UUID myId
+            @ModelAttribute @Valid MessageGetRequest request,
+            @AuthenticationPrincipal(expression = "userId") UUID myId
     ) {
-//        // todo: 인증 정보에서 아이디 가져오기
-        UUID myId = UUID.randomUUID();
         return ResponseEntity.ok(messageService.searchMessages(request, myId));
     }
 }
