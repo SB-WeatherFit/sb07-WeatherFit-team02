@@ -46,7 +46,7 @@ public class S3EventListener {
     @Recover
     public void recover(Exception e, S3ProfilePutEvent event) {
         log.error("S3 업로드 최종 실패: key={}", event.fileName(), e);
-        profileService.clearImageKey(event.profileId());
+        profileService.clearImageKey(event.userId());
     }
 
 }

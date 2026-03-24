@@ -105,7 +105,7 @@ public class ClothesServiceImpl implements ClothesService {
         clothes.update(
                 request.name(),
                 request.type(),
-                publishImageUploadEvent(clothes.getId(), image)
+                image != null? publishImageUploadEvent(clothes.getId(), image) : clothes.getImageKey()
         );
 
         for (ClothesAttributeDefUpdateRequest attr : request.attributes()) {
@@ -214,7 +214,7 @@ public class ClothesServiceImpl implements ClothesService {
 
     private String publishImageUploadEvent(UUID id, MultipartFile image) {
         String key = null;
-        if (!image.isEmpty()) {
+        if (image != null && !image.isEmpty()) {
             try {
                 key = S3KeyGenerator.generateKey(image.getOriginalFilename());
                 eventPublisher.publishEvent(new S3ClothesPutEvent(id, key, image.getContentType(), image.getBytes()));
