@@ -21,8 +21,8 @@ public class LogUploadConfig {
     private final PlatformTransactionManager transactionManager;
 
     @Bean
-    public Job weatherDeleteJob() {
-        return new JobBuilder(JobStatus.WEATHER_DELETE.getJobName(),jobRepository)
+    public Job logUploadJob() {
+        return new JobBuilder(JobStatus.LOG_UPLOAD.getJobName(),jobRepository)
                 .start(logUploadStep())
                 .build();
     }
