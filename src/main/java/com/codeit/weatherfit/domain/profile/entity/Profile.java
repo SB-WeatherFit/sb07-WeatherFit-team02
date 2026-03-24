@@ -43,8 +43,8 @@ public class Profile extends BaseEntity {
     @Column(name = "temperature_sensitivity", nullable = false)
     private int temperatureSensitivity;
 
-    @Column(name = "profile_image_url")
-    private String profileImageUrl;
+    @Column(name = "profile_image_key")
+    private String profileImageKey;
 
     private Profile(
             User user,
@@ -52,7 +52,7 @@ public class Profile extends BaseEntity {
             LocalDate birthDate,
             Location location,
             int temperatureSensitivity,
-            String profileImageUrl
+            String profileImageKey
     ) {
         validateUser(user);
         validateGender(gender);
@@ -63,7 +63,7 @@ public class Profile extends BaseEntity {
         this.birthDate = birthDate;
         this.location = location;
         this.temperatureSensitivity = temperatureSensitivity;
-        this.profileImageUrl = profileImageUrl;
+        this.profileImageKey = profileImageKey;
     }
 
     public static Profile create(
@@ -102,8 +102,8 @@ public class Profile extends BaseEntity {
         this.temperatureSensitivity = temperatureSensitivity;
     }
 
-    public void updateProfileImageUrl(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
+    public void updateProfileImageKey(String profileImageKey) {
+        this.profileImageKey = profileImageKey;
     }
 
     private static void validateUser(User user) {

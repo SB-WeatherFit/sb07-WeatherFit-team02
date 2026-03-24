@@ -10,10 +10,18 @@ import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.global.exception.ErrorCode;
 import com.codeit.weatherfit.global.exception.WeatherFitException;
+import com.codeit.weatherfit.global.s3.S3Service;
+import com.codeit.weatherfit.global.s3.event.S3ProfilePutEvent;
+import com.codeit.weatherfit.global.s3.exception.S3UploadException;
+import com.codeit.weatherfit.global.s3.util.S3KeyGenerator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.UUID;
 
 @Service
@@ -24,6 +32,8 @@ public class ProfileServiceImpl implements ProfileService {
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
     private final ProfileLocationResolver profileLocationResolver;
+    private final ApplicationEventPublisher eventPublisher;
+    private final S3Service s3Service;
 
     @Override
     @Transactional(readOnly = true)
@@ -34,11 +44,11 @@ public class ProfileServiceImpl implements ProfileService {
         Profile profile = profileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.PROFILE_NOT_FOUND));
 
-        return ProfileDto.from(profile);
+        return ProfileDto.from(profile, s3Service.getUrl(profile.getProfileImageKey()));
     }
 
     @Override
-    public ProfileDto update(UUID userId, ProfileUpdateRequest request) {
+    public ProfileDto update(UUID userId, ProfileUpdateRequest request, MultipartFile image) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
 
@@ -54,11 +64,33 @@ public class ProfileServiceImpl implements ProfileService {
                 request.location().longitude()
         );
 
+        if(image != null) {
+            try {
+                String key = S3KeyGenerator.generateKey(image.getOriginalFilename());
+                eventPublisher.publishEvent(new S3ProfilePutEvent(
+                        userId,
+                        key,
+                        image.getContentType(),
+                        image.getBytes()));
+                profile.updateProfileImageKey(key);
+            } catch (IOException e) {
+                throw new S3UploadException(image.getOriginalFilename());
+            }
+        }
+
         profile.updateGender(request.gender());
         profile.updateBirthDate(request.birthDate());
         profile.updateLocation(location);
         profile.updateTemperatureSensitivity(request.temperatureSensitivity());
 
-        return ProfileDto.from(profile);
+        return ProfileDto.from(profile, s3Service.getUrl(profile.getProfileImageKey()));
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void clearImageKey(UUID userId) {
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new WeatherFitException(ErrorCode.PROFILE_NOT_FOUND));
+        profile.updateProfileImageKey(null);
     }
 }

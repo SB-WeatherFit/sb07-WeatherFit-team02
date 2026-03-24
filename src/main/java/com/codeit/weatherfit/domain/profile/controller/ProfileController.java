@@ -6,6 +6,7 @@ import com.codeit.weatherfit.domain.profile.service.ProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -22,7 +23,9 @@ public class ProfileController {
     }
 
     @PatchMapping
-    public ProfileDto update(@PathVariable UUID userId, @Valid @RequestBody ProfileUpdateRequest request) {
-        return profileService.update(userId, request);
+    public ProfileDto update(@PathVariable UUID userId,
+                             @Valid @RequestPart ProfileUpdateRequest request,
+                             @RequestPart(value = "image", required = false) MultipartFile image) {
+        return profileService.update(userId, request, image);
     }
 }
