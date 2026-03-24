@@ -6,18 +6,19 @@ spring:
   batch:
     job:
       enabled: false
-  s3:
-    access-key: ${AWS_S3_ACCESS_KEY:-}
-    secret-key: ${AWS_S3_SECRET_KEY:-}
-    region: ${AWS_S3_REGION:-}
-    bucket: ${AWS_S3_BUCKET:-}
-    presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600}
 
 open-administration-map:
   api-key: ${WEATHER_ADMINISTRATION_API_KEY:-}
 
 kakao:
   api-key: ${KAKAO_API_KEY:-}
+
+s3:
+  bucket: ${AWS_S3_BUCKET}
+  region: ${AWS_S3_REGION}
+  access-key: ${AWS_S3_ACCESS_KEY}
+  secret-key: ${AWS_S3_SECRET_KEY}
+  presigned-url-expiration-time: ${AWS_S3_PRESIGNED_URL_EXPIRATION:1000}
 
 
 weatherfit:
