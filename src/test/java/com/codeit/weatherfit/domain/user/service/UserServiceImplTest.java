@@ -22,8 +22,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -42,6 +42,9 @@ class UserServiceImplTest {
     @Mock
     private ProfileRepository profileRepository;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private UserServiceImpl userService;
 
@@ -52,9 +55,10 @@ class UserServiceImplTest {
         @DisplayName("회원가입에 성공한다")
         void create() {
             UserCreateRequest request = new UserCreateRequest("tester", "user@test.com", "password");
-            User savedUser = User.create("user@test.com", "tester", UserRole.USER, "password");
+            User savedUser = User.create("user@test.com", "tester", UserRole.USER, "encoded-password");
 
             when(userRepository.existsByEmail(request.email())).thenReturn(false);
+            when(passwordEncoder.encode("password")).thenReturn("encoded-password");
             when(userRepository.save(any(User.class))).thenReturn(savedUser);
             when(profileRepository.save(any(Profile.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -189,13 +193,14 @@ class UserServiceImplTest {
         @DisplayName("비밀번호 변경에 성공한다")
         void updatePassword() {
             UUID userId = UUID.randomUUID();
-            User user = User.create("user@test.com", "tester", UserRole.USER, "password");
+            User user = User.create("user@test.com", "tester", UserRole.USER, "encoded-old-password");
 
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+            when(passwordEncoder.encode("new-password")).thenReturn("encoded-new-password");
 
             userService.updatePassword(userId, new ChangePasswordRequest("new-password"));
 
-            assertThat(user.getPassword()).isEqualTo("new-password");
+            assertThat(user.getPassword()).isEqualTo("encoded-new-password");
         }
 
         @Test
