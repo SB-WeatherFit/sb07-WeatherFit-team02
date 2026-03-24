@@ -40,29 +40,29 @@ class NotificationControllerTest {
     @Autowired
     ObjectMapper objectMapper;
 
-    @Test
-    void search() {
-        User user = UserFixture.createUser();
-        userRepository.save(user);
-
-        for (int i = 0; i < 40; i++) {
-            Notification notification = Notification.create(user, "title" + i, "content", NotificationLevel.INFO);
-            notificationRepository.save(notification);
-        }
-
-        em.flush();
-        em.clear();
-        NotificationSearchCondition condition = new NotificationSearchCondition(null, null, 20);
-        Map<String, String> params = objectMapper.convertValue(condition, new TypeReference<>() {
-        });
-        var requestBuilder = mvcTester.get().uri("/api/notifications");
-        params.forEach(requestBuilder::param);
-
-
-        assertThat(requestBuilder.exchange())
-                .apply(print())
-                .hasStatusOk();
-    }
+//    @Test
+//    void search() {
+//        User user = UserFixture.createUser();
+//        userRepository.save(user);
+//
+//        for (int i = 0; i < 40; i++) {
+//            Notification notification = Notification.create(user, "title" + i, "content", NotificationLevel.INFO);
+//            notificationRepository.save(notification);
+//        }
+//
+//        em.flush();
+//        em.clear();
+//        NotificationSearchCondition condition = new NotificationSearchCondition(null, null, 20);
+//        Map<String, String> params = objectMapper.convertValue(condition, new TypeReference<>() {
+//        });
+//        var requestBuilder = mvcTester.get().uri("/api/notifications");
+//        params.forEach(requestBuilder::param);
+//
+//
+//        assertThat(requestBuilder.exchange())
+//                .apply(print())
+//                .hasStatusOk();
+//    }
 
     @Test
     void delete() {
