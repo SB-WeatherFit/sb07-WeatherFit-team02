@@ -10,7 +10,7 @@ RUN ./gradlew clean build -x test
 
 FROM amazoncorretto:21-alpine
 
-ENV SPRING_PROFILES_ACTIVE=dev
+ENV SPRING_PROFILES_ACTIVE=docker
 
 ENV TZ=Asia/Seoul
 
