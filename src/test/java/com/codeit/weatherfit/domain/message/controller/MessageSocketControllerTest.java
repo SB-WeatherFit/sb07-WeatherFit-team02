@@ -14,7 +14,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.socket.WebSocketHttpHeaders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
+import org.springframework.web.socket.sockjs.client.SockJsClient;
+import org.springframework.web.socket.sockjs.client.Transport;
+import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +43,15 @@ class MessageSocketControllerTest {
 
     @BeforeEach
     void setUp() {
-        stompClient = new WebSocketStompClient(new StandardWebSocketClient());
+//        stompClient = new WebSocketStompClient(new StandardWebSocketClient());
+        List<Transport> transports = new ArrayList<>();
+        transports.add(new WebSocketTransport(new StandardWebSocketClient()));
+
+        //  SockJsClient를 생성합니다.
+        SockJsClient sockJsClient = new SockJsClient(transports);
+
+        // StompClient가 SockJsClient를 사용하도록 설정합니다.
+        stompClient = new WebSocketStompClient(sockJsClient);
         stompClient.setMessageConverter(new JacksonJsonMessageConverter());
     }
 

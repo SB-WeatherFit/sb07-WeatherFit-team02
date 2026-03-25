@@ -13,5 +13,16 @@ open-administration-map:
 kakao:
   api-key: ${KAKAO_API_KEY:-}
 
+s3:
+  bucket: ${AWS_S3_BUCKET:-}
+  region: ${AWS_S3_REGION:-}
+  access-key: ${AWS_S3_ACCESS_KEY:-}
+  secret-key: ${AWS_S3_SECRET_KEY:-}
+  presigned-url-expiration-time: ${AWS_S3_PRESIGNED_URL_EXPIRATION:1000}
+
+
+weatherfit:
+  storage:
+    type: ${STORAGE_TYPE:s3}
 
 

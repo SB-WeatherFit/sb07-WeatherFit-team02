@@ -9,13 +9,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class InMemoryAuthTokenStore {
 
-    // 임시 로그인
     private final Map<UUID, String> currentAccessTokenByUserId = new ConcurrentHashMap<>();
-    // 임시 로그인
     private final Map<UUID, String> currentRefreshTokenByUserId = new ConcurrentHashMap<>();
-    // 임시 로그인
     private final Map<String, UUID> activeRefreshTokenToUserId = new ConcurrentHashMap<>();
-    // 임시 로그인
     private final Map<String, Boolean> revokedAccessTokens = new ConcurrentHashMap<>();
 
     public void register(UUID userId, String accessToken, String refreshToken) {
@@ -47,5 +43,13 @@ public class InMemoryAuthTokenStore {
 
     public UUID findUserIdByRefreshToken(String refreshToken) {
         return activeRefreshTokenToUserId.get(refreshToken);
+    }
+
+    public boolean isRevokedAccessToken(String accessToken) {
+        if (accessToken == null || accessToken.isBlank()) {
+            return false;
+        }
+
+        return revokedAccessTokens.containsKey(accessToken);
     }
 }

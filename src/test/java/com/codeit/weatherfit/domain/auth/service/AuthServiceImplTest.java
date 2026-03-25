@@ -14,10 +14,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -44,6 +44,9 @@ class AuthServiceImplTest {
     @Mock
     private PasswordResetMailSender passwordResetMailSender;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
@@ -53,9 +56,10 @@ class AuthServiceImplTest {
         @Test
         @DisplayName("로그인에 성공한다")
         void signIn() {
-            User user = User.create("test3@test.com", "test3", UserRole.USER, "password");
+            User user = User.create("test3@test.com", "test3", UserRole.USER, "encoded-password");
 
             when(userRepository.findByEmail("test3@test.com")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("password", "encoded-password")).thenReturn(true);
             when(jwtTokenProvider.generateAccessToken(user)).thenReturn("access-token");
             when(jwtTokenProvider.generateRefreshToken(user)).thenReturn("refresh-token");
 
@@ -92,9 +96,10 @@ class AuthServiceImplTest {
         @Test
         @DisplayName("비밀번호가 다르면 로그인에 실패한다")
         void signInFailWhenPasswordMismatch() {
-            User user = User.create("test3@test.com", "test3", UserRole.USER, "password");
+            User user = User.create("test3@test.com", "test3", UserRole.USER, "encoded-password");
 
             when(userRepository.findByEmail("test3@test.com")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("wrong-password", "encoded-password")).thenReturn(false);
 
             assertThatThrownBy(() -> authService.signIn(new SignInRequest("test3@test.com", "wrong-password")))
                     .isInstanceOf(WeatherFitException.class)
@@ -132,7 +137,7 @@ class AuthServiceImplTest {
         @DisplayName("리프레시에 성공한다")
         void refresh() {
             UUID userId = UUID.randomUUID();
-            User user = User.create("test3@test.com", "test3", UserRole.USER, "password");
+            User user = User.create("test3@test.com", "test3", UserRole.USER, "encoded-password");
 
             when(inMemoryAuthTokenStore.findUserIdByRefreshToken("refresh-token")).thenReturn(userId);
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -175,14 +180,15 @@ class AuthServiceImplTest {
         @Test
         @DisplayName("비밀번호 초기화에 성공한다")
         void resetPassword() {
-            User user = User.create("test3@test.com", "test3", UserRole.USER, "old-password");
+            User user = User.create("test3@test.com", "test3", UserRole.USER, "old-encoded-password");
 
             when(userRepository.findByEmail("test3@test.com")).thenReturn(Optional.of(user));
             when(temporaryPasswordGenerator.generate()).thenReturn("temporary1234");
+            when(passwordEncoder.encode("temporary1234")).thenReturn("encoded-temporary1234");
 
             authService.resetPassword(new ResetPasswordRequest("test3@test.com"));
 
-            assertThat(user.getPassword()).isEqualTo("temporary1234");
+            assertThat(user.getPassword()).isEqualTo("encoded-temporary1234");
             verify(passwordResetMailSender, times(1))
                     .send("test3@test.com", "temporary1234");
         }

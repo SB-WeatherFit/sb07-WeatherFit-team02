@@ -18,7 +18,7 @@ public record MessageSentEvent(
 
     @Override
     public String getTitle(){
-        return senderName+"님이 댓글을 달았어요";
+        return senderName+"님이 메시지을 보냈어요";
     }
 
     @Override

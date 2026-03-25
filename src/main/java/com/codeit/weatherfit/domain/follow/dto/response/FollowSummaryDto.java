@@ -1,13 +1,11 @@
 package com.codeit.weatherfit.domain.follow.dto.response;
 
-import com.codeit.weatherfit.domain.follow.entity.Follow;
-
 import java.util.UUID;
 
 public record FollowSummaryDto(
         UUID followeeId,
         long followerCount,
-        long followeeCount,
+        long followingCount,
         boolean followedByMe,
         UUID followedByMeId,
         boolean followingMe

@@ -38,7 +38,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
 
+    //Aws
+    implementation 'software.amazon.awssdk:s3:2.31.7'
 
     // QueryDSL
     implementation "com.querydsl:querydsl-jpa:5.0.0:jakarta"
@@ -71,6 +74,13 @@ dependencies {
     
     //websocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // AWS SDK for Java v2
+    implementation platform('software.amazon.awssdk:bom:2.20.56')
+    implementation 'software.amazon.awssdk:s3'
+
+    // retry
+    implementation 'org.springframework.retry:spring-retry'
 }
 
 tasks.named('test') {

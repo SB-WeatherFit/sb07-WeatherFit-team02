@@ -33,6 +33,16 @@ public class FeedController {
         );
     }
 
+    @GetMapping("/{id}/comments")
+    public ResponseEntity<CommentGetResponse> getComment(@ModelAttribute @Valid CommentGetRequest request) {
+        return ResponseEntity.ok(feedService.getCommentsByCursor(request));
+    }
+
+    @PostMapping("/{id}/comments")
+    public ResponseEntity<CommentDto> createComment(@PathVariable UUID id, @RequestBody @Valid CommentCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(feedService.createComment(request));
+    }
+
 
     @PostMapping("/{id}/like")
     public ResponseEntity<Void> like(@PathVariable UUID id, Authentication authentication){
@@ -40,7 +50,7 @@ public class FeedController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/like")
+    @DeleteMapping("/{id}/like") // TODO: 수정
     public ResponseEntity<Void> unlike(@PathVariable UUID id, Authentication authentication){
         feedService.unlike(id, authentication);
         return ResponseEntity.noContent().build();

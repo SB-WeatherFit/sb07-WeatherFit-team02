@@ -3,12 +3,10 @@ package com.codeit.weatherfit.domain.feed.service.unit;
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedGetRequest;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
-import com.codeit.weatherfit.domain.feed.dto.request.SortBy;
-import com.codeit.weatherfit.domain.feed.dto.request.SortDirection;
+import com.codeit.weatherfit.domain.feed.dto.request.*;
+import com.codeit.weatherfit.domain.feed.dto.response.CommentGetResponse;
 import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
+import com.codeit.weatherfit.domain.feed.entity.Comment;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
@@ -16,10 +14,15 @@ import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
 import com.codeit.weatherfit.domain.feed.service.FeedServiceImpl;
+import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
+import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.domain.user.service.UserService;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
+import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
+import com.codeit.weatherfit.global.s3.S3Service;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,7 +41,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.instancio.Select.all;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -65,8 +69,17 @@ class FeedServiceImplTest {
     @Mock
     private CommentRepository commentRepository;
 
+    @Mock
+    private ProfileRepository profileRepository;
+
     @InjectMocks
     private FeedServiceImpl feedService;
+
+    @Mock
+    UserService userService;
+
+    @Mock
+    S3Service s3Service;
 
     @Nested
     @DisplayName("생성")
@@ -123,7 +136,7 @@ class FeedServiceImplTest {
 
                 // when & then
                 assertThatThrownBy(() -> feedService.create(Instancio.create(FeedCreateRequest.class)))
-                        .isInstanceOf(IllegalArgumentException.class); // 추후 커스텀 에러로 수정
+                        .isInstanceOf(WeatherNotFoundException.class);
             }
 
             @Test
@@ -194,7 +207,7 @@ class FeedServiceImplTest {
     }
 
     @Nested
-    @DisplayName("커서 조회")
+    @DisplayName("피드 조회")
     class getFeedsByCursor {
         @Test
         @DisplayName("성공 - 다음 페이지가 있는 경우")
@@ -304,6 +317,130 @@ class FeedServiceImplTest {
         }
     }
 
+    @Nested
+    @DisplayName("댓글 생성")
+    class createComment {
+        @Test
+        @DisplayName("성공")
+        void success() {
+            // given
+            Feed feed = Instancio.create(Feed.class);
+            when(feedRepository.findById(any(UUID.class)))
+                    .thenReturn(Optional.of(feed));
+            when(userRepository.findById(any(UUID.class)))
+                    .thenReturn(Optional.of(feed.getAuthor()));
+            when(commentRepository.save(any()))
+                    .thenReturn(Instancio.create(Comment.class));
+            when(userService.getUserSummary(any(User.class)))
+                    .thenReturn(Instancio.create(UserSummary.class));
+
+            // when
+            feedService.createComment(new CommentCreateRequest(
+                    feed.getId(),
+                    feed.getAuthor().getId(),
+                    "content"
+            ));
+
+            // then
+            verify(feedRepository).findById(feed.getId());
+            verify(userRepository).findById(feed.getAuthor().getId());
+            verify(commentRepository).save(any());
+        }
+
+        @Nested
+        @DisplayName("실패 - 비즈니스 로직")
+        class BusinessLogicFailure {
+//            @Test // TODO : 커스텀 에러 생기면 작성
+//            @DisplayName("feed Id가 존재해야한다.")
+//            void feed() {
+//                // given
+//                when(userRepository.findById(any(UUID.class)))
+//                        .thenReturn(Optional.empty());
+//
+//                // when
+//                feedService.createComment(Instancio.create(CommentCreateRequest.class));
+//
+//                // then
+//                assertThatThrownBy(() -> feedService.createComment(Instancio.create(CommentCreateRequest.class)))
+//
+//
+//            }
+        }
+    }
+
+    @Nested
+    @DisplayName("댓글 조회")
+    class getCommentsByCursor {
+        @Test
+        @DisplayName("성공 - 다음 페이지가 있는 경우")
+        void successWithNextPage() {
+            // given
+            int limit = 3;
+            UUID feedId = UUID.randomUUID();
+            CommentGetRequest request = new CommentGetRequest(feedId, null, null, limit);
+
+            List<Comment> comments = Instancio.ofList(Comment.class)
+                    .size(limit + 1)
+                    .set(all(Instant.class), Instant.now().minus(1, ChronoUnit.DAYS))
+                    .create();
+            when(commentRepository.getCommentsByCursor(request)).thenReturn(comments);
+            when(userService.getUserSummary(any(User.class)))
+                    .thenReturn(Instancio.create(UserSummary.class));
+
+            // when
+            CommentGetResponse response = feedService.getCommentsByCursor(request);
+
+            // then
+            Comment expectedLast = comments.get(limit - 1);
+            assertThat(response.hasNext()).isTrue();
+            assertThat(response.data()).hasSize(limit);
+            assertThat(response.nextCursor()).isEqualTo(expectedLast.getCreatedAt());
+            assertThat(response.nextIdAfter()).isEqualTo(expectedLast.getId());
+        }
+
+        @Test
+        @DisplayName("성공 - 다음 페이지가 없는 경우")
+        void successWithoutNextPage() {
+            // given
+            int limit = 3;
+            UUID feedId = UUID.randomUUID();
+            CommentGetRequest request = new CommentGetRequest(feedId, null, null, limit);
+
+            List<Comment> comments = Instancio.ofList(Comment.class)
+                    .size(limit)
+                    .set(all(Instant.class), Instant.now().minus(1, ChronoUnit.DAYS))
+                    .create();
+            when(commentRepository.getCommentsByCursor(request)).thenReturn(comments);
+            when(userService.getUserSummary(any(User.class)))
+                    .thenReturn(Instancio.create(UserSummary.class));
+
+            // when
+            CommentGetResponse response = feedService.getCommentsByCursor(request);
+
+            // then
+            assertThat(response.hasNext()).isFalse();
+            assertThat(response.data()).hasSize(limit);
+            assertThat(response.nextCursor()).isNull();
+            assertThat(response.nextIdAfter()).isNull();
+        }
+
+        @Test
+        @DisplayName("성공 - 결과가 없는 경우")
+        void successEmpty() {
+            // given
+            UUID feedId = UUID.randomUUID();
+            CommentGetRequest request = new CommentGetRequest(feedId, null, null, 10);
+            when(commentRepository.getCommentsByCursor(request)).thenReturn(List.of());
+
+            // when
+            CommentGetResponse response = feedService.getCommentsByCursor(request);
+
+            // then
+            assertThat(response.hasNext()).isFalse();
+            assertThat(response.data()).isEmpty();
+        }
+    }
+
     private void stubToFeedDto() {
         when(feedClothesRepository.findAllByFeed(any(Feed.class)))
                 .thenReturn(Instancio.createList(FeedClothes.class));
@@ -313,6 +450,8 @@ class FeedServiceImplTest {
                 .thenReturn(0L);
         when(feedLikeRepository.existsByFeedAndUser(any(Feed.class), any(User.class)))
                 .thenReturn(false);
+        when(s3Service.getUrl(any()))
+                .thenReturn("http://localhost:8080/image/1234567890");
     }
 
 }

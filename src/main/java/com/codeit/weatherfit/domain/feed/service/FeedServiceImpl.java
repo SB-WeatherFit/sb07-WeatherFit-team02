@@ -2,11 +2,13 @@ package com.codeit.weatherfit.domain.feed.service;
 
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
+import com.codeit.weatherfit.domain.feed.dto.CommentDto;
+import com.codeit.weatherfit.domain.feed.dto.FeedClothesDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedGetRequest;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
+import com.codeit.weatherfit.domain.feed.dto.request.*;
+import com.codeit.weatherfit.domain.feed.dto.response.CommentGetResponse;
 import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
+import com.codeit.weatherfit.domain.feed.entity.Comment;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import com.codeit.weatherfit.domain.feed.exception.FeedNotExistException;
@@ -14,10 +16,14 @@ import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
+import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.domain.user.service.UserService;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
+import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
+import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,6 +44,9 @@ public class FeedServiceImpl implements FeedService {
     private final FeedLikeRepository feedLikeRepository;
     private final CommentRepository commentRepository;
     private final ClothesRepository clothesRepository;
+    private final ProfileRepository profileRepository;
+    private final S3Service s3Service;
+    private final UserService userService;
 
     @Override
     @Transactional
@@ -49,7 +58,10 @@ public class FeedServiceImpl implements FeedService {
         Feed feed = Feed.create(author, weather, request.content());
         Feed saved = feedRepository.save(feed);
         List<FeedClothes> coords = clothes.stream()
-                .map(c -> FeedClothes.create(saved, c.getName(), c.getImageUrl()))
+                .map(c -> {
+                    String url = c.getImageKey() == null? null : s3Service.getUrl(c.getImageKey());
+                    return FeedClothes.create(saved, c.getName(), url);
+                })
                 .toList();
         feedClothesRepository.saveAll(coords);
         return toFeedDto(feed);
@@ -68,8 +80,8 @@ public class FeedServiceImpl implements FeedService {
                 feeds.stream()
                         .map(this::toFeedDto)
                         .toList(),
-                hasNext? lastFeed.getCreatedAt() : null,
-                hasNext? lastFeed.getId() : null,
+                hasNext ? lastFeed.getCreatedAt() : null,
+                hasNext ? lastFeed.getId() : null,
                 hasNext,
                 feeds.size(),
                 request.sortBy(),
@@ -87,15 +99,53 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
+    public CommentDto createComment(CommentCreateRequest request) {
+        Comment comment = Comment.create(
+                getUserOrThrow(request.authorId()),
+                getFeedOrThrow(request.feedId()),
+                request.content()
+        );
+        Comment saved = commentRepository.save(comment);
+        return CommentDto.from(saved, userService.getUserSummary(saved.getAuthor()));
+    }
+
+    @Override
+    public CommentGetResponse getCommentsByCursor(CommentGetRequest request) {
+        List<Comment> comments = commentRepository.getCommentsByCursor(request);
+
+        Comment last = null;
+        if (comments.size() == request.limit() + 1) {
+            comments = comments.subList(0, request.limit());
+            last = comments.getLast();
+        }
+        boolean hasNext = last != null;
+        return new CommentGetResponse(
+                comments.stream()
+                        .map(c -> CommentDto.from(c, userService.getUserSummary(c.getAuthor())))
+                        .toList(),
+                hasNext? last.getCreatedAt() : null,
+                hasNext? last.getId() : null,
+                hasNext,
+                comments.size()
+        );
+    }
+
+    @Override
+    @Transactional
     public void delete(UUID id) {
         Feed feed = getFeedOrThrow(id);
         feedRepository.delete(feed);
     }
 
     private FeedDto toFeedDto(Feed feed) {
+        feedClothesRepository.findAllByFeed(feed);
         return FeedDto.from(
                 feed,
-                feedClothesRepository.findAllByFeed(feed),
+                feedClothesRepository.findAllByFeed(feed).stream()
+                        .map(fc -> {
+                            String url = fc.getImageKey() == null? null : s3Service.getUrl(fc.getImageKey());
+                            return FeedClothesDto.from(fc, url);
+                        }).toList(),
                 feedLikeRepository.countByFeed(feed),
                 commentRepository.countByFeed(feed),
                 feedLikeRepository.existsByFeedAndUser(feed, feed.getAuthor()) // TODO 인증 구현 후 현재 로그인 유저로 변경
@@ -116,11 +166,12 @@ public class FeedServiceImpl implements FeedService {
 
     private Weather getWeatherOrThrow(UUID weatherId) {
         return weatherRepository.findById(weatherId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 id입니다.")); // TODO 커스텀 에러로 수정
+                .orElseThrow(() -> new WeatherNotFoundException(weatherId));
     }
 
     private User getUserOrThrow(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 id입니다.")); // TODO 커스텀 에러로 수정
     }
+
 }

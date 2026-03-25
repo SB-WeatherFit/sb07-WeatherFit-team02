@@ -18,10 +18,11 @@ public class MessageEventListener {
     @Async("messageTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleMessage(MessageCreatedEvent event) {
+        System.out.println("event.dmDto().messageId() = " + event.dmDto().id());
         try {
             messagingTemplate.convertAndSend(
                     "/sub/direct-messages_" + event.messageKey(),
-                    event.content()
+                    event.dmDto()
             );
         } catch (Exception e) {
             log.error("메시지 전송 실패: messageKey={}, error={}", event.messageKey(), e.getMessage());

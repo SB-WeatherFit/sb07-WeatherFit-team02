@@ -24,7 +24,7 @@ public class NotificationCustomRepositoryImpl implements NotificationCustomRepos
                 .where(
                         cursorInstant(condition.cursor())
                 )
-                .orderBy(notification.createdAt.desc())
+                .orderBy(notification.createdAt.desc(), notification.id.asc())
                 .limit(condition.limit() + 1)
                 .fetch();
     }

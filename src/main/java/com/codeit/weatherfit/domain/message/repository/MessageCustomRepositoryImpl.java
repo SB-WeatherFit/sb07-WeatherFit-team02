@@ -13,16 +13,17 @@ import java.util.UUID;
 import static com.codeit.weatherfit.domain.message.entity.QMessage.message;
 
 @RequiredArgsConstructor
-public class MessageRepositoryCustomImpl implements MessageRepositoryCustom {
+public class MessageCustomRepositoryImpl implements MessageCustomRepository {
 
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<Message> getByCursor(MessageGetRequest request) {
+    public List<Message> searchMessages(MessageGetRequest request, UUID senderId) {
         return queryFactory.selectFrom(message)
-                .where(cursorCondition(request.cursor(), request.idAfter()),
-                        message.sender.id.eq(request.userId())
-                                .or(message.receiver.id.eq(request.userId())))
+                .where(
+                        cursorCondition(request.cursor(), request.idAfter()),
+                        message.receiver.id.eq(request.userId())
+                                .and(message.sender.id.eq(senderId)))
                 .orderBy(message.createdAt.desc(), message.id.desc())
                 .limit(request.limit() + 1)
                 .fetch();
@@ -32,6 +33,6 @@ public class MessageRepositoryCustomImpl implements MessageRepositoryCustom {
         if (cursor == null || idAfter == null)
             return null;
         return message.createdAt.lt(cursor)
-                .or(message.createdAt.eq(cursor).and(message.id.lt(idAfter)));
+                .or(message.createdAt.eq(cursor).and(message.id.ne(idAfter)));
     }
 }

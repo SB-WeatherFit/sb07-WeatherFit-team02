@@ -27,6 +27,12 @@ public class SystemScheduler {
         batchScheduler.run(JobStatus.WEATHER_DELETE.getJobName());
     }
 
+    @Scheduled(cron = "0 0 2 * * ?")
+    public void runLogUploadJob(){
+        log.info("Starting log upload job : {}", Instant.now());
+        batchScheduler.run(JobStatus.LOG_UPLOAD.getJobName());
+    }
+
 
 
 

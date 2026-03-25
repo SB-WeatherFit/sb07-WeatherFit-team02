@@ -1,7 +1,6 @@
 package com.codeit.weatherfit.domain.feed.dto;
 
 import com.codeit.weatherfit.domain.feed.entity.Feed;
-import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import com.codeit.weatherfit.domain.user.dto.response.UserDto;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 
@@ -21,14 +20,14 @@ public record FeedDto(
         Long commentCount,
         boolean likedByMe
 ) {
-    public static FeedDto from(Feed feed, List<FeedClothes> ootds, Long likeCount, Long commentCount, boolean likedByMe){
+    public static FeedDto from(Feed feed, List<FeedClothesDto> ootds, Long likeCount, Long commentCount, boolean likedByMe){
         return new FeedDto(
                 feed.getId(),
                 feed.getCreatedAt(),
                 feed.getUpdatedAt(),
                 UserDto.from(feed.getAuthor()),
                 feed.getWeather(),
-                ootds.stream().map(FeedClothesDto::from).toList(),
+                ootds,
                 feed.getContent(),
                 likeCount,
                 commentCount,

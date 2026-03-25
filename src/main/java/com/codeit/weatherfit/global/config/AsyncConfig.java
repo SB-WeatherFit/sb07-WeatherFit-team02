@@ -40,6 +40,11 @@ public class AsyncConfig {
         return createExecutor("async-", 10, 20, 100);
     }
 
+    @Bean(name = "s3UploadTaskExecutor")
+    public Executor s3UploadTaskExecutor() {
+        return createExecutor("s3-upload-", 10, 20, 100);
+    }
+
     private ThreadPoolTaskExecutor createExecutor(String prefix, int core, int max, int queue) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(core);

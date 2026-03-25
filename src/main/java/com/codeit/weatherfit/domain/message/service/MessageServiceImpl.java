@@ -1,16 +1,16 @@
 package com.codeit.weatherfit.domain.message.service;
 
+import com.codeit.weatherfit.domain.message.dto.DmDto;
 import com.codeit.weatherfit.domain.message.dto.request.MessageCreateRequest;
 import com.codeit.weatherfit.domain.message.dto.request.MessageGetRequest;
-import com.codeit.weatherfit.domain.message.dto.response.DirectMessageDto;
-import com.codeit.weatherfit.domain.message.dto.response.MessageGetResponse;
-import com.codeit.weatherfit.domain.message.dto.response.SortBy;
-import com.codeit.weatherfit.domain.message.dto.response.SortDirection;
+import com.codeit.weatherfit.domain.message.dto.response.MessageCursorResponse;
+import com.codeit.weatherfit.domain.message.dto.response.MessageDto;
 import com.codeit.weatherfit.domain.message.entity.Message;
 import com.codeit.weatherfit.domain.message.repository.MessageRepository;
 import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
+import com.codeit.weatherfit.domain.notification.event.message.MessageSentEvent;
+import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
-import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class MessageServiceImpl implements MessageService{
+public class MessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
@@ -46,52 +46,42 @@ public class MessageServiceImpl implements MessageService{
                 .orElseThrow(); // todo
 
         Message message = Message.create(sender, receiver, content);
-        messageRepository.save(message);
+        Message save = messageRepository.save(message);
+        Profile receiverProfile = profileRepository.findWithUser(save.getReceiver().getId()).orElseThrow();
+        Profile senderProfile = profileRepository.findWithUser(save.getSender().getId()).orElseThrow();
+        DmDto messageDto = DmDto.from(save, senderProfile, receiverProfile);
+
 
         String dmKey = generateDmKey(senderId, receiverId);
-        eventPublisher.publishEvent(new MessageCreatedEvent(dmKey, content));
+        eventPublisher.publishEvent(new MessageCreatedEvent(dmKey, messageDto));
+        eventPublisher.publishEvent(new MessageSentEvent(receiverId, sender.getName(), save.getContent()));
     }
 
     @Override
-    public MessageGetResponse getByCursor(MessageGetRequest request) {
-        List<Message> messages = messageRepository.getByCursor(request);
+    public MessageCursorResponse searchMessages(MessageGetRequest request, UUID myId) {
+        List<Message> messages = messageRepository.searchMessages(request, myId);
+        Profile receiverProfile = profileRepository.findWithUser(request.userId()).orElseThrow();
+        Profile senderProfile = profileRepository.findWithUser(myId).orElseThrow();
+        long totalCount = messageRepository.countMessage(senderProfile.getUser().getId(), receiverProfile.getUser().getId());
 
-        Message lastMessage = null;
+        boolean hasNext = false;
         if (messages.size() == request.limit() + 1) {
             messages = messages.subList(0, request.limit());
-            lastMessage = messages.getLast();
+            hasNext = true;
         }
-        boolean hasNext = lastMessage != null;
 
-        User sender = null;
-        User receiver = null;
-        if (!messages.isEmpty()) {
-            sender = messages.getFirst().getSender();
-            receiver = messages.getFirst().getReceiver();
-        }
-        UserSummary senderSummary = getUserSummary(sender);
-        UserSummary receiverSummary = getUserSummary(receiver);
+        List<MessageDto> data = messages.stream()
+                .map(message -> MessageDto.from(message, senderProfile, receiverProfile))
+                .toList();
 
-        return new MessageGetResponse(
-                messages.stream()
-                        .map(m -> DirectMessageDto.from(
-                                m,
-                                senderSummary,
-                                receiverSummary
-                        )).toList(),
-                hasNext? lastMessage.getCreatedAt() : null,
-                hasNext? lastMessage.getId() : null,
+        return new MessageCursorResponse(
+                data,
+                hasNext ? data.getLast().createdAt() : null,
+                hasNext ? data.getLast().messageId() : null,
                 hasNext,
-                messages.size(),
-                SortBy.createdAt,
-                SortDirection.DESCENDING
+                totalCount
         );
 
-    }
-
-    private UserSummary getUserSummary(User user) {
-        return UserSummary.from(user,profileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("유저 프로필이 존재하지 않습니다."))); // TODO : 추후 커스텀 예외로);
     }
 
     private String generateDmKey(UUID senderId, UUID receiverId) {
