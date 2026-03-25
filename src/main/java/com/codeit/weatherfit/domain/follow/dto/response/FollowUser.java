@@ -13,7 +13,7 @@ public record FollowUser(
         return new FollowUser(
                 profile.getUser().getId(),
                 profile.getUser().getName(),
-                profile.getProfileImageUrl()
+                profile.getProfileImageKey()
         );
     }
 }

@@ -6,6 +6,8 @@ import com.codeit.weatherfit.domain.user.dto.request.UserLockUpdateRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.weatherfit.domain.user.dto.response.UserDto;
 import com.codeit.weatherfit.domain.user.dto.response.UserDtoCursorResponse;
+import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
+import com.codeit.weatherfit.domain.user.entity.User;
 
 import java.util.UUID;
 
@@ -29,4 +31,7 @@ public interface UserService {
     UserDto updateLock(UUID userId, UserLockUpdateRequest request);
 
     void updatePassword(UUID userId, ChangePasswordRequest request);
+
+    UserSummary getUserSummary(UUID userId);
+    UserSummary getUserSummary(User user);
 }

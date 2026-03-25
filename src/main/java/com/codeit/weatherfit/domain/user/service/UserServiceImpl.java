@@ -8,12 +8,14 @@ import com.codeit.weatherfit.domain.user.dto.request.UserLockUpdateRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserRoleUpdateRequest;
 import com.codeit.weatherfit.domain.user.dto.response.UserDto;
 import com.codeit.weatherfit.domain.user.dto.response.UserDtoCursorResponse;
+import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.entity.UserRole;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.user.repository.UserSearchCondition;
 import com.codeit.weatherfit.global.exception.ErrorCode;
 import com.codeit.weatherfit.global.exception.WeatherFitException;
+import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final S3Service s3Service;
 
     @Override
     public UserDto create(UserCreateRequest request) {
@@ -135,6 +138,24 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
 
         user.updatePassword(passwordEncoder.encode(request.password()));
+    }
+
+    @Override
+    public UserSummary getUserSummary(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
+        return UserSummary.from(user, s3Service.getUrl(profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new WeatherFitException(ErrorCode.PROFILE_NOT_FOUND))
+                .getProfileImageKey())
+        );
+    }
+
+    @Override
+    public UserSummary getUserSummary(User user) {
+        return UserSummary.from(user, s3Service.getUrl(profileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new WeatherFitException(ErrorCode.PROFILE_NOT_FOUND))
+                .getProfileImageKey())
+        );
     }
 
     private UserRole parseRole(String roleEqual) {

@@ -23,4 +23,6 @@ public interface ClothesService {
             ClothesType type,
             int size
     );
+
+    void clearImageKey(UUID clothesId);
 }

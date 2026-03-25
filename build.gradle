@@ -79,8 +79,8 @@ dependencies {
     implementation platform('software.amazon.awssdk:bom:2.20.56')
     implementation 'software.amazon.awssdk:s3'
 
-    // Environment Variables (.env)
-    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+    // retry
+    implementation 'org.springframework.retry:spring-retry'
 }
 
 tasks.named('test') {

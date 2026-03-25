@@ -14,10 +14,11 @@ import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
 import com.codeit.weatherfit.domain.feed.service.FeedServiceImpl;
-import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
+import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.domain.user.service.UserService;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
@@ -73,6 +74,9 @@ class FeedServiceImplTest {
 
     @InjectMocks
     private FeedServiceImpl feedService;
+
+    @Mock
+    UserService userService;
 
     @Mock
     S3Service s3Service;
@@ -327,7 +331,8 @@ class FeedServiceImplTest {
                     .thenReturn(Optional.of(feed.getAuthor()));
             when(commentRepository.save(any()))
                     .thenReturn(Instancio.create(Comment.class));
-            stubGetUserSummary();
+            when(userService.getUserSummary(any(User.class)))
+                    .thenReturn(Instancio.create(UserSummary.class));
 
             // when
             feedService.createComment(new CommentCreateRequest(
@@ -379,7 +384,8 @@ class FeedServiceImplTest {
                     .set(all(Instant.class), Instant.now().minus(1, ChronoUnit.DAYS))
                     .create();
             when(commentRepository.getCommentsByCursor(request)).thenReturn(comments);
-            stubGetUserSummary();
+            when(userService.getUserSummary(any(User.class)))
+                    .thenReturn(Instancio.create(UserSummary.class));
 
             // when
             CommentGetResponse response = feedService.getCommentsByCursor(request);
@@ -405,7 +411,8 @@ class FeedServiceImplTest {
                     .set(all(Instant.class), Instant.now().minus(1, ChronoUnit.DAYS))
                     .create();
             when(commentRepository.getCommentsByCursor(request)).thenReturn(comments);
-            stubGetUserSummary();
+            when(userService.getUserSummary(any(User.class)))
+                    .thenReturn(Instancio.create(UserSummary.class));
 
             // when
             CommentGetResponse response = feedService.getCommentsByCursor(request);
@@ -432,11 +439,6 @@ class FeedServiceImplTest {
             assertThat(response.hasNext()).isFalse();
             assertThat(response.data()).isEmpty();
         }
-    }
-
-    private void stubGetUserSummary() {
-        when(profileRepository.findByUserId(any(UUID.class)))
-                .thenReturn(Optional.of(Instancio.create(Profile.class)));
     }
 
     private void stubToFeedDto() {
