@@ -13,18 +13,17 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Transactional
@@ -38,6 +37,8 @@ class NotificationServiceTest {
     NotificationRepository notificationRepository;
     @Autowired
     EntityManager em;
+    @Autowired
+    JdbcTemplate jdbcTemplate;
 
     @Test
     void send() {
@@ -84,8 +85,12 @@ class NotificationServiceTest {
 
         for (int i = 0; i < 40; i++) {
             Notification notification = Notification.create(user, "title" + i, "content", NotificationLevel.INFO);
-            notificationRepository.save(notification);
-            ReflectionTestUtils.setField(notification, "createdAt", Instant.now().minusSeconds(40 - i));
+            Notification save = notificationRepository.save(notification);
+            jdbcTemplate.update(
+                    "UPDATE notifications SET created_at = ? WHERE id = ?",
+                    Timestamp.from(Instant.now().minusSeconds(i * 60)),
+                    save.getId()
+            );
         }
 
         em.flush();
@@ -116,7 +121,7 @@ class NotificationServiceTest {
         User user = UserFixture.createUser();
         User saved = userRepository.save(user);
 
-        Notification notification = Notification.create(user, "title" , "content", NotificationLevel.INFO);
+        Notification notification = Notification.create(user, "title", "content", NotificationLevel.INFO);
         Notification save = notificationRepository.save(notification);
 
         em.flush();

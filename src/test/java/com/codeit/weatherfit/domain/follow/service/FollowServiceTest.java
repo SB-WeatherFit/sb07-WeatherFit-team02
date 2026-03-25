@@ -19,8 +19,11 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +43,8 @@ class FollowServiceTest {
     ProfileRepository profileRepository;
     @Autowired
     EntityManager em;
+    @Autowired
+    JdbcTemplate jdbcTemplate;
 
     @Test
     void follow() {
@@ -139,8 +144,12 @@ class FollowServiceTest {
             User savedI = userRepository.save(userI);
             Profile profileI = ProfileFixture.createProfile(savedI);
             profileRepository.save(profileI);
-           
-            followRepository.save(Follow.create(new FollowCreateParam(saved, savedI)));
+            Follow savedFollow = followRepository.save(Follow.create(new FollowCreateParam(saved, savedI)));
+            jdbcTemplate.update(
+                    "UPDATE follows SET created_at = ? WHERE id = ?",
+                    Timestamp.from(Instant.now().minusSeconds(i * 60)),
+                    savedFollow.getId()
+            );
         }
         
         FollowerSearchCondition condition = new FollowerSearchCondition(saved.getId(), null, null, 20, null);

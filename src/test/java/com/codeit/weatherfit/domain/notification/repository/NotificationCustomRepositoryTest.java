@@ -13,8 +13,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 
@@ -33,6 +34,9 @@ class NotificationCustomRepositoryTest {
     @Autowired
     EntityManager em;
 
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
     @Test
     void searchCursor() {
         User user = UserFixture.createUser();
@@ -40,8 +44,12 @@ class NotificationCustomRepositoryTest {
 
         for (int i = 0; i < 40; i++) {
             Notification notification = Notification.create(user, "title" + i, "content", NotificationLevel.INFO);
-            notificationRepository.save(notification);
-            ReflectionTestUtils.setField(notification, "createdAt", Instant.now().minusSeconds(40 - i));
+            Notification save = notificationRepository.save(notification);
+            jdbcTemplate.update(
+                    "UPDATE notifications SET created_at = ? WHERE id = ?",
+                    Timestamp.from(Instant.now().minusSeconds(i * 60)),
+                    save.getId()
+            );
         }
 
         em.flush();

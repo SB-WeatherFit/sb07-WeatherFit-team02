@@ -1,0 +1,21 @@
+open-administration-map:
+  api-key: thisistemporaryapikey
+
+kakao:
+  api-key: thisistemporaryapikey
+
+s3:
+  bucket: s3bucket
+  region: region
+  access-key: accesskey
+  secret-key: secretkey
+  presigned-url-expiration-time: 1000
+
+weatherfit:
+  storage:
+    type: s3
+
+spring:
+  batch:
+    job:
+      enabled: false
