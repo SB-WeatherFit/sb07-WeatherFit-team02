@@ -61,6 +61,6 @@ public class FollowCustomRepositoryImpl implements FollowCustomRepository {
         if (cursor == null) {
             return null;
         }
-        return follow.createdAt.gt(cursor).or(follow.createdAt.eq(cursor).and(follow.id.ne(idAfter)));
+        return follow.createdAt.gt(cursor).or(follow.createdAt.eq(cursor).and(follow.id.gt(idAfter)));
     }
 }

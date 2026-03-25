@@ -37,8 +37,7 @@ class NotificationServiceTest {
     NotificationRepository notificationRepository;
     @Autowired
     EntityManager em;
-    @Autowired
-    JdbcTemplate jdbcTemplate;
+
 
     @Test
     void send() {
@@ -85,12 +84,7 @@ class NotificationServiceTest {
 
         for (int i = 0; i < 40; i++) {
             Notification notification = Notification.create(user, "title" + i, "content", NotificationLevel.INFO);
-            Notification save = notificationRepository.save(notification);
-            jdbcTemplate.update(
-                    "UPDATE notifications SET created_at = ? WHERE id = ?",
-                    Timestamp.from(Instant.now().minusSeconds(i * 60)),
-                    save.getId()
-            );
+            notificationRepository.save(notification);
         }
 
         em.flush();
@@ -119,7 +113,7 @@ class NotificationServiceTest {
     @Test
     void delete() {
         User user = UserFixture.createUser();
-        User saved = userRepository.save(user);
+        userRepository.save(user);
 
         Notification notification = Notification.create(user, "title", "content", NotificationLevel.INFO);
         Notification save = notificationRepository.save(notification);
