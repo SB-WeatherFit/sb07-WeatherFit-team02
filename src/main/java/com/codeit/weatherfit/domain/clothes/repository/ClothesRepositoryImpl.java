@@ -37,28 +37,31 @@ public class ClothesRepositoryImpl implements ClothesRepositoryCustom {
     }
 
     @Override
-    public List<Clothes> search(UUID ownerId, Instant cursor, UUID idAfter, ClothesType type, int size) {
+    public List<Clothes> search(
+            UUID ownerId,
+            Instant cursor,
+            UUID idAfter,
+            ClothesType type,
+            int size
+    ) {
         QClothes clothes = QClothes.clothes;
 
         BooleanBuilder builder = new BooleanBuilder();
 
-        if (ownerId != null) {
-            builder.and(clothes.owner.id.eq(ownerId));
+        builder.and(clothes.owner.id.eq(ownerId));
+
+        if (type != null) {
+            builder.and(clothes.type.eq(type));
         }
 
-        if (cursor != null) {
-            BooleanBuilder cursorBuilder = new BooleanBuilder();
-
-            cursorBuilder.or(clothes.createdAt.lt(cursor));
-
-            if (idAfter != null) {
-                cursorBuilder.or(
-                        clothes.createdAt.eq(cursor)
-                                .and(clothes.id.lt(idAfter))
-                );
-            }
-
-            builder.and(cursorBuilder);
+        if (cursor != null && idAfter != null) {
+            builder.and(
+                    clothes.createdAt.lt(cursor)
+                            .or(
+                                    clothes.createdAt.eq(cursor)
+                                            .and(clothes.id.lt(idAfter))
+                            )
+            );
         }
 
         return queryFactory

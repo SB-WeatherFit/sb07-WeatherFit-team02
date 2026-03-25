@@ -51,7 +51,7 @@ public class ClothesController {
             @RequestParam UUID ownerId,
             @RequestParam(required = false) String cursor,
             @RequestParam(required = false) UUID idAfter,
-            @RequestParam(required = false)ClothesType type,
+            @RequestParam(name = "typeEqual", required = false) ClothesType type,
             @RequestParam(defaultValue = "20") int size) {
         return clothesService.search(ownerId, cursor, idAfter, type, size);
     }

@@ -154,26 +154,23 @@ public class ClothesServiceImpl implements ClothesService {
 
     @Override
     @Transactional(readOnly = true)
-    public ClothesDtoCursorResponse search(UUID ownerId, String cursor, UUID idAfter, ClothesType type, int size) {
+    public ClothesDtoCursorResponse search(
+            UUID ownerId,
+            String cursor,
+            UUID idAfter,
+            ClothesType type,
+            int size
+    ) {
 
-        Pageable pageable = PageRequest.of(0, size + 1);
+        Instant cursorTime = cursor != null ? Instant.parse(cursor) : null;
 
-        List<Clothes> clothesList;
-
-        if (cursor == null) {
-            clothesList = clothesRepository
-                    .findByOwner_IdOrderByCreatedAtDescIdDesc(ownerId, pageable);
-        } else {
-            Instant cursorTime = Instant.parse(cursor);
-
-            clothesList = clothesRepository.search(
-                    ownerId,
-                    cursorTime,
-                    idAfter,
-                    type,
-                    size
-            );
-        }
+        List<Clothes> clothesList = clothesRepository.search(
+                ownerId,
+                cursorTime,
+                idAfter,
+                type,
+                size
+        );
 
         boolean hasNext = clothesList.size() > size;
 
@@ -185,17 +182,21 @@ public class ClothesServiceImpl implements ClothesService {
                 .map(clothes -> {
                     List<ClothesAttribute> attributes =
                             clothesAttributeRepository.findByClothes(clothes);
-                    String url = clothes.getImageKey() == null? null : s3Service.getUrl(clothes.getImageKey());
+
+                    String url = clothes.getImageKey() == null
+                            ? null
+                            : s3Service.getUrl(clothes.getImageKey());
+
                     return ClothesDto.from(clothes, attributes, url);
                 })
                 .toList();
 
-        Clothes last = page.isEmpty() ? null : page.getLast();
+        Clothes last = page.isEmpty() ? null : page.get(page.size() - 1);
 
         String nextCursor = last != null ? last.getCreatedAt().toString() : null;
         UUID nextIdAfter = last != null ? last.getId() : null;
 
-        int totalCount = (int) clothesRepository.countByOwner_Id(ownerId);
+        int totalCount = (int) clothesRepository.count(ownerId, type);
 
         return new ClothesDtoCursorResponse(
                 data,
