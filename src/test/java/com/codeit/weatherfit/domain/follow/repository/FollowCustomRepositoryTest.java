@@ -14,8 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 
@@ -31,6 +32,8 @@ class FollowCustomRepositoryTest {
     UserRepository userRepository;
     @Autowired
     EntityManager em;
+    @Autowired
+    JdbcTemplate jdbcTemplate;
 
     @Test
     void searchFollowees() {
@@ -40,8 +43,12 @@ class FollowCustomRepositoryTest {
             User userI = UserFixture.createUser("test@gmail.com" + i);
             userRepository.save(userI);
             Follow follow = Follow.create(new FollowCreateParam(userI, user));
-            followRepository.save(follow);
-            ReflectionTestUtils.setField(follow, "createdAt", Instant.now().minusSeconds(i));
+            Follow save = followRepository.save(follow);
+            jdbcTemplate.update(
+                    "UPDATE follows SET created_at = ? WHERE id = ?",
+                    Timestamp.from(Instant.now().minusSeconds(i * 60)),
+                    save.getId()
+            );
         }
 
         em.flush();
@@ -79,8 +86,12 @@ class FollowCustomRepositoryTest {
             User userI = UserFixture.createUser("test@gmail.com" + i);
             userRepository.save(userI);
             Follow follow = Follow.create(new FollowCreateParam(user, userI));
-            followRepository.save(follow);
-            ReflectionTestUtils.setField(follow, "createdAt", Instant.now().minusSeconds(i));
+            Follow save = followRepository.save(follow);
+            jdbcTemplate.update(
+                    "UPDATE follows SET created_at = ? WHERE id = ?",
+                    Timestamp.from(Instant.now().minusSeconds(i * 60)),
+                    save.getId()
+            );
         }
 
         em.flush();
