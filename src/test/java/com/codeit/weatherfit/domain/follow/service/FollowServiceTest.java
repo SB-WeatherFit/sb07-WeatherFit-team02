@@ -26,6 +26,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -43,8 +44,6 @@ class FollowServiceTest {
     ProfileRepository profileRepository;
     @Autowired
     EntityManager em;
-    @Autowired
-    JdbcTemplate jdbcTemplate;
 
     @Test
     void follow() {
@@ -70,6 +69,8 @@ class FollowServiceTest {
         assertThat(followDto.followee().userId()).isEqualTo(saved.getId());
         assertThat(followDto.follower().name()).isEqualTo(saved2.getName());
         assertThat(followDto.followee().name()).isEqualTo(saved.getName());
+        assertThat(followDto.follower()).isNotNull();
+        assertThat(followDto.followee()).isNotNull();
     }
 
     @Test
@@ -144,12 +145,7 @@ class FollowServiceTest {
             User savedI = userRepository.save(userI);
             Profile profileI = ProfileFixture.createProfile(savedI);
             profileRepository.save(profileI);
-            Follow savedFollow = followRepository.save(Follow.create(new FollowCreateParam(saved, savedI)));
-            jdbcTemplate.update(
-                    "UPDATE follows SET created_at = ? WHERE id = ?",
-                    Timestamp.from(Instant.now().minusSeconds(i * 60)),
-                    savedFollow.getId()
-            );
+            followRepository.save(Follow.create(new FollowCreateParam(saved, savedI)));
         }
         
         FollowerSearchCondition condition = new FollowerSearchCondition(saved.getId(), null, null, 20, null);

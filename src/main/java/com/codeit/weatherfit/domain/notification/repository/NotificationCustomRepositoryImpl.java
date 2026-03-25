@@ -34,6 +34,6 @@ public class NotificationCustomRepositoryImpl implements NotificationCustomRepos
         if (cursor == null) {
             return null;
         }
-        return notification.createdAt.lt(cursor).or(notification.createdAt.eq(cursor).and(notification.id.ne(idAfter)));
+        return notification.createdAt.lt(cursor).or(notification.createdAt.eq(cursor).and(notification.id.gt(idAfter)));
     }
 }
