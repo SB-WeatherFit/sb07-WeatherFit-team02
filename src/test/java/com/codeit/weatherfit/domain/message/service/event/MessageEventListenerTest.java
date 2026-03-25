@@ -1,7 +1,7 @@
 package com.codeit.weatherfit.domain.message.service.event;
 
 import com.codeit.weatherfit.domain.message.dto.DmDto;
-import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
+import com.codeit.weatherfit.domain.message.dto.response.MessageUser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,8 +31,8 @@ class MessageEventListenerTest {
         DmDto dmDto = new DmDto(
                 UUID.randomUUID(),
                 Instant.now(),
-                new UserSummary(UUID.randomUUID(), "name", null),
-                new UserSummary(UUID.randomUUID(), "name", null),
+                new MessageUser(UUID.randomUUID(), "name", null),
+                new MessageUser(UUID.randomUUID(), "name", null),
                 "content");
         MessageCreatedEvent event = new MessageCreatedEvent(
                 "89a71b30-e73f-415f-b791-e8cb9694e5b6_96671e32-ff27-4215-bf96-d0575abc11f4",
@@ -53,8 +53,8 @@ class MessageEventListenerTest {
         DmDto dmDto = new DmDto(
                 UUID.randomUUID(),
                 Instant.now(),
-                new UserSummary(UUID.randomUUID(), "name", null),
-                new UserSummary(UUID.randomUUID(), "name", null),
+                new MessageUser(UUID.randomUUID(), "name", null),
+                new MessageUser(UUID.randomUUID(), "name", null),
                 "content");
         MessageCreatedEvent event = new MessageCreatedEvent(
                 "89a71b30-e73f-415f-b791-e8cb9694e5b6_96671e32-ff27-4215-bf96-d0575abc11f4",

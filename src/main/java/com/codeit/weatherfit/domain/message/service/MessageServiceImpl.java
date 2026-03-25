@@ -13,7 +13,6 @@ import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
-import com.codeit.weatherfit.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -33,7 +32,6 @@ public class MessageServiceImpl implements MessageService {
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final ProfileRepository profileRepository;
-    private final UserService userService;
 
     @Transactional
     public void send(MessageCreateRequest request) {
@@ -49,7 +47,9 @@ public class MessageServiceImpl implements MessageService {
 
         Message message = Message.create(sender, receiver, content);
         Message save = messageRepository.save(message);
-        DmDto messageDto = DmDto.from(save, userService.getUserSummary(sender), userService.getUserSummary(receiver));
+        Profile receiverProfile = profileRepository.findWithUser(save.getReceiver().getId()).orElseThrow();
+        Profile senderProfile = profileRepository.findWithUser(save.getSender().getId()).orElseThrow();
+        DmDto messageDto = DmDto.from(save, senderProfile, receiverProfile);
 
 
         String dmKey = generateDmKey(senderId, receiverId);
@@ -71,11 +71,8 @@ public class MessageServiceImpl implements MessageService {
         }
 
         List<MessageDto> data = messages.stream()
-                .map(message -> MessageDto.from(
-                        message,
-                        userService.getUserSummary(myId),
-                        userService.getUserSummary(request.userId()))
-                ).toList();
+                .map(message -> MessageDto.from(message, senderProfile, receiverProfile))
+                .toList();
 
         return new MessageCursorResponse(
                 data,
