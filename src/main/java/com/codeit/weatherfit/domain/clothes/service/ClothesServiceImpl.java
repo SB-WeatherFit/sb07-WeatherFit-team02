@@ -103,32 +103,36 @@ public class ClothesServiceImpl implements ClothesService {
                 .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
 
         clothes.update(
-                request.name(),
-                request.type(),
-                image != null? publishImageUploadEvent(clothes.getId(), image) : clothes.getImageKey()
+                request.name() != null ? request.name() : clothes.getName(),
+                request.type() != null ? request.type() : clothes.getType(),
+                image != null ? publishImageUploadEvent(clothes.getId(), image) : clothes.getImageKey()
         );
 
-        for (ClothesAttributeDefUpdateRequest attr : request.attributes()) {
-            UUID definitionId = UUID.fromString(attr.name());
-            ClothesAttributeType type = clothesAttributeTypeRepository.findById(definitionId)
-                    .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND));
-            if (attr.selectableValues() == null || attr.selectableValues().size() != 1) {
-                throw new InvalidClothesAttributeOptionException(ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION);
+        if (request.attributes() != null) {
+            for (ClothesAttributeDefUpdateRequest attr : request.attributes()) {
+                UUID definitionId = UUID.fromString(attr.name());
+
+                ClothesAttributeType type = clothesAttributeTypeRepository.findById(definitionId)
+                        .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND));
+
+                if (attr.selectableValues() == null || attr.selectableValues().size() != 1) {
+                    throw new InvalidClothesAttributeOptionException(ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION);
+                }
+
+                String value = attr.selectableValues().get(0);
+
+                SelectableValue selectableValue =
+                        selectableValueRepository
+                                .findByClothesAttributeTypeAndOption(type, value)
+                                .orElseThrow(() -> new InvalidClothesAttributeOptionException(ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION));
+
+                ClothesAttribute attribute =
+                        clothesAttributeRepository
+                                .findByClothesAndOption_ClothesAttributeType(clothes, type)
+                                .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND));
+
+                attribute.changeOption(selectableValue);
             }
-
-            String value = attr.selectableValues().get(0);
-
-            SelectableValue selectableValue =
-                    selectableValueRepository
-                            .findByClothesAttributeTypeAndOption(type, value)
-                            .orElseThrow(() -> new InvalidClothesAttributeOptionException(ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION));
-
-            ClothesAttribute attribute =
-                    clothesAttributeRepository
-                            .findByClothesAndOption_ClothesAttributeType(clothes, type)
-                            .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND));
-
-            attribute.changeOption(selectableValue);
         }
 
         List<ClothesAttribute> attributes =

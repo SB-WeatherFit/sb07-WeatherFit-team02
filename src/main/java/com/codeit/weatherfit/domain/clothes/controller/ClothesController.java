@@ -33,7 +33,7 @@ public class ClothesController {
     @PatchMapping(path = "/{clothesId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ClothesDto> update(
             @PathVariable UUID clothesId,
-            @RequestBody @Valid ClothesUpdateRequest request,
+            @RequestPart("request") @Valid ClothesUpdateRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image
     ) {
         ClothesDto response = clothesService.update(clothesId, request, image);
