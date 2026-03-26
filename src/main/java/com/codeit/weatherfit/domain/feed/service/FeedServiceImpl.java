@@ -140,10 +140,9 @@ public class FeedServiceImpl implements FeedService {
     }
 
     @Override
+    @Transactional
     public void like(UUID id, WeatherFitUserDetails userDetails) {
         Feed feed = getFeedOrThrow(id);
-        if (!feed.getAuthor().getId().equals(userDetails.getUserId()))
-            throw new RuntimeException("올바르지 않은 접근입니다."); // TODO: 나중에 커스텀 에러
         User likeUser = getUserOrThrow(userDetails.getUserId());
         if (feedLikeRepository.existsByFeedAndUser(feed, likeUser))
             throw new FeedLikeAlreadyExistException(feed, likeUser);
@@ -151,6 +150,7 @@ public class FeedServiceImpl implements FeedService {
     }
 
     @Override
+    @Transactional
     public void unlike(UUID id, WeatherFitUserDetails userDetails) {
         Feed feed = getFeedOrThrow(id);
         if (!feed.getAuthor().getId().equals(userDetails.getUserId()))

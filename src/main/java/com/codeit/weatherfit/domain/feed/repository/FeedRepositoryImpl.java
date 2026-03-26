@@ -34,7 +34,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .join(feed.author, user)
                 .join(feed.weather, weather)
                 .where(
-                        cursorCondition(request.cursor(), request.idAfter()),
+                        cursorCondition(request.cursor(), request.idAfter(), request.sortDirection()),
                         keywordLike(request.keywordLike()),
                         skyStatusEq(request.skyStatusEqual()),
                         precipitationTypeEq(request.precipitationTypeEqual()),
@@ -44,40 +44,28 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .fetch();
     }
 
-    /**
-     *
-     * @param sortBy
-     * @param sortDirection
-     * @return
-     *
-     * createdAt으로만 정렬하지 말고 아이디로도 정렬해라
-     */
-    private OrderSpecifier<?> createOrderSpecifier(SortBy sortBy, SortDirection sortDirection) {
-        Order order = sortDirection == null || sortDirection == SortDirection.ASCENDING ?
-                Order.ASC : Order.DESC;
-
+    private OrderSpecifier<?>[] createOrderSpecifier(SortBy sortBy, SortDirection sortDirection) {
+        Order order = sortDirection == null || sortDirection == SortDirection.ASCENDING
+                ? Order.ASC : Order.DESC;
         return switch (sortBy) {
-            case createdAt -> new OrderSpecifier<>(order, feed.createdAt);
-            case likeCount -> new OrderSpecifier<>(order,
-                    JPAExpressions.select(feedLike.count())
-                            .from(feedLike)
-                            .where(feedLike.feed.eq(feed)));
+            case createdAt -> new OrderSpecifier<?>[]{
+                    new OrderSpecifier<>(order, feed.createdAt),
+                    new OrderSpecifier<>(order, feed.id)
+            };
+            case likeCount -> new OrderSpecifier<?>[]{
+                    new OrderSpecifier<>(order, JPAExpressions.select(feedLike.count())
+                            .from(feedLike).where(feedLike.feed.eq(feed))),
+                    new OrderSpecifier<>(order, feed.id)
+            };
         };
     }
 
-    /**
-     *
-     * @param cursor
-     * @param idAfter
-     * @return
-     * 마지막에 들어오는 쿼리로 해서 next 커서로 넘어가는게 20인데
-     * 그 다음 쿼리가 실행될 때 where절이 createdAt을 50개 다 같으면
-     * id에 대한 정렬이 없으면 문제가 발생함
-     * 오름차순으로 정렬해서 lt가 아니라 gt를 써야한다
-     */
-    private BooleanExpression cursorCondition(Instant cursor, UUID idAfter) {
-        if (cursor == null || idAfter == null)
-            return null;
+    private BooleanExpression cursorCondition(Instant cursor, UUID idAfter, SortDirection direction) {
+        if (cursor == null || idAfter == null) return null;
+        if (direction == SortDirection.ASCENDING) {
+            return feed.createdAt.gt(cursor)
+                    .or(feed.createdAt.eq(cursor).and(feed.id.gt(idAfter)));
+        }
         return feed.createdAt.lt(cursor)
                 .or(feed.createdAt.eq(cursor).and(feed.id.lt(idAfter)));
     }
