@@ -25,4 +25,6 @@ public interface ClothesService {
     );
 
     void clearImageKey(UUID clothesId);
+
+    ClothesDto extractionFromUrl(String url, UUID ownerId);
 }

@@ -23,6 +23,8 @@ import com.codeit.weatherfit.global.s3.event.S3ClothesPutEvent;
 import com.codeit.weatherfit.global.s3.exception.S3UploadException;
 import com.codeit.weatherfit.global.s3.util.S3KeyGenerator;
 import lombok.RequiredArgsConstructor;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -228,5 +230,39 @@ public class ClothesServiceImpl implements ClothesService {
             }
         }
         return key;
+    }
+
+    @Override
+    public ClothesDto extractionFromUrl(String url, UUID ownerId) {
+
+        try {
+            Document doc = Jsoup.connect(url)
+                    .userAgent("Mozilla/5.0")
+                    .header("Accept-Language", "ko-KR,ko;q=0.9")
+                    .header("Referer", "https://www.google.com")
+                    .timeout(5000)
+                    .get();
+
+            String name = doc.select("meta[property=og:title]").attr("content");
+            if (name.isEmpty()) {
+                name = doc.title();
+            }
+
+            String imageUrl = doc.select("meta[property=og:image]").attr("content");
+
+            User owner = userRepository.findById(ownerId)
+                    .orElseThrow(() -> new RuntimeException("유저 없음"));
+
+            Clothes temp = Clothes.create(
+                    owner,
+                    name,
+                    null
+            );
+
+            return ClothesDto.from(temp, List.of(), imageUrl);
+
+        } catch (IOException e) {
+            throw new RuntimeException("URL 파싱 실패");
+        }
     }
 }
