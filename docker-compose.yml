@@ -13,9 +13,12 @@ services:
 
   app-instance-1:
     build: .
+    env_file:
+      - .env
     container_name: weatherfit-app-instance-1
     environment:
       - SERVER_PORT=8080
+
     ports:
       - "8081:8080"
     networks:
@@ -25,9 +28,12 @@ services:
 
   app-instance-2:
     build: .
+    env_file:
+      - .env
     container_name: weatherfit-app-instance-2
     environment:
       - SERVER_PORT=8080
+
     ports:
       - "8082:8080"
     networks:
@@ -76,7 +82,7 @@ services:
      POSTGRES_DB: ${SPRING_DATASOURCE_DB}
 
    volumes:
-     - mission-postgres-data:/var/lib/postgresql/data
+     - postgres-data:/var/lib/postgresql/data
    command: >
      -c shared_buffers=128MB 
      -c max_connections=50
@@ -86,7 +92,7 @@ services:
      timeout: 5s # 5초 안에 응답 없으면 unhealthy
      retries: 5 # 5번 실해하면 unhealthy 상태로 판정
    networks:
-     - mission-network
+     - weatherfit-net
 
 networks:
   weatherfit-net:
@@ -94,3 +100,4 @@ networks:
 volumes:
   nginx-cache:
   redis-data:
+  postgres-data:
