@@ -13,6 +13,7 @@ import com.codeit.weatherfit.domain.feed.entity.Comment;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import com.codeit.weatherfit.domain.feed.entity.FeedLike;
+import com.codeit.weatherfit.domain.feed.exception.FeedBadRequestException;
 import com.codeit.weatherfit.domain.feed.exception.FeedLikeAlreadyExistException;
 import com.codeit.weatherfit.domain.feed.exception.FeedLikeNotExistException;
 import com.codeit.weatherfit.domain.feed.exception.FeedNotExistException;
@@ -20,6 +21,11 @@ import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
+import com.codeit.weatherfit.domain.follow.entity.Follow;
+import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
+import com.codeit.weatherfit.domain.notification.event.feed.FeedCommentedEvent;
+import com.codeit.weatherfit.domain.notification.event.feed.FeedLikedEvent;
+import com.codeit.weatherfit.domain.notification.event.feed.NewFeedFromFollowingsEvent;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.user.service.UserService;
@@ -29,6 +35,7 @@ import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
 import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +45,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class FeedServiceImpl implements FeedService {
 
     private final UserRepository userRepository;
@@ -49,10 +57,17 @@ public class FeedServiceImpl implements FeedService {
     private final ClothesRepository clothesRepository;
     private final S3Service s3Service;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
+    private final FollowRepository followRepository;
 
     @Override
     @Transactional
-    public FeedDto create(FeedCreateRequest request) {
+    public FeedDto create(FeedCreateRequest request, WeatherFitUserDetails userDetails) {
+        log.info("피드 생성 요청: userId={}, weatherId={}, clothesCount={}", request.userId(), request.weatherId(), request.clothesIds().size());
+        if (!request.userId().equals(userDetails.getUserId())) {
+            log.warn("피드 생성 권한 불일치: requestUserId={}, loginUserId={}", request.userId(), userDetails.getUserId());
+            throw new RuntimeException("Bad request"); // 추후 인증 에러로 수정
+        }
         User author = getUserOrThrow(request.userId());
         Weather weather = getWeatherOrThrow(request.weatherId());
         List<Clothes> clothes = getClothesOrThrow(request.clothesIds());
@@ -61,26 +76,48 @@ public class FeedServiceImpl implements FeedService {
         Feed saved = feedRepository.save(feed);
         List<FeedClothes> coords = clothes.stream()
                 .map(c -> {
-                    String url = c.getImageKey() == null? null : s3Service.getUrl(c.getImageKey());
+                    String url = c.getImageKey() == null ? null : s3Service.getUrl(c.getImageKey());
                     return FeedClothes.create(saved, c.getName(), url);
                 })
                 .toList();
         feedClothesRepository.saveAll(coords);
-        return toFeedDto(feed);
+
+        publishNotiToFollowers(feed);
+
+        log.info("피드 생성 완료: feedId={}", saved.getId());
+        return toFeedDto(feed, author);
+    }
+
+    private void publishNotiToFollowers(Feed feed) {
+        List<Follow> follows = followRepository.findAllByFollowee(feed.getAuthor());
+        log.info("팔로워 알림 발행: feedId={}, followerCount={}", feed.getId(), follows.size());
+        String followeeName = feed.getAuthor().getName();
+        String feedContent = feed.getContent();
+        follows.stream().map(Follow::getFollower).forEach(follower -> {
+            log.debug("팔로워 알림 이벤트 발행: followerId={}, feedId={}", follower.getId(), feed.getId());
+            eventPublisher.publishEvent(new NewFeedFromFollowingsEvent(
+                    follower.getId(),
+                    followeeName,
+                    feedContent
+            ));
+        });
     }
 
     @Override
-    public FeedGetResponse getFeedsByCursor(FeedGetRequest request) {
+    public FeedGetResponse getFeedsByCursor(FeedGetRequest request, WeatherFitUserDetails userDetails) {
+        log.info("피드 커서 조회: sortBy={}, sortDirection={}, limit={}", request.sortBy(), request.sortDirection(), request.limit());
         List<Feed> feeds = feedRepository.findWithCursor(request);
+        User loginUser = getUserOrThrow(userDetails.getUserId());
         Feed lastFeed = null;
         if (feeds.size() == request.limit() + 1) {
             feeds = feeds.subList(0, request.limit());
             lastFeed = feeds.getLast();
         }
         boolean hasNext = lastFeed != null;
+        log.info("피드 커서 조회 완료: count={}, hasNext={}", feeds.size(), hasNext);
         return new FeedGetResponse(
                 feeds.stream()
-                        .map(this::toFeedDto)
+                        .map(f -> this.toFeedDto(f, loginUser))
                         .toList(),
                 hasNext ? lastFeed.getCreatedAt() : null,
                 hasNext ? lastFeed.getId() : null,
@@ -93,26 +130,53 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
-    public FeedDto update(UUID id, FeedUpdateRequest request) {
+    public FeedDto update(UUID id, FeedUpdateRequest request, WeatherFitUserDetails userDetails) {
+        log.info("피드 수정 요청: feedId={}", id);
         Feed feed = getFeedOrThrow(id);
+        if (!userDetails.getUserId().equals(feed.getAuthor().getId())) {
+            log.warn("피드 수정 권한 불일치: feedId={}, authorId={}, loginUserId={}", id, feed.getAuthor().getId(), userDetails.getUserId());
+            throw new RuntimeException("Bad Request"); // 추후 인증 오류로 변경
+        }
         feed.update(request.content());
-        return toFeedDto(feed);
+        log.info("피드 수정 완료: feedId={}", id);
+        return toFeedDto(feed, feed.getAuthor());
     }
 
     @Override
     @Transactional
-    public CommentDto createComment(CommentCreateRequest request) {
+    public CommentDto createComment(UUID id, CommentCreateRequest request, WeatherFitUserDetails userDetails) {
+        log.info("댓글 생성 요청: authorId={}, feedId={}", request.authorId(), request.feedId());
+        if (!id.equals(request.feedId())) {
+            log.warn("댓글 생성 feedId 불일치: pathId={}, requestFeedId={}", id, request.feedId());
+            throw new FeedBadRequestException();
+        }
+        if (!userDetails.getUserId().equals(request.authorId())) {
+            log.warn("댓글 생성 권한 불일치: requestAuthorId={}, loginUserId={}", request.authorId(), userDetails.getUserId());
+            throw new RuntimeException("Bad Request"); // 추후 인증 오류로 변경
+        }
+        User commenter = getUserOrThrow(request.authorId());
+        Feed feed = getFeedOrThrow(request.feedId());
         Comment comment = Comment.create(
-                getUserOrThrow(request.authorId()),
-                getFeedOrThrow(request.feedId()),
+                commenter,
+                feed,
                 request.content()
         );
         Comment saved = commentRepository.save(comment);
+        log.info("댓글 생성 완료: commentId={}", saved.getId());
+
+        log.info("댓글 알림 이벤트 발행: feedAuthorId={}, commenterId={}", feed.getAuthor().getId(), commenter.getId());
+        eventPublisher.publishEvent(new FeedCommentedEvent(
+                feed.getAuthor().getId(),
+                commenter.getName(),
+                comment.getContent()
+        ));
+
         return CommentDto.from(saved, userService.getUserSummary(saved.getAuthor()));
     }
 
     @Override
-    public CommentGetResponse getCommentsByCursor(CommentGetRequest request) {
+    public CommentGetResponse getCommentsByCursor(CommentGetRequest request, WeatherFitUserDetails userDetails) {
+        log.info("댓글 커서 조회: feedId={}, limit={}", request.feedId(), request.limit());
         List<Comment> comments = commentRepository.getCommentsByCursor(request);
 
         Comment last = null;
@@ -121,12 +185,13 @@ public class FeedServiceImpl implements FeedService {
             last = comments.getLast();
         }
         boolean hasNext = last != null;
+        log.info("댓글 커서 조회 완료: count={}, hasNext={}", comments.size(), hasNext);
         return new CommentGetResponse(
                 comments.stream()
                         .map(c -> CommentDto.from(c, userService.getUserSummary(c.getAuthor())))
                         .toList(),
-                hasNext? last.getCreatedAt() : null,
-                hasNext? last.getId() : null,
+                hasNext ? last.getCreatedAt() : null,
+                hasNext ? last.getId() : null,
                 hasNext,
                 comments.size()
         );
@@ -134,68 +199,94 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
-    public void delete(UUID id) {
+    public void delete(UUID id, WeatherFitUserDetails userDetails) {
+        log.info("피드 삭제 요청: feedId={}", id);
         Feed feed = getFeedOrThrow(id);
+        if (!userDetails.getUserId().equals(feed.getAuthor().getId())) {
+            log.warn("피드 삭제 권한 불일치: feedId={}, authorId={}, loginUserId={}", id, feed.getAuthor().getId(), userDetails.getUserId());
+            throw new RuntimeException("Bad Request"); // 추후 인증 오류로 수정
+        }
         feedRepository.delete(feed);
+        log.info("피드 삭제 완료: feedId={}", id);
     }
 
     @Override
     @Transactional
     public void like(UUID id, WeatherFitUserDetails userDetails) {
+        log.info("피드 좋아요 요청: feedId={}, userId={}", id, userDetails.getUserId());
         Feed feed = getFeedOrThrow(id);
         User likeUser = getUserOrThrow(userDetails.getUserId());
         if (feedLikeRepository.existsByFeedAndUser(feed, likeUser))
             throw new FeedLikeAlreadyExistException(feed, likeUser);
         feedLikeRepository.save(FeedLike.create(feed, likeUser));
+
+        log.info("좋아요 알림 이벤트 발행: feedAuthorId={}, likeUserId={}", feed.getAuthor().getId(), likeUser.getId());
+        eventPublisher.publishEvent(new FeedLikedEvent(
+                feed.getAuthor().getId(),
+                likeUser.getName(),
+                feed.getContent()
+        ));
+
+        log.info("피드 좋아요 완료: feedId={}, userId={}", id, userDetails.getUserId());
     }
 
     @Override
     @Transactional
     public void unlike(UUID id, WeatherFitUserDetails userDetails) {
+        log.info("피드 좋아요 취소 요청: feedId={}, userId={}", id, userDetails.getUserId());
         Feed feed = getFeedOrThrow(id);
-        if (!feed.getAuthor().getId().equals(userDetails.getUserId()))
-            throw new RuntimeException("올바르지 않은 접근입니다."); // TODO: 나중에 커스텀 에러
         User likeUser = getUserOrThrow(userDetails.getUserId());
         if (!feedLikeRepository.existsByFeedAndUser(feed, likeUser))
             throw new FeedLikeNotExistException(feed, likeUser);
         feedLikeRepository.deleteByFeedAndUser(feed, likeUser);
+        log.info("피드 좋아요 취소 완료: feedId={}, userId={}", id, userDetails.getUserId());
     }
 
-    private FeedDto toFeedDto(Feed feed) {
-        feedClothesRepository.findAllByFeed(feed);
+    private FeedDto toFeedDto(Feed feed, User loginUser) {
         return FeedDto.from(
                 feed,
                 feedClothesRepository.findAllByFeed(feed).stream()
                         .map(fc -> {
-                            String url = fc.getImageKey() == null? null : s3Service.getUrl(fc.getImageKey());
+                            String url = fc.getImageKey() == null ? null : s3Service.getUrl(fc.getImageKey());
                             return FeedClothesDto.from(fc, url);
                         }).toList(),
                 feedLikeRepository.countByFeed(feed),
                 commentRepository.countByFeed(feed),
-                feedLikeRepository.existsByFeedAndUser(feed, feed.getAuthor()) // TODO 인증 구현 후 현재 로그인 유저로 변경
+                feedLikeRepository.existsByFeedAndUser(feed, loginUser)
         );
     }
 
     private Feed getFeedOrThrow(UUID id) {
         return feedRepository.findById(id)
-                .orElseThrow(() -> new FeedNotExistException(id));
+                .orElseThrow(() -> {
+                    log.warn("피드 조회 실패: feedId={}", id);
+                    return new FeedNotExistException(id);
+                });
     }
 
     private List<Clothes> getClothesOrThrow(List<UUID> clothesIds) {
         List<Clothes> clothes = clothesRepository.findAllById(clothesIds);
-        if (clothes.size() != clothesIds.size())
+        if (clothes.size() != clothesIds.size()) {
+            log.warn("존재하지 않는 옷 포함: 요청={}, 조회={}", clothesIds.size(), clothes.size());
             throw new IllegalArgumentException("존재하지 않는 옷이 포함되어 있습니다.");
+        }
         return clothes;
     }
 
     private Weather getWeatherOrThrow(UUID weatherId) {
         return weatherRepository.findById(weatherId)
-                .orElseThrow(() -> new WeatherNotFoundException(weatherId));
+                .orElseThrow(() -> {
+                    log.warn("날씨 조회 실패: weatherId={}", weatherId);
+                    return new WeatherNotFoundException(weatherId);
+                });
     }
 
     private User getUserOrThrow(UUID userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 id입니다.")); // TODO 커스텀 에러로 수정
+                .orElseThrow(() -> {
+                    log.warn("유저 조회 실패: userId={}", userId);
+                    return new IllegalArgumentException("존재하지 않는 id입니다.");
+                }); // TODO 커스텀 에러로 수정
     }
 
 }
