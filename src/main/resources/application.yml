@@ -25,4 +25,25 @@ weatherfit:
   storage:
     type: ${STORAGE_TYPE:s3}
 
+info:
+  app:
+    name: weatherfit
+    description: weather and clothes recommendation application
+    version: 1.0.0
+    encoding: UTF-8
+    java-version: 21
+
+    company:
+      name: SB07-team02
+      email: genius5375@gmail.com
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+  info:
+    env:
+      enabled: true
 
