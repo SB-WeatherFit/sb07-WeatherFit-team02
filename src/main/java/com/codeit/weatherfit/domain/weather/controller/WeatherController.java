@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 
 @RestController
@@ -71,6 +73,11 @@ public class WeatherController {
     public ResponseEntity<List<WeatherResponse>> testUpdateScheduler(){
         List<WeatherResponse> response = weatherScheduler.updateWeather();
         return ResponseEntity.ok().body(response);
+    }
+
+    @GetMapping("/test/who")
+    public String who() throws UnknownHostException {
+        return InetAddress.getLocalHost().getHostName();
     }
 
 //    @GetMapping("/test/scheduler/delete")
