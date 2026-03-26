@@ -139,6 +139,7 @@ class AuthServiceImplTest {
             UUID userId = UUID.randomUUID();
             User user = User.create("test3@test.com", "test3", UserRole.USER, "encoded-password");
 
+            when(jwtTokenProvider.isValidRefreshToken("refresh-token")).thenReturn(true);
             when(inMemoryAuthTokenStore.findUserIdByRefreshToken("refresh-token")).thenReturn(userId);
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             when(jwtTokenProvider.generateAccessToken(user)).thenReturn("new-access-token");
@@ -165,7 +166,7 @@ class AuthServiceImplTest {
         @Test
         @DisplayName("저장된 리프레시 토큰이 아니면 실패한다")
         void refreshFailWhenTokenInvalid() {
-            when(inMemoryAuthTokenStore.findUserIdByRefreshToken("refresh-token")).thenReturn(null);
+            when(jwtTokenProvider.isValidRefreshToken("refresh-token")).thenReturn(false);
 
             assertThatThrownBy(() -> authService.refresh("refresh-token"))
                     .isInstanceOf(WeatherFitException.class)
