@@ -16,13 +16,10 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.List;
 
 import static com.codeit.weatherfit.domain.message.entity.UserFixture.createUser;
@@ -50,9 +47,6 @@ class MessageServiceTest {
 
     @Autowired
     EntityManager em;
-
-    @Autowired
-    JdbcTemplate jdbcTemplate;
 
     @Test
     void send() {
@@ -92,12 +86,7 @@ class MessageServiceTest {
             Message message;
             if (i % 2 == 0) message = Message.create(user, user2, "content" + i);
             else message = Message.create(user2, user, "content" + i);
-            Message save = messageRepository.save(message);
-            jdbcTemplate.update(
-                    "UPDATE messages SET created_at = ? WHERE id = ?",
-                    Timestamp.from(Instant.now().minusSeconds(i * 60)),
-                    save.getId()
-            );
+            messageRepository.save(message);
         }
 
         em.flush();

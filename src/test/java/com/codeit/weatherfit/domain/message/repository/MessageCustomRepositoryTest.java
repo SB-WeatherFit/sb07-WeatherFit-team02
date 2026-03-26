@@ -11,10 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.List;
 
 import static com.codeit.weatherfit.domain.message.entity.UserFixture.createUser;
@@ -30,8 +27,6 @@ class MessageCustomRepositoryTest {
     UserRepository userRepository;
     @Autowired
     EntityManager em;
-    @Autowired
-    JdbcTemplate jdbcTemplate;
 
     @Test
     void searchMessages() {
@@ -41,15 +36,8 @@ class MessageCustomRepositoryTest {
         userRepository.save(user2);
 
         for (int i = 0; i < 50; i++) {
-            Message message;
-            if (i % 2 == 0) message = Message.create(user, user2, "content" + i);
-            else message = Message.create(user2, user, "content" + i);
-            Message save = messageRepository.save(message);
-            jdbcTemplate.update(
-                    "UPDATE messages SET created_at = ? WHERE id = ?",
-                    Timestamp.from(Instant.now().minusSeconds(i * 60)),
-                    save.getId()
-            );
+            Message message = Message.create(user2, user, "content" + i);
+            messageRepository.save(message);
         }
 
         em.flush();
@@ -65,6 +53,10 @@ class MessageCustomRepositoryTest {
         assertThat(messages).allSatisfy(m ->
                 assertThat(m.getSender().getId()).isEqualTo(user2.getId())
         );
-        assertThat(messages.getFirst().getCreatedAt()).isAfter(messages.getLast().getCreatedAt());
+
+        MessageGetRequest request2 = new MessageGetRequest(user.getId(), messages.get(19).getCreatedAt(), messages.get(19).getId(), 20);
+        List<Message> messages2 = messageRepository.searchMessages(request2, user2.getId());
+
+        assertThat(messages2.size()).isEqualTo(21);
     }
 }
