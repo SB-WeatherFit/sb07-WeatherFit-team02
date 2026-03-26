@@ -13,6 +13,7 @@ import com.codeit.weatherfit.domain.feed.entity.Comment;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import com.codeit.weatherfit.domain.feed.entity.FeedLike;
+import com.codeit.weatherfit.domain.feed.exception.FeedBadRequestException;
 import com.codeit.weatherfit.domain.feed.exception.FeedLikeAlreadyExistException;
 import com.codeit.weatherfit.domain.feed.exception.FeedLikeNotExistException;
 import com.codeit.weatherfit.domain.feed.exception.FeedNotExistException;
