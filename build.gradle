@@ -74,13 +74,6 @@ dependencies {
     
     //websocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
-
-    // AWS SDK for Java v2
-    implementation platform('software.amazon.awssdk:bom:2.20.56')
-    implementation 'software.amazon.awssdk:s3'
-
-    // Environment Variables (.env)
-    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 }
 
 tasks.named('test') {

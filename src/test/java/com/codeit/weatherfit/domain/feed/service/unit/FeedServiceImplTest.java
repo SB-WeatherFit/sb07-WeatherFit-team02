@@ -21,7 +21,6 @@ import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
-import com.codeit.weatherfit.global.s3.S3Service;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -73,9 +72,6 @@ class FeedServiceImplTest {
 
     @InjectMocks
     private FeedServiceImpl feedService;
-
-    @Mock
-    S3Service s3Service;
 
     @Nested
     @DisplayName("생성")
@@ -448,8 +444,6 @@ class FeedServiceImplTest {
                 .thenReturn(0L);
         when(feedLikeRepository.existsByFeedAndUser(any(Feed.class), any(User.class)))
                 .thenReturn(false);
-        when(s3Service.getUrl(any()))
-                .thenReturn("http://localhost:8080/image/1234567890");
     }
 
 }

@@ -1,4 +1,4 @@
-package com.codeit.weatherfit.global.s3;
+package com.codeit.weatherfit.global.util.s3;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,8 +15,9 @@ public class S3Controller {
     private final LogS3Service logS3Service;
 
     @PostMapping
-    public ResponseEntity<Void> addS3(){
+    public ResponseEntity.BodyBuilder addS3(){
+
         logS3Service.uploadLogFile();
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED);
     }
 }

@@ -6,7 +6,7 @@ public record FeedClothesDto(
         String name,
         String imageUrl
 ) {
-    public static FeedClothesDto from(FeedClothes feedClothes, String imageUrl) {
-        return new FeedClothesDto(feedClothes.getName(), imageUrl);
+    public static FeedClothesDto from(FeedClothes feedClothes) {
+        return new FeedClothesDto(feedClothes.getName(), feedClothes.getImageUrl());
     }
 }

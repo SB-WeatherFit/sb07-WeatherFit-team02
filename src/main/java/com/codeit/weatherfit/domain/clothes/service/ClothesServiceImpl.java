@@ -18,7 +18,6 @@ import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepository
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.global.exception.ErrorCode;
-import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -38,7 +37,6 @@ public class ClothesServiceImpl implements ClothesService {
     private final SelectableValueRepository selectableValueRepository;
     private final ClothesAttributeTypeRepository clothesAttributeTypeRepository;
     private final ClothesAttributeRepository clothesAttributeRepository;
-    private final S3Service s3Service;
 
     @Override
     @Transactional
@@ -46,18 +44,11 @@ public class ClothesServiceImpl implements ClothesService {
         User owner = userRepository.findById(request.ownerId())
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다.")); // 나중에 커스텀 예외 처리
 
-        String key = null;
-        if (!image.isEmpty()) {
-            key = s3Service.put(image);
-        }
-
         Clothes clothes = Clothes.create(
                 owner,
                 request.name(),
-                request.type(),
-                key
+                request.type()
         );
-
         clothesRepository.save(clothes);
 
         if (request.attributes() != null) {
@@ -90,26 +81,19 @@ public class ClothesServiceImpl implements ClothesService {
         // 조회용
         List<ClothesAttribute> attributes =
                 clothesAttributeRepository.findByClothes(clothes);
-        String url = clothes.getImageKey() == null? null : s3Service.getUrl(clothes.getImageKey());
 
-        return ClothesDto.from(clothes, attributes, url);
+        return ClothesDto.from(clothes, attributes);
     }
 
     @Override
     @Transactional
-    public ClothesDto update(UUID clothesId, ClothesUpdateRequest request, MultipartFile image) {
+    public ClothesDto update(UUID clothesId, ClothesUpdateRequest request) {
         Clothes clothes = clothesRepository.findById(clothesId)
                 .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
 
-        String key = null;
-        if(!image.isEmpty()) {
-            key = s3Service.put(image);
-        }
-
         clothes.update(
                 request.name(),
-                request.type(),
-                key
+                request.type()
         );
 
         for (ClothesAttributeDefUpdateRequest attr : request.attributes()) {
@@ -137,9 +121,8 @@ public class ClothesServiceImpl implements ClothesService {
 
         List<ClothesAttribute> attributes =
                 clothesAttributeRepository.findByClothes(clothes);
-        String url = clothes.getImageKey() == null? null : s3Service.getUrl(clothes.getImageKey());
 
-        return ClothesDto.from(clothes, attributes, s3Service.getUrl(url));
+        return ClothesDto.from(clothes, attributes);
     }
 
     @Override
@@ -185,8 +168,7 @@ public class ClothesServiceImpl implements ClothesService {
                 .map(clothes -> {
                     List<ClothesAttribute> attributes =
                             clothesAttributeRepository.findByClothes(clothes);
-                    String url = clothes.getImageKey() == null? null : s3Service.getUrl(clothes.getImageKey());
-                    return ClothesDto.from(clothes, attributes, url);
+                    return ClothesDto.from(clothes, attributes);
                 })
                 .toList();
 

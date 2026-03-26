@@ -46,9 +46,6 @@ public enum ErrorCode {
     WEATHER_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND,"날씨 정보를 불러오는데 실패했습니다","W-001"),
     WEATHER_NOT_FOUND(HttpStatus.NOT_FOUND,"날씨 정보를 DB에서 찾을 수 없습니다","W-002"),
 
-    // file,
-    FILE_UPLOAD_FAILURE(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다.", "FI-001"),
-
     // Clothes
     CLOTHES_NOT_FOUND(HttpStatus.NOT_FOUND, "옷을 찾을 수 없습니다.", "C-001"),
     CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND,"속성 정의를 찾을 수 없습니다.", "C-002"),

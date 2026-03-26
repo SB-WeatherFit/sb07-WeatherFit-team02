@@ -7,12 +7,13 @@ import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDtoCursorRespons
 import com.codeit.weatherfit.domain.clothes.entity.ClothesType;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface ClothesService {
     ClothesDto create(ClothesCreateRequest request, MultipartFile image);
 
-    ClothesDto update(UUID clothesId, ClothesUpdateRequest request, MultipartFile image);
+    ClothesDto update(UUID clothesId, ClothesUpdateRequest request);
 
     void delete(UUID clothesId);
 

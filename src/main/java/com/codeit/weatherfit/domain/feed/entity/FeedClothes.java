@@ -19,13 +19,13 @@ public class FeedClothes extends BaseEntity { // FeedCoordinate
     @Column(nullable = false)
     private String name;
 
-    private String imageKey;
+    private String imageUrl;
 
-    public static FeedClothes create(Feed feed, String name, String imageKey) {
+    public static FeedClothes create(Feed feed, String name, String imageUrl) {
         FeedClothes coordinate = new FeedClothes();
         coordinate.feed = feed;
         coordinate.name = name;
-        coordinate.imageKey = imageKey;
+        coordinate.imageUrl = imageUrl;
         return coordinate;
     }
 }
