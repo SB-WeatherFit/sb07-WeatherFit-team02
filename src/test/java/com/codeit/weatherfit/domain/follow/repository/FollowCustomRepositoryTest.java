@@ -14,9 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +30,7 @@ class FollowCustomRepositoryTest {
     @Autowired
     EntityManager em;
 
+
     @Test
     void searchFollowees() {
         User user = UserFixture.createUser();
@@ -40,8 +39,7 @@ class FollowCustomRepositoryTest {
             User userI = UserFixture.createUser("test@gmail.com" + i);
             userRepository.save(userI);
             Follow follow = Follow.create(new FollowCreateParam(userI, user));
-            followRepository.save(follow);
-            ReflectionTestUtils.setField(follow, "createdAt", Instant.now().minusSeconds(i));
+            Follow save = followRepository.save(follow);
         }
 
         em.flush();
@@ -56,16 +54,17 @@ class FollowCustomRepositoryTest {
         );
 
 
-        List<Follow> follows2 = followRepository.searchFollowees(new FolloweeSearchCondition(saved.getId(), follows.get(19).getCreatedAt(), null, 20, null));
+        List<Follow> follows2 = followRepository.searchFollowees(new FolloweeSearchCondition(saved.getId(), follows.get(19).getCreatedAt(), follows.get(19).getId(), 20, null));
 
         assertThat(follows2.size()).isEqualTo(21);
         assertThat(follows2).allSatisfy(f ->
                 assertThat(f.getFollower().getId()).isEqualTo(saved.getId())
         );
 
-        List<Follow> follows3 = followRepository.searchFollowees(new FolloweeSearchCondition(saved.getId(), follows2.get(19).getCreatedAt(), null, 20, null));
+        List<Follow> follows3 = followRepository.searchFollowees(new FolloweeSearchCondition(saved.getId(), follows2.get(19).getCreatedAt(), follows2.get(19).getId(), 20, null));
 
         assertThat(follows3.size()).isEqualTo(10);
+        System.out.println("follows3 = " + follows3.size());
         assertThat(follows3).allSatisfy(f ->
                 assertThat(f.getFollower().getId()).isEqualTo(saved.getId())
         );
@@ -79,8 +78,7 @@ class FollowCustomRepositoryTest {
             User userI = UserFixture.createUser("test@gmail.com" + i);
             userRepository.save(userI);
             Follow follow = Follow.create(new FollowCreateParam(user, userI));
-            followRepository.save(follow);
-            ReflectionTestUtils.setField(follow, "createdAt", Instant.now().minusSeconds(i));
+            Follow save = followRepository.save(follow);
         }
 
         em.flush();
@@ -94,14 +92,14 @@ class FollowCustomRepositoryTest {
         );
 
 
-        List<Follow> follows2 = followRepository.searchFollowers(new FollowerSearchCondition(saved.getId(), follows.get(19).getCreatedAt(), null, 20, null));
+        List<Follow> follows2 = followRepository.searchFollowers(new FollowerSearchCondition(saved.getId(), follows.get(19).getCreatedAt(), follows.get(19).getId(), 20, null));
 
         assertThat(follows2.size()).isEqualTo(21);
         assertThat(follows2).allSatisfy(f ->
                 assertThat(f.getFollowee().getId()).isEqualTo(saved.getId())
         );
 
-        List<Follow> follows3 = followRepository.searchFollowers(new FollowerSearchCondition(saved.getId(), follows2.get(19).getCreatedAt(), null, 20, null));
+        List<Follow> follows3 = followRepository.searchFollowers(new FollowerSearchCondition(saved.getId(), follows2.get(19).getCreatedAt(), follows2.get(19).getId(), 20, null));
 
         assertThat(follows3.size()).isEqualTo(10);
         assertThat(follows3).allSatisfy(f ->

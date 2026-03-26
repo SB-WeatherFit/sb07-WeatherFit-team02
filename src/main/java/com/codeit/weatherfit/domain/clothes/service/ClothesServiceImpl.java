@@ -18,13 +18,20 @@ import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepository
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.global.exception.ErrorCode;
+import com.codeit.weatherfit.global.s3.S3Service;
+import com.codeit.weatherfit.global.s3.event.S3ClothesPutEvent;
+import com.codeit.weatherfit.global.s3.exception.S3UploadException;
+import com.codeit.weatherfit.global.s3.util.S3KeyGenerator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -37,6 +44,8 @@ public class ClothesServiceImpl implements ClothesService {
     private final SelectableValueRepository selectableValueRepository;
     private final ClothesAttributeTypeRepository clothesAttributeTypeRepository;
     private final ClothesAttributeRepository clothesAttributeRepository;
+    private final S3Service s3Service;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -50,6 +59,7 @@ public class ClothesServiceImpl implements ClothesService {
                 request.type()
         );
         clothesRepository.save(clothes);
+        clothes.updateImageKey(publishImageUploadEvent(clothes.getId(), image));
 
         if (request.attributes() != null) {
             for (ClothesAttributeDefCreateRequest attr : request.attributes()) {
@@ -81,19 +91,21 @@ public class ClothesServiceImpl implements ClothesService {
         // 조회용
         List<ClothesAttribute> attributes =
                 clothesAttributeRepository.findByClothes(clothes);
+        String url = clothes.getImageKey() == null? null : s3Service.getUrl(clothes.getImageKey());
 
-        return ClothesDto.from(clothes, attributes);
+        return ClothesDto.from(clothes, attributes, url);
     }
 
     @Override
     @Transactional
-    public ClothesDto update(UUID clothesId, ClothesUpdateRequest request) {
+    public ClothesDto update(UUID clothesId, ClothesUpdateRequest request, MultipartFile image) {
         Clothes clothes = clothesRepository.findById(clothesId)
                 .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
 
         clothes.update(
                 request.name(),
-                request.type()
+                request.type(),
+                image != null? publishImageUploadEvent(clothes.getId(), image) : clothes.getImageKey()
         );
 
         for (ClothesAttributeDefUpdateRequest attr : request.attributes()) {
@@ -121,8 +133,9 @@ public class ClothesServiceImpl implements ClothesService {
 
         List<ClothesAttribute> attributes =
                 clothesAttributeRepository.findByClothes(clothes);
+        String url = clothes.getImageKey() == null? null : s3Service.getUrl(clothes.getImageKey());
 
-        return ClothesDto.from(clothes, attributes);
+        return ClothesDto.from(clothes, attributes, url);
     }
 
     @Override
@@ -168,7 +181,8 @@ public class ClothesServiceImpl implements ClothesService {
                 .map(clothes -> {
                     List<ClothesAttribute> attributes =
                             clothesAttributeRepository.findByClothes(clothes);
-                    return ClothesDto.from(clothes, attributes);
+                    String url = clothes.getImageKey() == null? null : s3Service.getUrl(clothes.getImageKey());
+                    return ClothesDto.from(clothes, attributes, url);
                 })
                 .toList();
 
@@ -188,5 +202,26 @@ public class ClothesServiceImpl implements ClothesService {
                 "createdAt",
                 "DESCENDING"
         );
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void clearImageKey(UUID clothesId) {
+        Clothes clothes = clothesRepository.findById(clothesId)
+                .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
+        clothes.updateImageKey(null);
+    }
+
+    private String publishImageUploadEvent(UUID id, MultipartFile image) {
+        String key = null;
+        if (image != null && !image.isEmpty()) {
+            try {
+                key = S3KeyGenerator.generateKey(image.getOriginalFilename());
+                eventPublisher.publishEvent(new S3ClothesPutEvent(id, key, image.getContentType(), image.getBytes()));
+            } catch (IOException e) {
+                throw new S3UploadException(image.getOriginalFilename());
+            }
+        }
+        return key;
     }
 }

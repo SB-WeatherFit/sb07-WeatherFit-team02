@@ -19,10 +19,14 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -65,6 +69,8 @@ class FollowServiceTest {
         assertThat(followDto.followee().userId()).isEqualTo(saved.getId());
         assertThat(followDto.follower().name()).isEqualTo(saved2.getName());
         assertThat(followDto.followee().name()).isEqualTo(saved.getName());
+        assertThat(followDto.follower()).isNotNull();
+        assertThat(followDto.followee()).isNotNull();
     }
 
     @Test
@@ -139,7 +145,6 @@ class FollowServiceTest {
             User savedI = userRepository.save(userI);
             Profile profileI = ProfileFixture.createProfile(savedI);
             profileRepository.save(profileI);
-           
             followRepository.save(Follow.create(new FollowCreateParam(saved, savedI)));
         }
         

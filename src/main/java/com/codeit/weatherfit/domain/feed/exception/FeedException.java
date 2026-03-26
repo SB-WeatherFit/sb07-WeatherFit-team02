@@ -7,4 +7,9 @@ public class FeedException extends WeatherFitException {
     public FeedException(ErrorCode errorCode) {
         super(errorCode);
     }
+
+    public FeedException(ErrorCode errorCode, String message) {
+        super(errorCode);
+        this.getDetails().put("message", message);
+    }
 }

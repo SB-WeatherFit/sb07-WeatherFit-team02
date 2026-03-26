@@ -14,7 +14,7 @@ public record ProfileDto(
         Integer temperatureSensitivity,
         String profileImageUrl
 ) {
-    public static ProfileDto from(Profile profile) {
+    public static ProfileDto from(Profile profile, String profileImageUrl) {
         return new ProfileDto(
                 profile.getUser().getId(),
                 profile.getUser().getName(),
@@ -22,7 +22,7 @@ public record ProfileDto(
                 profile.getBirthDate(),
                 ProfileLocationDto.from(profile.getLocation()),
                 profile.getTemperatureSensitivity(),
-                profile.getProfileImageUrl()
+                profileImageUrl
         );
     }
 }

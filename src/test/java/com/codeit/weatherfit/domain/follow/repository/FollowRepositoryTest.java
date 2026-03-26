@@ -12,10 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -57,7 +54,6 @@ class FollowRepositoryTest {
             userRepository.save(userI);
             Follow follow = Follow.create(new FollowCreateParam(userI, saved));
             followRepository.save(follow);
-            ReflectionTestUtils.setField(follow, "createdAt", Instant.now().minusSeconds(i));
         }
 
         em.flush();
@@ -77,7 +73,6 @@ class FollowRepositoryTest {
             User savedI = userRepository.save(userI);
             Follow follow = Follow.create(new FollowCreateParam(saved, savedI));
             followRepository.save(follow);
-            ReflectionTestUtils.setField(follow, "createdAt", Instant.now().minusSeconds(i));
         }
 
         em.flush();
@@ -117,7 +112,6 @@ class FollowRepositoryTest {
             User savedI = userRepository.save(userI);
             Follow follow = Follow.create(new FollowCreateParam(saved, savedI));
             followRepository.save(follow);
-            ReflectionTestUtils.setField(follow, "createdAt", Instant.now().minusSeconds(i));
         }
 
         em.flush();

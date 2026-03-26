@@ -31,6 +31,9 @@ public enum ErrorCode {
 
     // Feed
     FEED_NOT_EXIST(HttpStatus.NOT_FOUND, "피드를 찾을 수 없습니다.", "FE-001"),
+    ALREADY_LIKED(HttpStatus.BAD_REQUEST, "이미 좋아요한 피드입니다.", "FE-002"),
+    LIKE_NOT_EXIST(HttpStatus.BAD_REQUEST, "좋아요하지 않은 피드입니다.", "FE-003"),
+    FEED_BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.", "FE-004"),
 
     // Auth
     INVALID_SIGN_IN_REQUEST(HttpStatus.BAD_REQUEST, "이메일과 비밀번호는 필수입니다.", "A-001"),
@@ -45,6 +48,9 @@ public enum ErrorCode {
     //Weather
     WEATHER_CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND,"날씨 정보를 불러오는데 실패했습니다","W-001"),
     WEATHER_NOT_FOUND(HttpStatus.NOT_FOUND,"날씨 정보를 DB에서 찾을 수 없습니다","W-002"),
+
+    // file,
+    FILE_UPLOAD_FAILURE(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다.", "FI-001"),
 
     // Clothes
     CLOTHES_NOT_FOUND(HttpStatus.NOT_FOUND, "옷을 찾을 수 없습니다.", "C-001"),

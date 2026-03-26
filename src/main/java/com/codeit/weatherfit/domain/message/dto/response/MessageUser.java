@@ -13,7 +13,7 @@ public record MessageUser(
         return new MessageUser(
                 profile.getUser().getId(),
                 profile.getUser().getName(),
-                profile.getProfileImageUrl()
+                profile.getProfileImageKey()
         );
     }
 }

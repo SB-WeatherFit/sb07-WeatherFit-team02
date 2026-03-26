@@ -6,22 +6,44 @@ spring:
   batch:
     job:
       enabled: false
-  s3:
-    access-key: ${AWS_S3_ACCESS_KEY:-}
-    secret-key: ${AWS_S3_SECRET_KEY:-}
-    region: ${AWS_S3_REGION:-}
-    bucket: ${AWS_S3_BUCKET:-}
-    presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600}
 
 open-administration-map:
-  api-key: ${WEATHER_ADMINISTRATION_API_KEY:-}
+  api-key: ${WEATHER_ADMINISTRATION_API_KEY}
 
 kakao:
-  api-key: ${KAKAO_API_KEY:-}
+  api-key: ${KAKAO_API_KEY}
+
+s3:
+  bucket: ${AWS_S3_BUCKET}
+  region: ${AWS_S3_REGION}
+  access-key: ${AWS_S3_ACCESS_KEY}
+  secret-key: ${AWS_S3_SECRET_KEY}
+  presigned-url-expiration-time: ${AWS_S3_PRESIGNED_URL_EXPIRATION:1000}
 
 
 weatherfit:
   storage:
     type: ${STORAGE_TYPE:s3}
 
+info:
+  app:
+    name: weatherfit
+    description: weather and clothes recommendation application
+    version: 1.0.0
+    encoding: UTF-8
+    java-version: 21
+
+    company:
+      name: SB07-team02
+      email: genius5375@gmail.com
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+  info:
+    env:
+      enabled: true
 

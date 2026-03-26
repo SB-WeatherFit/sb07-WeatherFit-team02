@@ -84,8 +84,8 @@ class MessageServiceTest {
 
         for (int i = 0; i < 50; i++) {
             Message message;
-            if (i%2==0) message= Message.create(user, user2, "content"+i);
-            else  message = Message.create(user2, user, "content"+i);
+            if (i % 2 == 0) message = Message.create(user, user2, "content" + i);
+            else message = Message.create(user2, user, "content" + i);
             messageRepository.save(message);
         }
 
