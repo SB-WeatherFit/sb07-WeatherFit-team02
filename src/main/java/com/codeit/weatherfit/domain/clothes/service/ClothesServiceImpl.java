@@ -7,10 +7,7 @@ import com.codeit.weatherfit.domain.clothes.dto.request.ClothesUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDto;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDtoCursorResponse;
 import com.codeit.weatherfit.domain.clothes.entity.*;
-import com.codeit.weatherfit.domain.clothes.exception.ClothesAttributeTypeNotFoundException;
-import com.codeit.weatherfit.domain.clothes.exception.ClothesAttributeValueMissingException;
-import com.codeit.weatherfit.domain.clothes.exception.ClothesNotFoundException;
-import com.codeit.weatherfit.domain.clothes.exception.InvalidClothesAttributeOptionException;
+import com.codeit.weatherfit.domain.clothes.exception.*;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeTypeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
@@ -251,7 +248,7 @@ public class ClothesServiceImpl implements ClothesService {
             String imageUrl = doc.select("meta[property=og:image]").attr("content");
 
             User owner = userRepository.findById(ownerId)
-                    .orElseThrow(() -> new RuntimeException("유저 없음"));
+                    .orElseThrow(() -> new RuntimeException("유저 없음")); // 커스텀
 
             Clothes temp = Clothes.create(
                     owner,
@@ -262,7 +259,7 @@ public class ClothesServiceImpl implements ClothesService {
             return ClothesDto.from(temp, List.of(), imageUrl);
 
         } catch (IOException e) {
-            throw new RuntimeException("URL 파싱 실패");
+            throw new ClothesExtractionException(ErrorCode.URL_PARSING_FAILED);
         }
     }
 }
