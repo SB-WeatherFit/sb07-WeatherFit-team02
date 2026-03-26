@@ -7,8 +7,12 @@ import com.codeit.weatherfit.domain.feed.dto.request.*;
 import com.codeit.weatherfit.domain.feed.dto.response.CommentGetResponse;
 import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
 import com.codeit.weatherfit.domain.feed.entity.Comment;
+import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
+import com.codeit.weatherfit.domain.feed.entity.FeedLike;
+import com.codeit.weatherfit.domain.feed.exception.FeedLikeAlreadyExistException;
+import com.codeit.weatherfit.domain.feed.exception.FeedLikeNotExistException;
 import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
@@ -438,6 +442,164 @@ class FeedServiceImplTest {
             // then
             assertThat(response.hasNext()).isFalse();
             assertThat(response.data()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("좋아요")
+    class like {
+        @Test
+        @DisplayName("성공")
+        void success() {
+            // given
+            Feed feed = Instancio.create(Feed.class);
+            User author = feed.getAuthor();
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
+
+            when(feedRepository.findById(feed.getId()))
+                    .thenReturn(Optional.of(feed));
+            when(userRepository.findById(author.getId()))
+                    .thenReturn(Optional.of(author));
+            when(feedLikeRepository.existsByFeedAndUser(feed, author))
+                    .thenReturn(false);
+
+            // when
+            feedService.like(feed.getId(), userDetails);
+
+            // then
+            verify(feedLikeRepository).save(any(FeedLike.class));
+        }
+
+        @Nested
+        @DisplayName("실패 - 비즈니스 로직")
+        class BusinessLogicFailure {
+            @Test
+            @DisplayName("존재하지 않는 피드에 좋아요할 수 없다.")
+            void feedNotFound() {
+                // given
+                User user = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(user);
+                when(feedRepository.findById(any(UUID.class)))
+                        .thenReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> feedService.like(UUID.randomUUID(), userDetails))
+                        .isInstanceOf(com.codeit.weatherfit.domain.feed.exception.FeedNotExistException.class);
+            }
+
+            @Test
+            @DisplayName("피드 작성자가 아니면 좋아요할 수 없다.")
+            void notAuthor() {
+                // given
+                Feed feed = Instancio.create(Feed.class);
+                User otherUser = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(otherUser);
+                when(feedRepository.findById(feed.getId()))
+                        .thenReturn(Optional.of(feed));
+
+                // when & then
+                assertThatThrownBy(() -> feedService.like(feed.getId(), userDetails))
+                        .isInstanceOf(RuntimeException.class);
+            }
+
+            @Test
+            @DisplayName("이미 좋아요한 피드에 다시 좋아요할 수 없다.")
+            void alreadyLiked() {
+                // given
+                Feed feed = Instancio.create(Feed.class);
+                User author = feed.getAuthor();
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
+
+                when(feedRepository.findById(feed.getId()))
+                        .thenReturn(Optional.of(feed));
+                when(userRepository.findById(author.getId()))
+                        .thenReturn(Optional.of(author));
+                when(feedLikeRepository.existsByFeedAndUser(feed, author))
+                        .thenReturn(true);
+
+                // when & then
+                assertThatThrownBy(() -> feedService.like(feed.getId(), userDetails))
+                        .isInstanceOf(FeedLikeAlreadyExistException.class);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("좋아요 취소")
+    class unlike {
+        @Test
+        @DisplayName("성공")
+        void success() {
+            // given
+            Feed feed = Instancio.create(Feed.class);
+            User author = feed.getAuthor();
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
+
+            when(feedRepository.findById(feed.getId()))
+                    .thenReturn(Optional.of(feed));
+            when(userRepository.findById(author.getId()))
+                    .thenReturn(Optional.of(author));
+            when(feedLikeRepository.existsByFeedAndUser(feed, author))
+                    .thenReturn(true);
+
+            // when
+            feedService.unlike(feed.getId(), userDetails);
+
+            // then
+            verify(feedLikeRepository).deleteByFeedAndUser(feed, author);
+        }
+
+        @Nested
+        @DisplayName("실패 - 비즈니스 로직")
+        class BusinessLogicFailure {
+            @Test
+            @DisplayName("존재하지 않는 피드의 좋아요는 취소할 수 없다.")
+            void feedNotFound() {
+                // given
+                User user = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(user);
+                when(feedRepository.findById(any(UUID.class)))
+                        .thenReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> feedService.unlike(UUID.randomUUID(), userDetails))
+                        .isInstanceOf(com.codeit.weatherfit.domain.feed.exception.FeedNotExistException.class);
+            }
+
+            @Test
+            @DisplayName("피드 작성자가 아니면 좋아요를 취소할 수 없다.")
+            void notAuthor() {
+                // given
+                Feed feed = Instancio.create(Feed.class);
+                User otherUser = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(otherUser);
+                when(feedRepository.findById(feed.getId()))
+                        .thenReturn(Optional.of(feed));
+
+                // when & then
+                assertThatThrownBy(() -> feedService.unlike(feed.getId(), userDetails))
+                        .isInstanceOf(RuntimeException.class);
+            }
+
+            @Test
+            @DisplayName("좋아요하지 않은 피드의 좋아요는 취소할 수 없다.")
+            void notLiked() {
+                // given
+                Feed feed = Instancio.create(Feed.class);
+                User author = feed.getAuthor();
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
+
+                when(feedRepository.findById(feed.getId()))
+                        .thenReturn(Optional.of(feed));
+                when(userRepository.findById(author.getId()))
+                        .thenReturn(Optional.of(author));
+                when(feedLikeRepository.existsByFeedAndUser(feed, author))
+                        .thenReturn(false);
+
+                // when & then
+                assertThatThrownBy(() -> feedService.unlike(feed.getId(), userDetails))
+                        .isInstanceOf(FeedLikeNotExistException.class);
+            }
         }
     }
 

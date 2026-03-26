@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.feed.service;
 
+import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.feed.dto.CommentDto;
@@ -11,12 +12,14 @@ import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
 import com.codeit.weatherfit.domain.feed.entity.Comment;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
+import com.codeit.weatherfit.domain.feed.entity.FeedLike;
+import com.codeit.weatherfit.domain.feed.exception.FeedLikeAlreadyExistException;
+import com.codeit.weatherfit.domain.feed.exception.FeedLikeNotExistException;
 import com.codeit.weatherfit.domain.feed.exception.FeedNotExistException;
 import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
-import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.user.service.UserService;
@@ -44,7 +47,6 @@ public class FeedServiceImpl implements FeedService {
     private final FeedLikeRepository feedLikeRepository;
     private final CommentRepository commentRepository;
     private final ClothesRepository clothesRepository;
-    private final ProfileRepository profileRepository;
     private final S3Service s3Service;
     private final UserService userService;
 
@@ -135,6 +137,28 @@ public class FeedServiceImpl implements FeedService {
     public void delete(UUID id) {
         Feed feed = getFeedOrThrow(id);
         feedRepository.delete(feed);
+    }
+
+    @Override
+    @Transactional
+    public void like(UUID id, WeatherFitUserDetails userDetails) {
+        Feed feed = getFeedOrThrow(id);
+        User likeUser = getUserOrThrow(userDetails.getUserId());
+        if (feedLikeRepository.existsByFeedAndUser(feed, likeUser))
+            throw new FeedLikeAlreadyExistException(feed, likeUser);
+        feedLikeRepository.save(FeedLike.create(feed, likeUser));
+    }
+
+    @Override
+    @Transactional
+    public void unlike(UUID id, WeatherFitUserDetails userDetails) {
+        Feed feed = getFeedOrThrow(id);
+        if (!feed.getAuthor().getId().equals(userDetails.getUserId()))
+            throw new RuntimeException("올바르지 않은 접근입니다."); // TODO: 나중에 커스텀 에러
+        User likeUser = getUserOrThrow(userDetails.getUserId());
+        if (!feedLikeRepository.existsByFeedAndUser(feed, likeUser))
+            throw new FeedLikeNotExistException(feed, likeUser);
+        feedLikeRepository.deleteByFeedAndUser(feed, likeUser);
     }
 
     private FeedDto toFeedDto(Feed feed) {

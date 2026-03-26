@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.feed.controller;
 
+import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
 import com.codeit.weatherfit.domain.feed.dto.CommentDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.*;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -40,6 +42,19 @@ public class FeedController {
     @PostMapping("/{id}/comments")
     public ResponseEntity<CommentDto> createComment(@PathVariable UUID id, @RequestBody @Valid CommentCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(feedService.createComment(request));
+    }
+
+
+    @PostMapping("/{id}/like")
+    public ResponseEntity<Void> like(@PathVariable UUID id, @AuthenticationPrincipal WeatherFitUserDetails userDetails){
+        feedService.like(id, userDetails);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/like") // TODO: 수정
+    public ResponseEntity<Void> unlike(@PathVariable UUID id, @AuthenticationPrincipal WeatherFitUserDetails userDetails){
+        feedService.unlike(id, userDetails);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}")

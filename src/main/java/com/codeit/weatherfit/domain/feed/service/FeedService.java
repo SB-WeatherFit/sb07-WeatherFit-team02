@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.feed.service;
 
+import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
 import com.codeit.weatherfit.domain.feed.dto.CommentDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.*;
@@ -20,4 +21,8 @@ public interface FeedService {
     CommentGetResponse getCommentsByCursor(CommentGetRequest request);
 
     void delete(UUID id);
+
+    void like(UUID id, WeatherFitUserDetails userDetails);
+
+    void unlike(UUID id, WeatherFitUserDetails userDetails);
 }
