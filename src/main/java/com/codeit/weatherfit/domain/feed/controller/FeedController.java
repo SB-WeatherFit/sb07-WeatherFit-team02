@@ -1,16 +1,17 @@
 package com.codeit.weatherfit.domain.feed.controller;
 
+import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
+import com.codeit.weatherfit.domain.feed.dto.CommentDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedCreateRequest;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedGetRequest;
-import com.codeit.weatherfit.domain.feed.dto.request.FeedUpdateRequest;
+import com.codeit.weatherfit.domain.feed.dto.request.*;
+import com.codeit.weatherfit.domain.feed.dto.response.CommentGetResponse;
 import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
 import com.codeit.weatherfit.domain.feed.service.FeedService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -45,14 +46,14 @@ public class FeedController {
 
 
     @PostMapping("/{id}/like")
-    public ResponseEntity<Void> like(@PathVariable UUID id, Authentication authentication){
-        feedService.like(id, authentication);
+    public ResponseEntity<Void> like(@PathVariable UUID id, @AuthenticationPrincipal WeatherFitUserDetails userDetails){
+        feedService.like(id, userDetails);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}/like") // TODO: 수정
-    public ResponseEntity<Void> unlike(@PathVariable UUID id, Authentication authentication){
-        feedService.unlike(id, authentication);
+    public ResponseEntity<Void> unlike(@PathVariable UUID id, @AuthenticationPrincipal WeatherFitUserDetails userDetails){
+        feedService.unlike(id, userDetails);
         return ResponseEntity.noContent().build();
     }
 
