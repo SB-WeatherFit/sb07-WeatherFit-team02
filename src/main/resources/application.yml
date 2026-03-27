@@ -6,6 +6,14 @@ spring:
   batch:
     job:
       enabled: false
+  ai:
+    openai:
+      api-key: ${OPENROUTER_API_KEY}
+      base-url: https://openrouter.ai/api
+      chat:
+        options:
+          model: nvidia/nemotron-3-super-120b-a12b:free
+
 
 open-administration-map:
   api-key: ${WEATHER_ADMINISTRATION_API_KEY}
@@ -25,4 +33,25 @@ weatherfit:
   storage:
     type: ${STORAGE_TYPE:s3}
 
+info:
+  app:
+    name: weatherfit
+    description: weather and clothes recommendation application
+    version: 1.0.0
+    encoding: UTF-8
+    java-version: 21
+
+    company:
+      name: SB07-team02
+      email: genius5375@gmail.com
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+  info:
+    env:
+      enabled: true
 

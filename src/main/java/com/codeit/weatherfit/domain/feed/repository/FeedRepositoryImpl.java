@@ -34,7 +34,7 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .join(feed.author, user)
                 .join(feed.weather, weather)
                 .where(
-                        cursorCondition(request.cursor(), request.idAfter()),
+                        cursorCondition(request.cursor(), request.idAfter(), request.sortDirection()),
                         keywordLike(request.keywordLike()),
                         skyStatusEq(request.skyStatusEqual()),
                         precipitationTypeEq(request.precipitationTypeEqual()),
@@ -44,22 +44,28 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .fetch();
     }
 
-    private OrderSpecifier<?> createOrderSpecifier(SortBy sortBy, SortDirection sortDirection) {
-        Order order = sortDirection == null || sortDirection == SortDirection.ASCENDING ?
-                Order.ASC : Order.DESC;
-
+    private OrderSpecifier<?>[] createOrderSpecifier(SortBy sortBy, SortDirection sortDirection) {
+        Order order = sortDirection == null || sortDirection == SortDirection.ASCENDING
+                ? Order.ASC : Order.DESC;
         return switch (sortBy) {
-            case createdAt -> new OrderSpecifier<>(order, feed.createdAt);
-            case likeCount -> new OrderSpecifier<>(order,
-                    JPAExpressions.select(feedLike.count())
-                            .from(feedLike)
-                            .where(feedLike.feed.eq(feed)));
+            case createdAt -> new OrderSpecifier<?>[]{
+                    new OrderSpecifier<>(order, feed.createdAt),
+                    new OrderSpecifier<>(order, feed.id)
+            };
+            case likeCount -> new OrderSpecifier<?>[]{
+                    new OrderSpecifier<>(order, JPAExpressions.select(feedLike.count())
+                            .from(feedLike).where(feedLike.feed.eq(feed))),
+                    new OrderSpecifier<>(order, feed.id)
+            };
         };
     }
 
-    private BooleanExpression cursorCondition(Instant cursor, UUID idAfter) {
-        if (cursor == null || idAfter == null)
-            return null;
+    private BooleanExpression cursorCondition(Instant cursor, UUID idAfter, SortDirection direction) {
+        if (cursor == null || idAfter == null) return null;
+        if (direction == SortDirection.ASCENDING) {
+            return feed.createdAt.gt(cursor)
+                    .or(feed.createdAt.eq(cursor).and(feed.id.gt(idAfter)));
+        }
         return feed.createdAt.lt(cursor)
                 .or(feed.createdAt.eq(cursor).and(feed.id.lt(idAfter)));
     }
@@ -88,6 +94,8 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
             return null;
         return feed.content.contains(keyword);
     }
+
+
 
 
 }

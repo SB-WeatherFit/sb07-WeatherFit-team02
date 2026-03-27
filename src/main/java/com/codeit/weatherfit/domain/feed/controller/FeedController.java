@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.feed.controller;
 
+import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
 import com.codeit.weatherfit.domain.feed.dto.CommentDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.*;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -21,36 +23,59 @@ public class FeedController {
     private final FeedService feedService;
 
     @GetMapping
-    public ResponseEntity<FeedGetResponse> get(@RequestBody @Valid FeedGetRequest request) {
-        return ResponseEntity.ok(feedService.getFeedsByCursor(request));
+    public ResponseEntity<FeedGetResponse> get(@ModelAttribute @Valid FeedGetRequest request,
+                                               @AuthenticationPrincipal WeatherFitUserDetails userDetails) {
+        return ResponseEntity.ok(feedService.getFeedsByCursor(request, userDetails));
     }
 
     @PostMapping
-    public ResponseEntity<FeedDto> createFeed(@RequestBody @Valid FeedCreateRequest request){
+    public ResponseEntity<FeedDto> createFeed(@RequestBody @Valid FeedCreateRequest request,
+                                              @AuthenticationPrincipal WeatherFitUserDetails userDetails){
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                feedService.create(request)
+                feedService.create(request, userDetails)
         );
     }
 
     @GetMapping("/{id}/comments")
-    public ResponseEntity<CommentGetResponse> getComment(@ModelAttribute @Valid CommentGetRequest request) {
-        return ResponseEntity.ok(feedService.getCommentsByCursor(request));
+    public ResponseEntity<CommentGetResponse> getComment(@ModelAttribute @Valid CommentGetRequest request,
+                                                         @AuthenticationPrincipal WeatherFitUserDetails userDetails) {
+        return ResponseEntity.ok(feedService.getCommentsByCursor(request, userDetails));
     }
 
     @PostMapping("/{id}/comments")
-    public ResponseEntity<CommentDto> createComment(@PathVariable UUID id, @RequestBody @Valid CommentCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(feedService.createComment(request));
+    public ResponseEntity<CommentDto> createComment(@PathVariable UUID id,
+                                                    @RequestBody @Valid CommentCreateRequest request,
+                                                    @AuthenticationPrincipal WeatherFitUserDetails userDetails) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(feedService.createComment(id, request, userDetails));
+    }
+
+
+    @PostMapping("/{id}/like")
+    public ResponseEntity<Void> like(@PathVariable UUID id,
+                                     @AuthenticationPrincipal WeatherFitUserDetails userDetails){
+        feedService.like(id, userDetails);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/like")
+    public ResponseEntity<Void> unlike(@PathVariable UUID id,
+                                       @AuthenticationPrincipal WeatherFitUserDetails userDetails){
+        feedService.unlike(id, userDetails);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<FeedDto> update(@PathVariable UUID id, @RequestBody @Valid FeedUpdateRequest request) {
-        return ResponseEntity.ok(feedService.update(id, request));
+    public ResponseEntity<FeedDto> update(@PathVariable UUID id,
+                                          @RequestBody @Valid FeedUpdateRequest request,
+                                          @AuthenticationPrincipal WeatherFitUserDetails userDetails) {
+        return ResponseEntity.ok(feedService.update(id, request, userDetails));
     }
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        feedService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable UUID id,
+                                       @AuthenticationPrincipal WeatherFitUserDetails userDetails) {
+        feedService.delete(id, userDetails);
         return ResponseEntity.noContent().build();
     }
 

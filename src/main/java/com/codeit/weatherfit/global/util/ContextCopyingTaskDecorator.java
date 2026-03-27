@@ -1,6 +1,6 @@
 package com.codeit.weatherfit.global.util;
 
-import org.jspecify.annotations.NullMarked;
+
 import org.slf4j.MDC;
 import org.springframework.core.task.TaskDecorator;
 import org.springframework.security.core.Authentication;
@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 @Component
-@NullMarked
 public class ContextCopyingTaskDecorator implements TaskDecorator {
 
     @Override

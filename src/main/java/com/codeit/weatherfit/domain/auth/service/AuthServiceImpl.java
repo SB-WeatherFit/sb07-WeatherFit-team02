@@ -67,9 +67,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthTokenResult refresh(String refreshToken) {
-        if (refreshToken == null || refreshToken.isBlank()) {
-            throw new WeatherFitException(ErrorCode.INVALID_REFRESH_TOKEN);
-        }
+        validateRefreshToken(refreshToken);
 
         UUID userId = inMemoryAuthTokenStore.findUserIdByRefreshToken(refreshToken);
         if (userId == null) {
@@ -78,6 +76,10 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.INVALID_REFRESH_TOKEN));
+
+        if (user.isLocked()) {
+            throw new WeatherFitException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
 
         String newAccessToken = jwtTokenProvider.generateAccessToken(user);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(user);
@@ -113,6 +115,16 @@ public class AuthServiceImpl implements AuthService {
                 || request.password() == null
                 || request.password().isBlank()) {
             throw new WeatherFitException(ErrorCode.INVALID_SIGN_IN_REQUEST);
+        }
+    }
+
+    private void validateRefreshToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new WeatherFitException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        if (!jwtTokenProvider.isValidRefreshToken(refreshToken)) {
+            throw new WeatherFitException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
     }
 
