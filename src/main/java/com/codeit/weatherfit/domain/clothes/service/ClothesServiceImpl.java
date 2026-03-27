@@ -32,7 +32,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -48,43 +50,65 @@ public class ClothesServiceImpl implements ClothesService {
 
     @Override
     @Transactional
-    public ClothesDto create(ClothesCreateRequest request, MultipartFile image) {
-        User owner = userRepository.findById(request.ownerId())
-                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다.")); // 나중에 커스텀 예외 처리
+    public ClothesDto create(Map<String, Object> rawRequest, MultipartFile image) {
+        UUID ownerId = UUID.fromString((String) rawRequest.get("ownerId"));
+        String name = (String) rawRequest.get("name");
+
+        String typeStr = (String) rawRequest.get("type");
+        ClothesType cType = ClothesType.valueOf(typeStr);
+        User owner = userRepository.findById(ownerId)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));// 나중에 커스텀 예외 처리
 
         Clothes clothes = Clothes.create(
                 owner,
-                request.name(),
-                request.type()
+                name,
+                cType
         );
         clothesRepository.save(clothes);
         clothes.updateImageKey(publishImageUploadEvent(clothes.getId(), image));
 
-        if (request.attributes() != null) {
-            for (ClothesAttributeDefCreateRequest attr : request.attributes()) {
+        List<Map<String, Object>> rawAttrs =
+                (List<Map<String, Object>>) rawRequest.get("attributes");
 
-                UUID definitionId = UUID.fromString(attr.name());
+        if (rawAttrs != null) {
 
-                ClothesAttributeType type =
-                        clothesAttributeTypeRepository.findById(definitionId)
-                                .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND));
+            for (Map<String, Object> rawAttr : rawAttrs) {
 
-                if (attr.selectableValues() == null || attr.selectableValues().isEmpty()) {
-                    throw new ClothesAttributeValueMissingException(ErrorCode.CLOTHES_ATTRIBUTE_VALUE_MISSING);
+                String definitionId = (String) rawAttr.get("definitionId");
+
+                Object rawValue = rawAttr.get("value");
+
+                String value;
+
+                if (rawValue instanceof String str) {
+                    value = str;
+                } else if (rawValue instanceof List<?> list) {
+                    value = (String) list.get(0);
+                } else {
+                    throw new IllegalArgumentException("value 형식 오류");
                 }
 
-                String value = attr.selectableValues().get(0);
+                UUID id = UUID.fromString(definitionId);
+
+                ClothesAttributeType type =
+                        clothesAttributeTypeRepository.findById(id)
+                                .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(
+                                        ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND
+                                ));
 
                 SelectableValue selectableValue =
                         selectableValueRepository
                                 .findByClothesAttributeTypeAndOption(type, value)
-                                .orElseThrow(() -> new InvalidClothesAttributeOptionException(ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION));
+                                .orElseThrow(() -> new InvalidClothesAttributeOptionException(
+                                        ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION
+                                ));
 
                 ClothesAttribute clothesAttribute =
                         ClothesAttribute.create(clothes, selectableValue);
 
                 clothesAttributeRepository.save(clothesAttribute);
             }
+
         }
 
         // 조회용
@@ -97,46 +121,58 @@ public class ClothesServiceImpl implements ClothesService {
 
     @Override
     @Transactional
-    public ClothesDto update(UUID clothesId, ClothesUpdateRequest request, MultipartFile image) {
+    public ClothesDto update(UUID clothesId, Map<String, Object> rawRequest, MultipartFile image) {
+
         Clothes clothes = clothesRepository.findById(clothesId)
                 .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
 
+        String name = (String) rawRequest.get("name");
+
+        String typeStr = (String) rawRequest.get("type");
+        ClothesType type = typeStr != null ? ClothesType.valueOf(typeStr) : null;
+
         clothes.update(
-                request.name() != null ? request.name() : clothes.getName(),
-                request.type() != null ? request.type() : clothes.getType(),
+                name != null ? name : clothes.getName(),
+                type != null ? type : clothes.getType(),
                 image != null ? publishImageUploadEvent(clothes.getId(), image) : clothes.getImageKey()
         );
 
-        if (request.attributes() != null) {
-            for (ClothesAttributeDefUpdateRequest attr : request.attributes()) {
-                UUID definitionId = UUID.fromString(attr.name());
+        List<Map<String, Object>> rawAttrs =
+                (List<Map<String, Object>>) rawRequest.get("attributes");
 
-                ClothesAttributeType type = clothesAttributeTypeRepository.findById(definitionId)
-                        .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND));
+        if (rawAttrs != null) {
 
-                if (attr.selectableValues() == null || attr.selectableValues().size() != 1) {
-                    throw new InvalidClothesAttributeOptionException(ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION);
-                }
+            clothesAttributeRepository.deleteByClothes(clothes);
 
-                String value = attr.selectableValues().get(0);
+            for (Map<String, Object> rawAttr : rawAttrs) {
+
+                UUID definitionId = UUID.fromString((String) rawAttr.get("definitionId"));
+                String value = (String) rawAttr.get("value");
+
+                ClothesAttributeType typeEntity =
+                        clothesAttributeTypeRepository.findById(definitionId)
+                                .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(
+                                        ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND
+                                ));
 
                 SelectableValue selectableValue =
                         selectableValueRepository
-                                .findByClothesAttributeTypeAndOption(type, value)
-                                .orElseThrow(() -> new InvalidClothesAttributeOptionException(ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION));
+                                .findByClothesAttributeTypeAndOption(typeEntity, value)
+                                .orElseThrow(() -> new InvalidClothesAttributeOptionException(
+                                        ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION
+                                ));
 
-                ClothesAttribute attribute =
-                        clothesAttributeRepository
-                                .findByClothesAndOption_ClothesAttributeType(clothes, type)
-                                .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND));
+                ClothesAttribute newAttr =
+                        ClothesAttribute.create(clothes, selectableValue);
 
-                attribute.changeOption(selectableValue);
+                clothesAttributeRepository.save(newAttr);
             }
         }
 
         List<ClothesAttribute> attributes =
                 clothesAttributeRepository.findByClothes(clothes);
-        String url = clothes.getImageKey() == null? null : s3Service.getUrl(clothes.getImageKey());
+
+        String url = clothes.getImageKey() == null ? null : s3Service.getUrl(clothes.getImageKey());
 
         return ClothesDto.from(clothes, attributes, url);
     }

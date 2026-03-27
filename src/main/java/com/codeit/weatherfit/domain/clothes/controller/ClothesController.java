@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.filter.RequestContextFilter;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -29,19 +30,20 @@ public class ClothesController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ClothesDto> create(
-            @RequestPart ClothesCreateRequest request,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-        ClothesDto created = clothesService.create(request, image);
+            @RequestPart("request") Map<String, Object> rawRequest,
+            @RequestPart(value = "image", required = false) MultipartFile image
+    ) {
+        ClothesDto created = clothesService.create(rawRequest, image);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PatchMapping(path = "/{clothesId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ClothesDto> update(
             @PathVariable UUID clothesId,
-            @RequestPart("request") @Valid ClothesUpdateRequest request,
+            @RequestPart("request") Map<String, Object> rawRequest,
             @RequestPart(value = "image", required = false) MultipartFile image
     ) {
-        ClothesDto response = clothesService.update(clothesId, request, image);
+        ClothesDto response = clothesService.update(clothesId, rawRequest, image);
         return ResponseEntity.ok(response);
     }
 
