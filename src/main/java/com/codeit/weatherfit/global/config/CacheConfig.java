@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.querydsl.jpa.Hibernate5Templates;
 import org.hibernate.mapping.Any;
 import org.springframework.cache.CacheManager;
@@ -28,19 +29,16 @@ public class CacheConfig {
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory
                                           ) {
-        BasicPolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
-                .allowIfBaseType(Object.class) // DTO 캐시용 설정
-                .build();
-        JsonMapper jsonMapper = JsonMapper.builder()
-                .findAndAddModules()
-                .activateDefaultTyping(typeValidator, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY)
-                .build();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.activateDefaultTyping(
+                mapper.getPolymorphicTypeValidator(),
+                ObjectMapper.DefaultTyping.NON_FINAL
+        );
 
 
-        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
-//
-//        GenericJacksonJsonRedisSerializer serializer = new GenericJacksonJsonRedisSerializer(jsonMapper);
 
+        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(mapper,Object.class);
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeKeysWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(
