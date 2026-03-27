@@ -1,3 +1,4 @@
+
 services:
   redis:
     image: redis:7.2-alpine
@@ -7,6 +8,13 @@ services:
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes
+    networks:
+      - weatherfit-net
+
+
+
+networks:
+  weatherfit-net:
 
 volumes:
   redis-data:

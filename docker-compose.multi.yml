@@ -1,0 +1,91 @@
+services:
+  app-instance-1:
+    build: .
+    env_file:
+      - .env
+    container_name: weatherfit-app-instance-1
+    environment:
+      - SERVER_PORT=8080
+
+    ports:
+      - "8081:8080"
+    networks:
+      - weatherfit-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+
+  app-instance-2:
+    build: .
+    env_file:
+      - .env
+    container_name: weatherfit-app-instance-2
+    environment:
+      - SERVER_PORT=8080
+
+    ports:
+      - "8082:8080"
+    networks:
+      - weatherfit-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx-loadbalancer
+    ports:
+      - "80:80"
+    networks:
+      - weatherfit-net
+    depends_on:
+      - app-instance-1
+      - app-instance-2
+    volumes:
+      # 로그 볼륨 (옵션)
+      - ./logs/nginx:/var/log/nginx
+      # 캐시 볼륨 (옵션)
+      - nginx-cache:/var/cache/nginx
+    environment:
+      - TZ=Asia/Seoul
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost/nginx_status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  postgres:
+    image: postgres:16
+    container_name: weatherfit-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME}
+      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      POSTGRES_DB: ${SPRING_DATASOURCE_DB}
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    command: >
+      -c shared_buffers=128MB 
+      -c max_connections=50
+    healthcheck: ##컨테이너가 정상적인지 주기적으로 호가인
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ] #헬스 체크를 위해 실행한 명령어
+      interval: 10s #10초마다 체크
+      timeout: 5s # 5초 안에 응답 없으면 unhealthy
+      retries: 5 # 5번 실해하면 unhealthy 상태로 판정
+    networks:
+      - weatherfit-net
+networks:
+  weatherfit-net:
+    external: true
+    name: weatherfit_weatherfit-net
+
+volumes:
+  nginx-cache:
+  postgres-data:
