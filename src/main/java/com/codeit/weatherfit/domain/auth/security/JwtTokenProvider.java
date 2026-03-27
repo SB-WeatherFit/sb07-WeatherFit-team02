@@ -15,13 +15,13 @@ import java.util.UUID;
 @Component
 public class JwtTokenProvider {
 
-    private static final String ACCESS_SECRET_KEY = "temporary-weatherfit-access-secret-key-temporary-weatherfit-access-secret-key"; //수정
-    private static final String REFRESH_SECRET_KEY = "temporary-weatherfit-refresh-secret-key-temporary-weatherfit-refresh-secret-key"; //수정
+    private static final String ACCESS_SECRET_KEY = "temporary-weatherfit-access-secret-key-temporary-weatherfit-access-secret-key";
+    private static final String REFRESH_SECRET_KEY = "temporary-weatherfit-refresh-secret-key-temporary-weatherfit-refresh-secret-key";
     private static final long ACCESS_TOKEN_EXPIRE_SECONDS = 60L * 60L;
     private static final long REFRESH_TOKEN_EXPIRE_SECONDS = 60L * 60L * 24L * 7L;
 
-    private final SecretKey accessSecretKey = Keys.hmacShaKeyFor(ACCESS_SECRET_KEY.getBytes(StandardCharsets.UTF_8)); //수정
-    private final SecretKey refreshSecretKey = Keys.hmacShaKeyFor(REFRESH_SECRET_KEY.getBytes(StandardCharsets.UTF_8)); //수정
+    private final SecretKey accessSecretKey = Keys.hmacShaKeyFor(ACCESS_SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+    private final SecretKey refreshSecretKey = Keys.hmacShaKeyFor(REFRESH_SECRET_KEY.getBytes(StandardCharsets.UTF_8));
 
     public String generateAccessToken(User user) {
         return generateToken(
@@ -29,7 +29,7 @@ public class JwtTokenProvider {
                 user.getEmail(),
                 user.getRole().name(),
                 "ACCESS",
-                accessSecretKey, //수정
+                accessSecretKey,
                 ACCESS_TOKEN_EXPIRE_SECONDS
         );
     }
@@ -40,21 +40,21 @@ public class JwtTokenProvider {
                 user.getEmail(),
                 user.getRole().name(),
                 "REFRESH",
-                refreshSecretKey, //수정
+                refreshSecretKey,
                 REFRESH_TOKEN_EXPIRE_SECONDS
         );
     }
 
     public boolean isValidAccessToken(String token) {
-        return isValidToken(token, accessSecretKey, "ACCESS"); //수정
+        return isValidToken(token, accessSecretKey, "ACCESS");
     }
 
     public boolean isValidRefreshToken(String token) {
-        return isValidToken(token, refreshSecretKey, "REFRESH"); //수정
+        return isValidToken(token, refreshSecretKey, "REFRESH");
     }
 
     public UUID getUserId(String token) {
-        Claims claims = parseClaims(token, accessSecretKey); //수정
+        Claims claims = parseClaims(token, accessSecretKey);
         if (claims == null || claims.getSubject() == null) {
             return null;
         }
@@ -67,7 +67,7 @@ public class JwtTokenProvider {
     }
 
     public String getEmail(String token) {
-        Claims claims = parseClaims(token, accessSecretKey); //수정
+        Claims claims = parseClaims(token, accessSecretKey);
         if (claims == null) {
             return null;
         }
@@ -76,7 +76,7 @@ public class JwtTokenProvider {
     }
 
     public String getRole(String token) {
-        Claims claims = parseClaims(token, accessSecretKey); //수정
+        Claims claims = parseClaims(token, accessSecretKey);
         if (claims == null) {
             return null;
         }
@@ -84,7 +84,7 @@ public class JwtTokenProvider {
         return claims.get("role", String.class);
     }
 
-    private boolean isValidToken(String token, SecretKey secretKey, String expectedTokenType) { //수정
+    private boolean isValidToken(String token, SecretKey secretKey, String expectedTokenType) {
         try {
             if (token == null || token.isBlank()) {
                 return false;
@@ -107,24 +107,24 @@ public class JwtTokenProvider {
             String email,
             String role,
             String tokenType,
-            SecretKey secretKey, //수정
+            SecretKey secretKey,
             long expireSeconds
     ) {
         Instant now = Instant.now();
         Instant expiresAt = now.plusSeconds(expireSeconds);
 
-        return Jwts.builder() //수정
-                .subject(userId.toString()) //수정
-                .claim("email", email) //수정
-                .claim("role", role) //수정
-                .claim("tokenType", tokenType) //수정
-                .issuedAt(Date.from(now)) //수정
-                .expiration(Date.from(expiresAt)) //수정
-                .signWith(secretKey) //수정
-                .compact(); //수정
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim("email", email)
+                .claim("role", role)
+                .claim("tokenType", tokenType)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiresAt))
+                .signWith(secretKey)
+                .compact();
     }
 
-    private Claims parseClaims(String token, SecretKey secretKey) { //수정
+    private Claims parseClaims(String token, SecretKey secretKey) {
         try {
             return Jwts.parser()
                     .verifyWith(secretKey)
