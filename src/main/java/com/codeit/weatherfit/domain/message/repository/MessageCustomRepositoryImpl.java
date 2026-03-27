@@ -22,8 +22,8 @@ public class MessageCustomRepositoryImpl implements MessageCustomRepository {
         return queryFactory.selectFrom(message)
                 .where(
                         cursorCondition(request.cursor(), request.idAfter()),
-                        message.receiver.id.eq(request.userId())
-                                .and(message.sender.id.eq(senderId)))
+                        (message.receiver.id.eq(request.userId()).and(message.sender.id.eq(senderId)))
+                                .or(message.receiver.id.eq(senderId).and(message.sender.id.eq(request.userId()))))
                 .orderBy(message.createdAt.desc(), message.id.asc())
                 .limit(request.limit() + 1)
                 .fetch();
