@@ -2,13 +2,15 @@ package com.codeit.weatherfit.domain.message.controller;
 
 import com.codeit.weatherfit.domain.message.dto.response.MessageCursorResponse;
 import com.codeit.weatherfit.domain.message.service.MessageService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import tools.jackson.databind.ObjectMapper;
+
 
 import java.util.UUID;
 
@@ -24,7 +26,8 @@ class MessageControllerTest {
 
     private MockMvcTester mvcTester;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {

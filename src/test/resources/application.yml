@@ -19,3 +19,10 @@ spring:
   batch:
     job:
       enabled: false
+  ai:
+    openai:
+      api-key: temporaryapikey
+      base-url: https://openrouter.ai/api
+      chat:
+        options:
+          model: nvidia/nemotron-3-super-120b-a12b:free

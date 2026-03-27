@@ -1,7 +1,9 @@
 package com.codeit.weatherfit.domain.recommendation.ai;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
-import tools.jackson.databind.ObjectMapper;
+
 
 import java.util.List;
 
@@ -30,9 +32,17 @@ public class ClothesRecommendationPrompt {
 
         ObjectMapper objectMapper = new ObjectMapper();
 
-        String clothesJson = objectMapper.writeValueAsString(clothesInfos);
-        String userJson = objectMapper.writeValueAsString(userInfo);
-        String weatherJson = objectMapper.writeValueAsString(weatherInfo);
+        String clothesJson = null;
+        String userJson = null;
+        String weatherJson = null;
+        try {
+            clothesJson = objectMapper.writeValueAsString(clothesInfos);
+            userJson = objectMapper.writeValueAsString(userInfo);
+            weatherJson = objectMapper.writeValueAsString(weatherInfo);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        ;
 
 
         return """
