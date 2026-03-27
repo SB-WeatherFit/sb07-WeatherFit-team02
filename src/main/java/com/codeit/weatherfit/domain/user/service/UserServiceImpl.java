@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.user.service;
 
+import com.codeit.weatherfit.domain.profile.entity.Location;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.dto.request.ChangePasswordRequest;
@@ -17,6 +18,8 @@ import com.codeit.weatherfit.global.exception.ErrorCode;
 import com.codeit.weatherfit.global.exception.WeatherFitException;
 import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -188,5 +191,32 @@ public class UserServiceImpl implements UserService {
         }
 
         return user.getCreatedAt().toString();
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    protected void initializeAdmin() {
+        if(userRepository.existsUserByRole(UserRole.ADMIN)) return;
+
+        User user = User.create(
+                "admin@admin.com",
+                "admin",
+                UserRole.ADMIN,
+                passwordEncoder.encode("admin1234")
+        );
+
+        User savedUser = userRepository.save(user);
+        Profile profile = Profile.create(savedUser, null, null,
+
+                Location.create(
+                        37.2911,
+                        127.0089,
+                        127,
+                        37,
+                        List.of("경기도", "로날도", "수원")
+
+                )
+
+                , null, null);
+        profileRepository.save(profile);
     }
 }
