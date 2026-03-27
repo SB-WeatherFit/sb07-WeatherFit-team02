@@ -19,8 +19,10 @@ import com.codeit.weatherfit.domain.user.dto.response.UserDto;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.user.service.UserService;
+import com.codeit.weatherfit.global.s3.S3Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -28,6 +30,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -36,6 +39,8 @@ import org.springframework.util.MultiValueMap;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
@@ -56,6 +61,14 @@ class FollowControllerTest {
     ProfileRepository profileRepository;
     @Autowired
     FollowRepository followRepository;
+    @MockitoBean
+    private S3Service s3Service;
+
+    @BeforeEach
+    void setUp() {
+        given(s3Service.getUrl(any()))
+                .willReturn("https://mock-s3-url.com/default-image.jpg");
+    }
 
 
     @Test
@@ -200,7 +213,6 @@ class FollowControllerTest {
     @Test
     @WithMockUser
     void unFollow() {
-
         User user = UserFixture.createUser("test@email.com");
         userRepository.save(user);
         Profile profile = ProfileFixture.createProfile(user);
