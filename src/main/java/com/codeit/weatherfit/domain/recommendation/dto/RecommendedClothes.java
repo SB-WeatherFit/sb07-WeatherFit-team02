@@ -2,6 +2,7 @@ package com.codeit.weatherfit.domain.recommendation.dto;
 
 import com.codeit.weatherfit.domain.clothes.entity.ClothesType;
 
+import java.util.List;
 import java.util.UUID;
 
 public record RecommendedClothes(
@@ -9,6 +10,6 @@ public record RecommendedClothes(
         String name,
         String imageUrl,
         ClothesType type,
-        AttributesDto attributes
+        List<AttributesDto> attributes
 ) {
 }

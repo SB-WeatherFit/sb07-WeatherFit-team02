@@ -13,6 +13,7 @@ import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class MessageServiceImpl implements MessageService {
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final ProfileRepository profileRepository;
+    private final S3Service s3Service;
 
     @Transactional
     public void send(MessageCreateRequest request) {
@@ -40,16 +42,21 @@ public class MessageServiceImpl implements MessageService {
         String content = request.content();
 
         User sender = userRepository.findById(senderId)
-                .orElseThrow(); // todo
+                .orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다."));
 
         User receiver = userRepository.findById(receiverId)
-                .orElseThrow(); // todo
+                .orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다."));
 
         Message message = Message.create(sender, receiver, content);
         Message save = messageRepository.save(message);
         Profile receiverProfile = profileRepository.findWithUser(save.getReceiver().getId()).orElseThrow();
         Profile senderProfile = profileRepository.findWithUser(save.getSender().getId()).orElseThrow();
-        DmDto messageDto = DmDto.from(save, senderProfile, receiverProfile);
+        DmDto messageDto = DmDto.from(save,
+                senderProfile.getUser(),
+                s3Service.getUrl(senderProfile.getProfileImageKey()),
+                receiverProfile.getUser(),
+                s3Service.getUrl(receiverProfile.getProfileImageKey())
+        );
 
 
         String dmKey = generateDmKey(senderId, receiverId);
@@ -71,7 +78,14 @@ public class MessageServiceImpl implements MessageService {
         }
 
         List<MessageDto> data = messages.stream()
-                .map(message -> MessageDto.from(message, senderProfile, receiverProfile))
+                .map(message -> MessageDto.from(
+                                message,
+                                senderProfile.getUser(),
+                                s3Service.getUrl(senderProfile.getProfileImageKey()),
+                                receiverProfile.getUser(),
+                                s3Service.getUrl(receiverProfile.getProfileImageKey())
+                        )
+                )
                 .toList();
 
         return new MessageCursorResponse(

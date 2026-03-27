@@ -5,6 +5,6 @@ import com.codeit.weatherfit.domain.user.entity.User;
 
 public abstract class ProfileFixture {
     public static Profile createProfile(User user) {
-        return Profile.create(user, null, null, null, null, null);
+        return Profile.create(user, null, null, null, null, "key");
     }
 }

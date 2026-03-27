@@ -19,6 +19,7 @@ import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.global.exception.ErrorCode;
+import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,8 @@ public class FollowServiceImpl implements FollowService {
     private final ProfileRepository profileRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final S3Service s3Service;
+
 
     @Override
     @Transactional
@@ -55,12 +58,15 @@ public class FollowServiceImpl implements FollowService {
         Follow follow = Follow.create(new FollowCreateParam(followee, follower));
         Follow save = followRepository.save(follow);
 
-        Profile followeeProfile = profileRepository.findWithUser(createRequest.followeeId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
-        Profile followerProfile = profileRepository.findWithUser(createRequest.followerId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
+        Profile followeeProfile = profileRepository.findByUserId(createRequest.followeeId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
+        Profile followerProfile = profileRepository.findByUserId(createRequest.followerId()).orElseThrow(() -> new FollowProfileNotExistException(ErrorCode.PROFILE_NOT_FOUND));
+
+        String followeeProfileImageUrl = s3Service.getUrl(followeeProfile.getProfileImageKey());
+        String followerProfileImageUrl = s3Service.getUrl(followerProfile.getProfileImageKey());
 
         eventPublisher.publishEvent(new FollowerCreatedEvent(followee.getId(), follower.getName()));
 
-        return FollowDto.create(save.getId(), followeeProfile, followerProfile);
+        return FollowDto.create(save.getId(), followee, followeeProfileImageUrl, follower, followerProfileImageUrl);
     }
 
     @Override
@@ -119,8 +125,11 @@ public class FollowServiceImpl implements FollowService {
 
         List<FollowDto> data = follows.stream()
                 .map(follow -> FollowDto.create(follow.getId(),
-                        collect.get(follow.getFollowee().getId()),
-                        profile)
+                                follow.getFollowee(),
+                                s3Service.getUrl(collect.get(follow.getFollowee().getId()).getProfileImageKey()),
+                                follow.getFollower(),
+                                s3Service.getUrl(profile.getProfileImageKey())
+                        )
                 )
                 .toList();
 
@@ -154,8 +163,11 @@ public class FollowServiceImpl implements FollowService {
 
         List<FollowDto> data = follows.stream()
                 .map(follow -> FollowDto.create(follow.getId(),
-                        profile,
-                        collect.get(follow.getFollower().getId()))
+                                follow.getFollowee(),
+                                s3Service.getUrl(profile.getProfileImageKey()),
+                                follow.getFollower(),
+                                s3Service.getUrl(collect.get(follow.getFollower().getId()).getProfileImageKey())
+                        )
                 )
                 .toList();
 
