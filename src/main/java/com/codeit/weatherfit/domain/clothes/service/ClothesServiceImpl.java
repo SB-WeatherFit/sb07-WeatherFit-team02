@@ -1,9 +1,5 @@
 package com.codeit.weatherfit.domain.clothes.service;
 
-import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefCreateRequest;
-import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefUpdateRequest;
-import com.codeit.weatherfit.domain.clothes.dto.request.ClothesCreateRequest;
-import com.codeit.weatherfit.domain.clothes.dto.request.ClothesUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDto;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDtoCursorResponse;
 import com.codeit.weatherfit.domain.clothes.entity.*;
@@ -23,8 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +26,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -59,10 +52,28 @@ public class ClothesServiceImpl implements ClothesService {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));// 나중에 커스텀 예외 처리
 
+        String key = null;
+
+        if (image != null && !image.isEmpty()) {
+            try {
+                key = S3KeyGenerator.generateKey(image.getOriginalFilename());
+
+                s3Service.put(
+                        key,
+                        image.getContentType(),
+                        image.getBytes()
+                );
+
+            } catch (IOException e) {
+                throw new S3UploadException(image.getOriginalFilename());
+            }
+        }
+
         Clothes clothes = Clothes.create(
                 owner,
                 name,
-                cType
+                cType,
+                key
         );
         clothesRepository.save(clothes);
         clothes.updateImageKey(publishImageUploadEvent(clothes.getId(), image));
@@ -126,6 +137,23 @@ public class ClothesServiceImpl implements ClothesService {
         Clothes clothes = clothesRepository.findById(clothesId)
                 .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
 
+        String key = null;
+
+        if (image != null && !image.isEmpty()) {
+            try {
+                key = S3KeyGenerator.generateKey(image.getOriginalFilename());
+
+                s3Service.put(
+                        key,
+                        image.getContentType(),
+                        image.getBytes()
+                );
+
+            } catch (IOException e) {
+                throw new S3UploadException(image.getOriginalFilename());
+            }
+        }
+
         String name = (String) rawRequest.get("name");
 
         String typeStr = (String) rawRequest.get("type");
@@ -134,7 +162,7 @@ public class ClothesServiceImpl implements ClothesService {
         clothes.update(
                 name != null ? name : clothes.getName(),
                 type != null ? type : clothes.getType(),
-                image != null ? publishImageUploadEvent(clothes.getId(), image) : clothes.getImageKey()
+                key
         );
 
         List<Map<String, Object>> rawAttrs =
