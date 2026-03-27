@@ -137,7 +137,7 @@ public class ClothesServiceImpl implements ClothesService {
         Clothes clothes = clothesRepository.findById(clothesId)
                 .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
 
-        String key = null;
+        String key = clothes.getImageKey();
 
         if (image != null && !image.isEmpty()) {
             try {
