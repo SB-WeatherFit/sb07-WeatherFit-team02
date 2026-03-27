@@ -30,20 +30,20 @@ public class ClothesController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ClothesDto> create(
-            @RequestPart("request") Map<String, Object> rawRequest,
+            @RequestPart("request") ClothesCreateRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image
     ) {
-        ClothesDto created = clothesService.create(rawRequest, image);
+        ClothesDto created = clothesService.create(request, image);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PatchMapping(path = "/{clothesId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ClothesDto> update(
             @PathVariable UUID clothesId,
-            @RequestPart("request") Map<String, Object> rawRequest,
+            @RequestPart("request") ClothesUpdateRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image
     ) {
-        ClothesDto response = clothesService.update(clothesId, rawRequest, image);
+        ClothesDto response = clothesService.update(clothesId, request, image);
         return ResponseEntity.ok(response);
     }
 

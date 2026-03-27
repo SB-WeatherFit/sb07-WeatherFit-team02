@@ -12,9 +12,9 @@ import java.util.Objects;
 import java.util.UUID;
 
 public interface ClothesService {
-    ClothesDto create(Map<String, Object> rawRequest, MultipartFile image);
+    ClothesDto create(ClothesCreateRequest request, MultipartFile image);
 
-    ClothesDto update(UUID clothesId, Map<String, Object> rawRequest, MultipartFile image);
+    ClothesDto update(UUID clothesId,ClothesUpdateRequest request, MultipartFile image);
 
     void delete(UUID clothesId);
 

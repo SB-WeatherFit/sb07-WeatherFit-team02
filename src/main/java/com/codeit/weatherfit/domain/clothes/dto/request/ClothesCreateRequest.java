@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.clothes.dto.request;
 
+import com.codeit.weatherfit.domain.clothes.dto.response.ClothesAttributeDto;
 import com.codeit.weatherfit.domain.clothes.entity.ClothesType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -18,6 +19,6 @@ public record ClothesCreateRequest (
         @NotNull
         ClothesType type,
 
-        List<@Valid ClothesAttributeDefCreateRequest> attributes
+        List<@Valid ClothesAttributeDto> attributes
 ) {
 }
