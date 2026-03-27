@@ -23,7 +23,7 @@ public class FeedController {
     private final FeedService feedService;
 
     @GetMapping
-    public ResponseEntity<FeedGetResponse> get(@RequestBody @Valid FeedGetRequest request,
+    public ResponseEntity<FeedGetResponse> get(@ModelAttribute @Valid FeedGetRequest request,
                                                @AuthenticationPrincipal WeatherFitUserDetails userDetails) {
         return ResponseEntity.ok(feedService.getFeedsByCursor(request, userDetails));
     }
