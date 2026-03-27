@@ -142,8 +142,7 @@ class FollowControllerTest {
 
         FolloweeSearchCondition followeeSearchCondition = new FolloweeSearchCondition(user.getId(), null, null, 20, null);
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        Map<String, String> map = objectMapper.convertValue(followeeSearchCondition, new TypeReference<>() {
-        });
+        Map<String, String> map = objectMapper.convertValue(followeeSearchCondition, new TypeReference<>() {});
         params.setAll(map);
 
         assertThat(
