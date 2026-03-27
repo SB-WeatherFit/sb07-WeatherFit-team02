@@ -2,9 +2,7 @@ package com.codeit.weatherfit.domain.clothes.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
 import com.codeit.weatherfit.domain.user.entity.User;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +19,8 @@ public class Clothes extends BaseEntity {
 
     private String name;
     private String imageKey;
+
+    @Enumerated(EnumType.STRING)
     private ClothesType type;
 
     private Clothes(User owner, String name, String imageKey, ClothesType type) {

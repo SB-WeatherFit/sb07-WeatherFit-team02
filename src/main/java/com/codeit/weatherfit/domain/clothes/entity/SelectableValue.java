@@ -2,12 +2,14 @@ package com.codeit.weatherfit.domain.clothes.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
 import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepositoryCustom;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
+import static org.hibernate.annotations.OnDeleteAction.CASCADE;
 
 @Table(name = "selectable_values")
 @Getter
@@ -16,7 +18,9 @@ import lombok.NoArgsConstructor;
 public class SelectableValue extends BaseEntity {
     // 빨주노초파남보
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = CASCADE)
+    @JoinColumn(name = "type_id")
     private ClothesAttributeType clothesAttributeType; // 색상
     private String option; // 빨강
 

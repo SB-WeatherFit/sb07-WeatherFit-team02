@@ -88,6 +88,9 @@ dependencies {
 
     // retry
     implementation 'org.springframework.retry:spring-retry'
+
+    // Jsoup
+    implementation 'org.jsoup:jsoup:1.17.2'
 }
 
 tasks.named('test') {

@@ -1,9 +1,7 @@
 package com.codeit.weatherfit.domain.clothes.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,7 +13,8 @@ import lombok.NoArgsConstructor;
 public class ClothesAttribute extends BaseEntity {
     // 맨투맨 Clothes 가 빨강을 갖고있다
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "value_id")
     private Clothes clothes; // 맨투맨
 
     @ManyToOne
