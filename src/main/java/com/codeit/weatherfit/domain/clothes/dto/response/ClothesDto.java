@@ -20,13 +20,8 @@ public record ClothesDto(
                                   String imageUrl) {
 
         List<ClothesAttributeDto> attributesDtos = attributes.stream()
-                .map(attr -> new ClothesAttributeDto(
-                        attr.getOption()
-                                .getClothesAttributeType()
-                                .getId(),
-                        attr.getOption()
-                                .getOption()
-                )).toList();
+                .map(ClothesAttributeDto::from)
+                .toList();
 
         return new ClothesDto(
                 clothes.getId(),

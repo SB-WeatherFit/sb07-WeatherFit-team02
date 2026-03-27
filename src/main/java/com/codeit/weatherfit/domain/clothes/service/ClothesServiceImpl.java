@@ -1,5 +1,10 @@
 package com.codeit.weatherfit.domain.clothes.service;
 
+import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefCreateRequest;
+import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefUpdateRequest;
+import com.codeit.weatherfit.domain.clothes.dto.request.ClothesCreateRequest;
+import com.codeit.weatherfit.domain.clothes.dto.request.ClothesUpdateRequest;
+import com.codeit.weatherfit.domain.clothes.dto.response.ClothesAttributeDto;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDto;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDtoCursorResponse;
 import com.codeit.weatherfit.domain.clothes.entity.*;
@@ -19,6 +24,8 @@ import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -43,12 +51,12 @@ public class ClothesServiceImpl implements ClothesService {
 
     @Override
     @Transactional
-    public ClothesDto create(Map<String, Object> rawRequest, MultipartFile image) {
-        UUID ownerId = UUID.fromString((String) rawRequest.get("ownerId"));
-        String name = (String) rawRequest.get("name");
+    public ClothesDto create(ClothesCreateRequest request, MultipartFile image) {
+        UUID ownerId = request.ownerId();
+        String name = request.name();
 
-        String typeStr = (String) rawRequest.get("type");
-        ClothesType cType = ClothesType.valueOf(typeStr);
+
+        ClothesType cType = request.type();
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));// 나중에 커스텀 예외 처리
 
@@ -69,40 +77,26 @@ public class ClothesServiceImpl implements ClothesService {
             }
         }
 
-        Clothes clothes = Clothes.create(
-                owner,
-                name,
-                cType,
-                key
-        );
-        clothesRepository.save(clothes);
+        Clothes clothes =
+                clothesRepository.save(Clothes.create(
+                                owner,
+                                name,
+                                cType,
+                                key
+                        )
+                );
         clothes.updateImageKey(publishImageUploadEvent(clothes.getId(), image));
 
-        List<Map<String, Object>> rawAttrs =
-                (List<Map<String, Object>>) rawRequest.get("attributes");
+        List<ClothesAttributeDto> attributeDtos = request.attributes();
 
-        if (rawAttrs != null) {
+        if (attributeDtos != null) {
 
-            for (Map<String, Object> rawAttr : rawAttrs) {
+            for (ClothesAttributeDto attributeDto : attributeDtos) {
 
-                String definitionId = (String) rawAttr.get("definitionId");
-
-                Object rawValue = rawAttr.get("value");
-
-                String value;
-
-                if (rawValue instanceof String str) {
-                    value = str;
-                } else if (rawValue instanceof List<?> list) {
-                    value = (String) list.get(0);
-                } else {
-                    throw new IllegalArgumentException("value 형식 오류");
-                }
-
-                UUID id = UUID.fromString(definitionId);
-
+                UUID definitionId = attributeDto.definitionId();
+                String value = attributeDto.value();
                 ClothesAttributeType type =
-                        clothesAttributeTypeRepository.findById(id)
+                        clothesAttributeTypeRepository.findById(definitionId)
                                 .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(
                                         ErrorCode.CLOTHES_ATTRIBUTE_TYPE_NOT_FOUND
                                 ));
@@ -122,21 +116,21 @@ public class ClothesServiceImpl implements ClothesService {
 
         }
 
+
         // 조회용
         List<ClothesAttribute> attributes =
                 clothesAttributeRepository.findByClothes(clothes);
-        String url = clothes.getImageKey() == null? null : s3Service.getUrl(clothes.getImageKey());
+        String url = clothes.getImageKey() == null ? null : s3Service.getUrl(clothes.getImageKey());
 
         return ClothesDto.from(clothes, attributes, url);
     }
 
     @Override
     @Transactional
-    public ClothesDto update(UUID clothesId, Map<String, Object> rawRequest, MultipartFile image) {
+    public ClothesDto update(UUID clothesId, ClothesUpdateRequest request, MultipartFile image) {
 
         Clothes clothes = clothesRepository.findById(clothesId)
                 .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
-
         String key = clothes.getImageKey();
 
         if (image != null && !image.isEmpty()) {
@@ -154,10 +148,8 @@ public class ClothesServiceImpl implements ClothesService {
             }
         }
 
-        String name = (String) rawRequest.get("name");
-
-        String typeStr = (String) rawRequest.get("type");
-        ClothesType type = typeStr != null ? ClothesType.valueOf(typeStr) : null;
+        String name = request.name();
+        ClothesType type = request.type();
 
         clothes.update(
                 name != null ? name : clothes.getName(),
@@ -165,18 +157,15 @@ public class ClothesServiceImpl implements ClothesService {
                 key
         );
 
-        List<Map<String, Object>> rawAttrs =
-                (List<Map<String, Object>>) rawRequest.get("attributes");
+        List<ClothesAttributeDto> attributeDtos = request.attributes();
 
-        if (rawAttrs != null) {
-
+        if (attributeDtos != null) {
             clothesAttributeRepository.deleteByClothes(clothes);
 
-            for (Map<String, Object> rawAttr : rawAttrs) {
+            for (ClothesAttributeDto attributeDto : attributeDtos) {
 
-                UUID definitionId = UUID.fromString((String) rawAttr.get("definitionId"));
-                String value = (String) rawAttr.get("value");
-
+                UUID definitionId = attributeDto.definitionId();
+                String value = attributeDto.value();
                 ClothesAttributeType typeEntity =
                         clothesAttributeTypeRepository.findById(definitionId)
                                 .orElseThrow(() -> new ClothesAttributeTypeNotFoundException(
@@ -189,10 +178,8 @@ public class ClothesServiceImpl implements ClothesService {
                                 .orElseThrow(() -> new InvalidClothesAttributeOptionException(
                                         ErrorCode.INVALID_CLOTHES_ATTRIBUTE_OPTION
                                 ));
-
                 ClothesAttribute newAttr =
                         ClothesAttribute.create(clothes, selectableValue);
-
                 clothesAttributeRepository.save(newAttr);
             }
         }

@@ -14,10 +14,10 @@ public class ClothesAttribute extends BaseEntity {
     // 맨투맨 Clothes 가 빨강을 갖고있다
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "value_id")
     private Clothes clothes; // 맨투맨
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="value_id")
     private SelectableValue option; // 빨강
 
     public void changeOption(SelectableValue option) { this.option = option; }
