@@ -1,27 +1,27 @@
 package com.codeit.weatherfit.domain.auth.security;
 
 import com.codeit.weatherfit.domain.user.entity.User;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.Map;
+import java.util.Date;
 import java.util.UUID;
 
 @Component
 public class JwtTokenProvider {
 
-    private static final String ACCESS_SECRET_KEY = "temporary-weatherfit-access-secret-key";
-    private static final String REFRESH_SECRET_KEY = "temporary-weatherfit-refresh-secret-key";
+    private static final String ACCESS_SECRET_KEY = "temporary-weatherfit-access-secret-key-temporary-weatherfit-access-secret-key"; //수정
+    private static final String REFRESH_SECRET_KEY = "temporary-weatherfit-refresh-secret-key-temporary-weatherfit-refresh-secret-key"; //수정
     private static final long ACCESS_TOKEN_EXPIRE_SECONDS = 60L * 60L;
     private static final long REFRESH_TOKEN_EXPIRE_SECONDS = 60L * 60L * 24L * 7L;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final SecretKey accessSecretKey = Keys.hmacShaKeyFor(ACCESS_SECRET_KEY.getBytes(StandardCharsets.UTF_8)); //수정
+    private final SecretKey refreshSecretKey = Keys.hmacShaKeyFor(REFRESH_SECRET_KEY.getBytes(StandardCharsets.UTF_8)); //수정
 
     public String generateAccessToken(User user) {
         return generateToken(
@@ -29,7 +29,7 @@ public class JwtTokenProvider {
                 user.getEmail(),
                 user.getRole().name(),
                 "ACCESS",
-                ACCESS_SECRET_KEY,
+                accessSecretKey, //수정
                 ACCESS_TOKEN_EXPIRE_SECONDS
         );
     }
@@ -40,83 +40,63 @@ public class JwtTokenProvider {
                 user.getEmail(),
                 user.getRole().name(),
                 "REFRESH",
-                REFRESH_SECRET_KEY,
+                refreshSecretKey, //수정
                 REFRESH_TOKEN_EXPIRE_SECONDS
         );
     }
 
     public boolean isValidAccessToken(String token) {
-        return isValidToken(token, ACCESS_SECRET_KEY, "ACCESS");
+        return isValidToken(token, accessSecretKey, "ACCESS"); //수정
     }
 
     public boolean isValidRefreshToken(String token) {
-        return isValidToken(token, REFRESH_SECRET_KEY, "REFRESH");
+        return isValidToken(token, refreshSecretKey, "REFRESH"); //수정
     }
 
     public UUID getUserId(String token) {
-        Map<String, Object> payload = parsePayload(token);
-        if (payload == null || payload.get("sub") == null) {
+        Claims claims = parseClaims(token, accessSecretKey); //수정
+        if (claims == null || claims.getSubject() == null) {
             return null;
         }
 
         try {
-            return UUID.fromString(String.valueOf(payload.get("sub")));
+            return UUID.fromString(claims.getSubject());
         } catch (Exception exception) {
             return null;
         }
     }
 
     public String getEmail(String token) {
-        Map<String, Object> payload = parsePayload(token);
-        if (payload == null || payload.get("email") == null) {
+        Claims claims = parseClaims(token, accessSecretKey); //수정
+        if (claims == null) {
             return null;
         }
 
-        return String.valueOf(payload.get("email"));
+        return claims.get("email", String.class);
     }
 
     public String getRole(String token) {
-        Map<String, Object> payload = parsePayload(token);
-        if (payload == null || payload.get("role") == null) {
+        Claims claims = parseClaims(token, accessSecretKey); //수정
+        if (claims == null) {
             return null;
         }
 
-        return String.valueOf(payload.get("role"));
+        return claims.get("role", String.class);
     }
 
-    private boolean isValidToken(String token, String secretKey, String expectedTokenType) {
+    private boolean isValidToken(String token, SecretKey secretKey, String expectedTokenType) { //수정
         try {
             if (token == null || token.isBlank()) {
                 return false;
             }
 
-            String[] tokenParts = token.split("\\.");
-            if (tokenParts.length != 3) {
+            Claims claims = parseClaims(token, secretKey);
+            if (claims == null) {
                 return false;
             }
 
-            String expectedSignature = sign(tokenParts[0] + "." + tokenParts[1], secretKey);
-            if (!expectedSignature.equals(tokenParts[2])) {
-                return false;
-            }
-
-            Map<String, Object> payload = parsePayload(token);
-            if (payload == null) {
-                return false;
-            }
-
-            Object tokenType = payload.get("tokenType");
-            if (tokenType == null || !expectedTokenType.equals(String.valueOf(tokenType))) {
-                return false;
-            }
-
-            Object expiration = payload.get("exp");
-            if (expiration == null) {
-                return false;
-            }
-
-            long expirationEpochSecond = Long.parseLong(String.valueOf(expiration));
-            return expirationEpochSecond > Instant.now().getEpochSecond();
+            String tokenType = claims.get("tokenType", String.class);
+            return expectedTokenType.equals(tokenType);
         } catch (Exception exception) {
             return false;
         }
@@ -127,65 +107,32 @@ public class JwtTokenProvider {
             String email,
             String role,
             String tokenType,
-            String secretKey,
+            SecretKey secretKey, //수정
             long expireSeconds
     ) {
-        try {
-            Instant now = Instant.now();
-            Instant expiresAt = now.plusSeconds(expireSeconds);
+        Instant now = Instant.now();
+        Instant expiresAt = now.plusSeconds(expireSeconds);
 
-            String headerJson = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
-            String payloadJson = "{"
-                    + "\"sub\":\"" + userId + "\","
-                    + "\"email\":\"" + email + "\","
-                    + "\"role\":\"" + role + "\","
-                    + "\"tokenType\":\"" + tokenType + "\","
-                    + "\"iat\":" + now.getEpochSecond() + ","
-                    + "\"exp\":" + expiresAt.getEpochSecond()
-                    + "}";
-
-            String encodedHeader = encode(headerJson);
-            String encodedPayload = encode(payloadJson);
-            String signature = sign(encodedHeader + "." + encodedPayload, secretKey);
-
-            return encodedHeader + "." + encodedPayload + "." + signature;
-        } catch (Exception exception) {
-            throw new IllegalStateException("JWT 생성 중 오류가 발생했습니다.", exception);
-        }
+        return Jwts.builder() //수정
+                .subject(userId.toString()) //수정
+                .claim("email", email) //수정
+                .claim("role", role) //수정
+                .claim("tokenType", tokenType) //수정
+                .issuedAt(Date.from(now)) //수정
+                .expiration(Date.from(expiresAt)) //수정
+                .signWith(secretKey) //수정
+                .compact(); //수정
     }
 
-    private Map<String, Object> parsePayload(String token) {
+    private Claims parseClaims(String token, SecretKey secretKey) { //수정
         try {
-            String[] tokenParts = token.split("\\.");
-            if (tokenParts.length != 3) {
-                return null;
-            }
-
-            byte[] decodedPayloadBytes = Base64.getUrlDecoder().decode(tokenParts[1]);
-            String payloadJson = new String(decodedPayloadBytes, StandardCharsets.UTF_8);
-
-            return objectMapper.readValue(payloadJson, new TypeReference<>() {
-            });
+            return Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
         } catch (Exception exception) {
             return null;
         }
-    }
-
-    private String encode(String value) {
-        return Base64.getUrlEncoder()
-                .withoutPadding()
-                .encodeToString(value.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private String sign(String value, String secretKey) throws Exception {
-        Mac mac = Mac.getInstance("HmacSHA256");
-        SecretKeySpec secretKeySpec = new SecretKeySpec(
-                secretKey.getBytes(StandardCharsets.UTF_8),
-                "HmacSHA256"
-        );
-        mac.init(secretKeySpec);
-
-        byte[] signatureBytes = mac.doFinal(value.getBytes(StandardCharsets.UTF_8));
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(signatureBytes);
     }
 }
