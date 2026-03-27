@@ -6,7 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.messaging.converter.JacksonJsonMessageConverter;
+
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
@@ -52,7 +53,7 @@ class MessageSocketControllerTest {
 
         // StompClient가 SockJsClient를 사용하도록 설정합니다.
         stompClient = new WebSocketStompClient(sockJsClient);
-        stompClient.setMessageConverter(new JacksonJsonMessageConverter());
+        stompClient.setMessageConverter(new MappingJackson2MessageConverter()); // 부트4에선 다른 걸 사용
     }
 
     @Test

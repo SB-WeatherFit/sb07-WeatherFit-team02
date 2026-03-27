@@ -122,7 +122,7 @@ public class FeedServiceImpl implements FeedService {
                 hasNext ? lastFeed.getCreatedAt() : null,
                 hasNext ? lastFeed.getId() : null,
                 hasNext,
-                feeds.size(),
+                feedRepository.count(),
                 request.sortBy(),
                 request.sortDirection()
         );
@@ -193,7 +193,7 @@ public class FeedServiceImpl implements FeedService {
                 hasNext ? last.getCreatedAt() : null,
                 hasNext ? last.getId() : null,
                 hasNext,
-                comments.size()
+                commentRepository.count()
         );
     }
 

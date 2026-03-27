@@ -7,11 +7,13 @@ import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
 import com.codeit.weatherfit.domain.weather.service.WeatherApiCallService;
 import com.codeit.weatherfit.domain.weather.service.WeatherScheduler;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
+
+import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
-import org.springframework.batch.core.step.StepContribution;
+
 import org.springframework.batch.core.step.tasklet.Tasklet;
-import org.springframework.batch.infrastructure.repeat.RepeatStatus;
+
+import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

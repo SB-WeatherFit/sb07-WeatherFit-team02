@@ -19,4 +19,11 @@ public interface ClothesRepository extends JpaRepository<Clothes, UUID>, Clothes
             UUID ownerId,
             Pageable pageable
     );
+
+    List<Clothes> findByOwnerId(UUID ownerId);
+
+    @Query("select c from Clothes c" +
+            " where c.id in :clothesIds")
+    List<Clothes> findAllByIds(
+            @Param("clothesIds") List<UUID> clothesIds);
 }
