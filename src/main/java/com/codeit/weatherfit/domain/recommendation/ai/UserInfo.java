@@ -13,7 +13,7 @@ public record UserInfo(
         // 나이 계산 (BirthDate가 있다면 추가, 없다면 생략 가능)
         Integer age = (profile.getBirthDate() != null)
                 ? LocalDate.now().getYear() - profile.getBirthDate().getYear() + 1
-                : null; // 혹은 -1
+                : -1; // 혹은 -1
 
         return new UserInfo(
             profile.getGender().name(),
