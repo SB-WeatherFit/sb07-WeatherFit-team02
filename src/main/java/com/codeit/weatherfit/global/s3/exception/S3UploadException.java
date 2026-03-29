@@ -5,5 +5,6 @@ import com.codeit.weatherfit.global.exception.ErrorCode;
 public class S3UploadException extends S3Exception {
     public S3UploadException(String originalFilename) {
         super(ErrorCode.FILE_UPLOAD_FAILURE);
+        this.getDetails().put("originalFilename", originalFilename);
     }
 }
