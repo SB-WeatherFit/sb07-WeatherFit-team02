@@ -1,8 +1,14 @@
 package com.codeit.weatherfit.domain.feed.service;
 
 import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
+import com.codeit.weatherfit.domain.clothes.dto.response.ClothesAttributeWithDefDto;
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesAttribute;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesAttributeType;
+import com.codeit.weatherfit.domain.clothes.entity.SelectableValue;
+import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
+import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepository;
 import com.codeit.weatherfit.domain.feed.dto.CommentDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedClothesDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
@@ -33,6 +39,7 @@ import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
 import com.codeit.weatherfit.global.s3.S3Service;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -59,6 +66,8 @@ public class FeedServiceImpl implements FeedService {
     private final UserService userService;
     private final ApplicationEventPublisher eventPublisher;
     private final FollowRepository followRepository;
+    private final ClothesAttributeRepository clothesAttributeRepository;
+    private final SelectableValueRepository selectableValueRepository;
 
     @Override
     @Transactional
@@ -75,10 +84,7 @@ public class FeedServiceImpl implements FeedService {
         Feed feed = Feed.create(author, weather, request.content());
         Feed saved = feedRepository.save(feed);
         List<FeedClothes> coords = clothes.stream()
-                .map(c -> {
-                    String url = c.getImageKey() == null ? null : s3Service.getUrl(c.getImageKey());
-                    return FeedClothes.create(saved, c.getName(), url);
-                })
+                .map(c -> FeedClothes.create(saved, c))
                 .toList();
         feedClothesRepository.saveAll(coords);
 
@@ -246,13 +252,38 @@ public class FeedServiceImpl implements FeedService {
         return FeedDto.from(
                 feed,
                 feedClothesRepository.findAllByFeed(feed).stream()
-                        .map(fc -> {
-                            String url = fc.getImageKey() == null ? null : s3Service.getUrl(fc.getImageKey());
-                            return FeedClothesDto.from(fc, url);
-                        }).toList(),
+                        .map(this::getFeedClothesDto).toList(),
                 feedLikeRepository.countByFeed(feed),
                 commentRepository.countByFeed(feed),
                 feedLikeRepository.existsByFeedAndLikedUser(feed, loginUser)
+        );
+    }
+
+    private @NonNull FeedClothesDto getFeedClothesDto(FeedClothes fc) {
+        Clothes c = clothesRepository.findById(fc.getClothes().getId())
+                .orElseThrow();
+        List<ClothesAttribute> byClothes = clothesAttributeRepository.findByClothes(c);
+        List<ClothesAttributeWithDefDto> defDtoList = byClothes.stream()
+                .map(this::getClothesAttributeWithDefDto)
+                .toList();
+        String imageKey = fc.getClothes().getImageKey();
+        String url = imageKey == null ? null : s3Service.getUrl(imageKey);
+        return FeedClothesDto.from(fc, url, defDtoList);
+    }
+
+    private ClothesAttributeWithDefDto getClothesAttributeWithDefDto(ClothesAttribute c) {
+        ClothesAttributeType clothesAttributeType = c.getOption().getClothesAttributeType();
+        UUID defId = clothesAttributeType.getId();
+        String defName = clothesAttributeType.getName();
+        List<String> selectableValues = selectableValueRepository.findByClothesAttributeType(clothesAttributeType).stream()
+                .map(SelectableValue::getOption) // 순서?
+                .toList();
+        String option = c.getOption().getOption();
+        return new ClothesAttributeWithDefDto(
+                defId,
+                defName,
+                selectableValues,
+                option
         );
     }
 
