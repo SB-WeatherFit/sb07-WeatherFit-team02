@@ -216,7 +216,7 @@ public class FeedServiceImpl implements FeedService {
         log.info("피드 좋아요 요청: feedId={}, userId={}", id, userDetails.getUserId());
         Feed feed = getFeedOrThrow(id);
         User likeUser = getUserOrThrow(userDetails.getUserId());
-        if (feedLikeRepository.existsByFeedAndUser(feed, likeUser))
+        if (feedLikeRepository.existsByFeedAndLikedUser(feed, likeUser))
             throw new FeedLikeAlreadyExistException(feed, likeUser);
         feedLikeRepository.save(FeedLike.create(feed, likeUser));
 
@@ -236,9 +236,9 @@ public class FeedServiceImpl implements FeedService {
         log.info("피드 좋아요 취소 요청: feedId={}, userId={}", id, userDetails.getUserId());
         Feed feed = getFeedOrThrow(id);
         User likeUser = getUserOrThrow(userDetails.getUserId());
-        if (!feedLikeRepository.existsByFeedAndUser(feed, likeUser))
+        if (!feedLikeRepository.existsByFeedAndLikedUser(feed, likeUser))
             throw new FeedLikeNotExistException(feed, likeUser);
-        feedLikeRepository.deleteByFeedAndUser(feed, likeUser);
+        feedLikeRepository.deleteByFeedAndLikedUser(feed, likeUser);
         log.info("피드 좋아요 취소 완료: feedId={}, userId={}", id, userDetails.getUserId());
     }
 
@@ -252,7 +252,7 @@ public class FeedServiceImpl implements FeedService {
                         }).toList(),
                 feedLikeRepository.countByFeed(feed),
                 commentRepository.countByFeed(feed),
-                feedLikeRepository.existsByFeedAndUser(feed, loginUser)
+                feedLikeRepository.existsByFeedAndLikedUser(feed, loginUser)
         );
     }
 

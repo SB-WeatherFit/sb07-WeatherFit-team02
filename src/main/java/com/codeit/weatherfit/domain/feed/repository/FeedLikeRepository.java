@@ -10,7 +10,7 @@ import java.util.UUID;
 public interface FeedLikeRepository extends JpaRepository<FeedLike, UUID> {
     Long countByFeed(Feed feed);
 
-    boolean existsByFeedAndUser(Feed feed, User user);
+    boolean existsByFeedAndLikedUser(Feed feed, User likedUser);
 
-    void deleteByFeedAndUser(Feed feed, User user);
+    void deleteByFeedAndLikedUser(Feed feed, User likedUser);
 }
