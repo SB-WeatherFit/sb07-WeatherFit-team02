@@ -104,17 +104,17 @@ public class FollowServiceImpl implements FollowService {
         long totalCount = followRepository.countByFollowerId(condition.followerId());
 
         Instant nextCursor = null;
-        UUID nextIdAfter;
+        UUID nextIdAfter = null;
         boolean hasNext = false;
+        if (!follows.isEmpty()) {
+            if (follows.size() > condition.limit()) {
+                follows.removeLast();
+                hasNext = true;
+                nextCursor = follows.getLast().getCreatedAt();
+            }
 
-        if (follows.size() > condition.limit()) {
-            follows.removeLast();
-            hasNext = true;
-            nextCursor = follows.getLast().getCreatedAt();
+            nextIdAfter = follows.getLast().getFollowee().getId();
         }
-
-        nextIdAfter = follows.getLast().getFollowee().getId();
-
         List<UUID> ids = follows.stream().map(follow -> follow.getFollowee().getId()).toList();
         Map<UUID, Profile> collect = profileRepository.findByUserIds(ids).stream()
                 .collect(Collectors.toMap(
@@ -142,17 +142,17 @@ public class FollowServiceImpl implements FollowService {
         long totalCount = followRepository.countByFolloweeId(condition.followeeId());
 
         Instant nextCursor = null;
-        UUID nextIdAfter;
+        UUID nextIdAfter = null;
         boolean hasNext = false;
+        if (!follows.isEmpty()) {
+            if (follows.size() > condition.limit()) {
+                follows.removeLast();
+                hasNext = true;
+                nextCursor = follows.getLast().getCreatedAt();
+            }
 
-        if (follows.size() > condition.limit()) {
-            follows.removeLast();
-            hasNext = true;
-            nextCursor = follows.getLast().getCreatedAt();
+            nextIdAfter = follows.getLast().getFollowee().getId();
         }
-
-        nextIdAfter = follows.getLast().getFollowee().getId();
-
         List<UUID> ids = follows.stream().map(follow -> follow.getFollower().getId()).toList();
         Map<UUID, Profile> collect = profileRepository.findByUserIds(ids).stream()
                 .collect(Collectors.toMap(
