@@ -2,6 +2,11 @@ package com.codeit.weatherfit.domain.feed.dto;
 
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.user.dto.response.UserDto;
+import com.codeit.weatherfit.domain.weather.dto.response.PrecipitaionResponse;
+import com.codeit.weatherfit.domain.weather.dto.response.TemperatureResponse;
+import com.codeit.weatherfit.domain.weather.entity.Precipitation;
+import com.codeit.weatherfit.domain.weather.entity.SkyStatus;
+import com.codeit.weatherfit.domain.weather.entity.Temperature;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 
 import java.time.Instant;
@@ -13,7 +18,7 @@ public record FeedDto(
         Instant createdAt,
         Instant updatedAt,
         UserDto author,
-        Weather weather, // TODO 추후 WeatherDto로 수정
+        WeatherDto weather,
         List<FeedClothesDto> ootds,
         String content,
         Long likeCount,
@@ -26,12 +31,30 @@ public record FeedDto(
                 feed.getCreatedAt(),
                 feed.getUpdatedAt(),
                 UserDto.from(feed.getAuthor()),
-                feed.getWeather(),
+                WeatherDto.from(feed.getWeather()),
                 ootds,
                 feed.getContent(),
                 likeCount,
                 commentCount,
                 likedByMe
         );
+    }
+
+    // TODO 충접 dto 각 도메인으로 옮기기
+
+    public record WeatherDto(
+            UUID weatherId,
+            SkyStatus skyStatus,
+            PrecipitaionResponse precipitation,
+            TemperatureResponse temperature
+    ){
+        public static WeatherDto from(Weather weather) {
+            return new WeatherDto(
+                    weather.getId(),
+                    weather.getSkyStatus(),
+                    PrecipitaionResponse.from(new Precipitation(weather.getType(), weather.getAmount(), weather.getProbability())),
+                    TemperatureResponse.from(new Temperature(weather.getTemperatureCurrent(), weather.getTemperatureComparedToDayBefore(), weather.getMin(), weather.getMax()))
+            );
+        }
     }
 }

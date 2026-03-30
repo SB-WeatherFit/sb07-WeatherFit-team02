@@ -181,11 +181,10 @@ create table feed_clothes
     created_at timestamp with time zone not null default CURRENT_TIMESTAMP,
     updated_at timestamp with time zone not null default CURRENT_TIMESTAMP,
     feed_id    uuid                     not null,
-    name       varchar(255)             not null,
-    image_key  TEXT,
+    clothes_id uuid                     not null,
 
-    constraint fk_feed_clothes_feeds foreign key (feed_id) references feeds (id) on DELETE cascade
-
+    constraint fk_feed_clothes_feeds foreign key (feed_id) references feeds (id) on DELETE cascade,
+    constraint fk_feed_clothes_clothes foreign key (clothes_id) references clothes (id) on DELETE cascade
 );
 
 create table profiles
