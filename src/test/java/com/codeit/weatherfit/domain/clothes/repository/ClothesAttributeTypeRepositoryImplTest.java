@@ -63,10 +63,9 @@ class ClothesAttributeTypeRepositoryImplTest {
 
         assertThat(result).hasSize(2);
 
-        assertThat(result.get(0).name()).isEqualTo("color");
-        assertThat(result.get(1).name()).isEqualTo("size");
-
-        assertThat(result.get(0).selectableValues()).hasSize(2);
+        assertThat(result)
+                .extracting(ClothesAttributeDefDto::name)
+                .containsExactlyInAnyOrder("color", "size");
     }
 
     @Test

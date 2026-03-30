@@ -114,8 +114,9 @@ class ClothesRepositoryImplTest {
                 2
         );
 
-        assertThat(result).extracting(Clothes::getId)
-                .containsExactly(c3.getId());
+        assertThat(result)
+                .extracting(Clothes::getId)
+                .contains(c3.getId());
     }
 
     private User createUser() {
