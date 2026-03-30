@@ -1,5 +1,7 @@
 package com.codeit.weatherfit.domain.clothes.service;
 
+import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefCreateRequest;
+import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesCreateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesAttributeDto;
@@ -19,23 +21,19 @@ import com.codeit.weatherfit.global.s3.event.S3ClothesPutEvent;
 import com.codeit.weatherfit.global.s3.exception.S3UploadException;
 import com.codeit.weatherfit.global.s3.util.S3KeyGenerator;
 import lombok.RequiredArgsConstructor;
-import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import javax.crypto.KeyGenerator;
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -50,7 +48,7 @@ public class ClothesServiceImpl implements ClothesService {
     private final ClothesAttributeRepository clothesAttributeRepository;
     private final S3Service s3Service;
     private final ApplicationEventPublisher eventPublisher;
-    private final WebClient imageUploadClient;
+
     @Override
     @Transactional
     public ClothesDto create(ClothesCreateRequest request, MultipartFile image) {
@@ -286,14 +284,6 @@ public class ClothesServiceImpl implements ClothesService {
     public ClothesDto extractionFromUrl(String url, UUID ownerId) {
 
         try {
-            Connection.Response response = Jsoup.connect(url)
-                    .userAgent("Mozilla/5.0")
-                    .header("Accept-Language", "ko-KR,ko;q=0.9")
-                    .header("Referer", "https://www.google.com")
-                    .userAgent("Mozilla/5.0")
-                    .execute();
-            Map<String, String> cookies = response.cookies();
-
             Document doc = Jsoup.connect(url)
                     .userAgent("Mozilla/5.0")
                     .header("Accept-Language", "ko-KR,ko;q=0.9")
@@ -301,18 +291,12 @@ public class ClothesServiceImpl implements ClothesService {
                     .timeout(5000)
                     .get();
 
-
             String name = doc.select("meta[property=og:title]").attr("content");
             if (name.isEmpty()) {
                 name = doc.title();
             }
 
             String imageUrl = doc.select("meta[property=og:image]").attr("content");
-            InputStream inputStream = downloadImageByte(imageUrl,cookies);
-            s3Service.put(
-                    inputStream.readAllBytes(),
-                    imageUrl
-            );
 
             User owner = userRepository.findById(ownerId)
                     .orElseThrow(() -> new RuntimeException("유저 없음")); // 커스텀
@@ -328,19 +312,5 @@ public class ClothesServiceImpl implements ClothesService {
         } catch (IOException e) {
             throw new ClothesExtractionException(ErrorCode.URL_PARSING_FAILED);
         }
-    }
-
-    private InputStream downloadImageByte(String imageUrl,Map<String,String> cookies) throws IOException {
-
-
-        return imageUploadClient.get()
-                .uri(imageUrl)
-                .header(HttpHeaders.REFERER, imageUrl)
-                .cookies(c-> cookies.forEach(c::add))
-                .retrieve()
-                .bodyToMono(Resource.class)
-                .block()
-                .getInputStream();
-
     }
 }
