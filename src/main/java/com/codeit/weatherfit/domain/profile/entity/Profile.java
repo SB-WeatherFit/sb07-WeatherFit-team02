@@ -40,7 +40,7 @@ public class Profile extends BaseEntity {
     @Embedded
     private Location location;
 
-    @Column(name = "temperature_sensitivity", nullable = false, columnDefinition = "int2")
+    @Column(name = "temperature_sensitivity")
     private int temperatureSensitivity;
 
     @Column(name = "profile_image_key")

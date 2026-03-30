@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Table(name = "selectable_values")
 @Getter
@@ -14,7 +16,8 @@ public class SelectableValue extends BaseEntity {
     // 빨주노초파남보
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "type_id")
+    @JoinColumn(name="type_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private ClothesAttributeType clothesAttributeType; // 색상
     private String option; // 빨강
 

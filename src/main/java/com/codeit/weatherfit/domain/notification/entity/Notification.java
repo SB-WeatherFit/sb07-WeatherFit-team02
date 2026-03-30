@@ -24,7 +24,6 @@ public class Notification extends BaseEntity {
     private String content;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     private NotificationLevel level;
 
     public static Notification create(User receiver, String title, String content, NotificationLevel level) {
