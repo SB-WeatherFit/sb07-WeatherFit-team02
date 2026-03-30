@@ -147,18 +147,26 @@ public class UserServiceImpl implements UserService {
     public UserSummary getUserSummary(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
-        return UserSummary.from(user, s3Service.getUrl(profileRepository.findByUserId(userId)
-                .orElseThrow(() -> new WeatherFitException(ErrorCode.PROFILE_NOT_FOUND))
-                .getProfileImageKey())
-        );
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new WeatherFitException(ErrorCode.PROFILE_NOT_FOUND));
+
+        return UserSummary.from(user, getProfileImageUrl(profile));
     }
 
     @Override
     public UserSummary getUserSummary(User user) {
-        return UserSummary.from(user, s3Service.getUrl(profileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new WeatherFitException(ErrorCode.PROFILE_NOT_FOUND))
-                .getProfileImageKey())
-        );
+        Profile profile = profileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new WeatherFitException(ErrorCode.PROFILE_NOT_FOUND));
+
+        return UserSummary.from(user, getProfileImageUrl(profile));
+    }
+
+    private String getProfileImageUrl(Profile profile) {
+        String profileImageKey = profile.getProfileImageKey();
+        if (profileImageKey == null || profileImageKey.isBlank()) {
+            return null;
+        }
+        return s3Service.getUrl(profileImageKey);
     }
 
     private UserRole parseRole(String roleEqual) {
