@@ -132,7 +132,7 @@ class FeedServiceImplTest {
             feedService.create(request, userDetails);
 
             // then
-            verify(userRepository).findById(request.userId());
+            verify(userRepository).findById(request.authorId());
             verify(weatherRepository).findById(request.weatherId());
             verify(feedRepository).save(any(Feed.class));
             verify(feedClothesRepository).saveAll(anyList());
