@@ -44,7 +44,7 @@ public class ProfileServiceImpl implements ProfileService {
         Profile profile = profileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.PROFILE_NOT_FOUND));
 
-        return ProfileDto.from(profile, s3Service.getUrl(profile.getProfileImageKey()));
+        return ProfileDto.from(profile, getProfileImageUrl(profile));
     }
 
     @Override
@@ -64,7 +64,7 @@ public class ProfileServiceImpl implements ProfileService {
                 request.location().longitude()
         );
 
-        if(image != null) {
+        if (image != null) {
             try {
                 String key = S3KeyGenerator.generateKey(image.getOriginalFilename());
                 eventPublisher.publishEvent(new S3ProfilePutEvent(
@@ -83,7 +83,7 @@ public class ProfileServiceImpl implements ProfileService {
         profile.updateLocation(location);
         profile.updateTemperatureSensitivity(request.temperatureSensitivity());
 
-        return ProfileDto.from(profile, s3Service.getUrl(profile.getProfileImageKey()));
+        return ProfileDto.from(profile, getProfileImageUrl(profile));
     }
 
     @Override
@@ -92,5 +92,13 @@ public class ProfileServiceImpl implements ProfileService {
         Profile profile = profileRepository.findByUserId(userId)
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.PROFILE_NOT_FOUND));
         profile.updateProfileImageKey(null);
+    }
+
+    private String getProfileImageUrl(Profile profile) {
+        String profileImageKey = profile.getProfileImageKey();
+        if (profileImageKey == null || profileImageKey.isBlank()) {
+            return null;
+        }
+        return s3Service.getUrl(profileImageKey);
     }
 }
