@@ -83,6 +83,8 @@ public class S3ServiceImpl implements S3Service {
 
     @Override
     public String getUrl(String key) {
+        if (key == null)
+            return null;
         try {
             GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
                     .signatureDuration(Duration.ofSeconds(s3Properties.presignedUrlExpirationTime()))
