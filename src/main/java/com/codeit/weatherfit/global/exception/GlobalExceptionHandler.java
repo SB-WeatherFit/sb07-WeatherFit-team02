@@ -32,6 +32,7 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
         Map<String, Object> details = new HashMap<>();
         details.put("code", errorCode.getCode());
+        details.put("message", e.getMessage());
 
         ErrorResponse errorResponse = new ErrorResponse(
                 e.getClass().getSimpleName(),
