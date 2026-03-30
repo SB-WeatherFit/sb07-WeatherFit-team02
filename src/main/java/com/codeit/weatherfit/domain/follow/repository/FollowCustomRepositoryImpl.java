@@ -29,7 +29,7 @@ public class FollowCustomRepositoryImpl implements FollowCustomRepository {
                 .where(
                         follow.follower.id.eq(condition.followerId()),
                         cursorCondition(condition.cursor(), condition.idAfter()),
-                        nameLike(condition.nameLike()))
+                        nameLikeFollowee(condition.nameLike()))
                 .orderBy(follow.createdAt.asc(), follow.id.asc())
                 .limit(condition.limit() + 1)
                 .fetch();
@@ -44,17 +44,24 @@ public class FollowCustomRepositoryImpl implements FollowCustomRepository {
                 .where(
                         follow.followee.id.eq(condition.followeeId()),
                         cursorCondition(condition.cursor(), condition.idAfter()),
-                        nameLike(condition.nameLike()))
+                        nameLikeFollowers(condition.nameLike()))
                 .orderBy(follow.createdAt.asc(), follow.id.asc())
                 .limit(condition.limit() + 1)
                 .fetch();
     }
 
-    private BooleanExpression nameLike(String nameLike) {
+    private BooleanExpression nameLikeFollowee(String nameLike) {
+        if (nameLike == null || nameLike.isBlank()) {
+            return null;
+        }
+        return follow.followee.name.contains(nameLike);
+    }
+
+    private BooleanExpression nameLikeFollowers(String nameLike) {
         if (nameLike == null) {
             return null;
         }
-        return follow.follower.name.like(nameLike);
+        return follow.follower.name.contains(nameLike);
     }
 
     private BooleanExpression cursorCondition(Instant cursor, UUID idAfter) {

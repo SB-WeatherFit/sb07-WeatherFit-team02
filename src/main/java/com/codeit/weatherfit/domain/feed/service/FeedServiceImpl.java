@@ -1,8 +1,14 @@
 package com.codeit.weatherfit.domain.feed.service;
 
 import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
+import com.codeit.weatherfit.domain.clothes.dto.response.ClothesAttributeWithDefDto;
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesAttribute;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesAttributeType;
+import com.codeit.weatherfit.domain.clothes.entity.SelectableValue;
+import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
+import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepository;
 import com.codeit.weatherfit.domain.feed.dto.CommentDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedClothesDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
@@ -33,6 +39,7 @@ import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
 import com.codeit.weatherfit.global.s3.S3Service;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -59,26 +66,25 @@ public class FeedServiceImpl implements FeedService {
     private final UserService userService;
     private final ApplicationEventPublisher eventPublisher;
     private final FollowRepository followRepository;
+    private final ClothesAttributeRepository clothesAttributeRepository;
+    private final SelectableValueRepository selectableValueRepository;
 
     @Override
     @Transactional
     public FeedDto create(FeedCreateRequest request, WeatherFitUserDetails userDetails) {
-        log.info("피드 생성 요청: userId={}, weatherId={}, clothesCount={}", request.userId(), request.weatherId(), request.clothesIds().size());
-        if (!request.userId().equals(userDetails.getUserId())) {
-            log.warn("피드 생성 권한 불일치: requestUserId={}, loginUserId={}", request.userId(), userDetails.getUserId());
+        log.info("피드 생성 요청: authorId={}, weatherId={}, clothesCount={}", request.authorId(), request.weatherId(), request.clothesIds().size());
+        if (!request.authorId().equals(userDetails.getUserId())) {
+            log.warn("피드 생성 권한 불일치: requestUserId={}, loginUserId={}", request.authorId(), userDetails.getUserId());
             throw new RuntimeException("Bad request"); // 추후 인증 에러로 수정
         }
-        User author = getUserOrThrow(request.userId());
+        User author = getUserOrThrow(request.authorId());
         Weather weather = getWeatherOrThrow(request.weatherId());
         List<Clothes> clothes = getClothesOrThrow(request.clothesIds());
 
         Feed feed = Feed.create(author, weather, request.content());
         Feed saved = feedRepository.save(feed);
         List<FeedClothes> coords = clothes.stream()
-                .map(c -> {
-                    String url = c.getImageKey() == null ? null : s3Service.getUrl(c.getImageKey());
-                    return FeedClothes.create(saved, c.getName(), url);
-                })
+                .map(c -> FeedClothes.create(saved, c))
                 .toList();
         feedClothesRepository.saveAll(coords);
 
@@ -213,10 +219,10 @@ public class FeedServiceImpl implements FeedService {
     @Override
     @Transactional
     public void like(UUID id, WeatherFitUserDetails userDetails) {
-        log.info("피드 좋아요 요청: feedId={}, userId={}", id, userDetails.getUserId());
+        log.info("피드 좋아요 요청: feedId={}, authorId={}", id, userDetails.getUserId());
         Feed feed = getFeedOrThrow(id);
         User likeUser = getUserOrThrow(userDetails.getUserId());
-        if (feedLikeRepository.existsByFeedAndUser(feed, likeUser))
+        if (feedLikeRepository.existsByFeedAndLikedUser(feed, likeUser))
             throw new FeedLikeAlreadyExistException(feed, likeUser);
         feedLikeRepository.save(FeedLike.create(feed, likeUser));
 
@@ -227,32 +233,57 @@ public class FeedServiceImpl implements FeedService {
                 feed.getContent()
         ));
 
-        log.info("피드 좋아요 완료: feedId={}, userId={}", id, userDetails.getUserId());
+        log.info("피드 좋아요 완료: feedId={}, authorId={}", id, userDetails.getUserId());
     }
 
     @Override
     @Transactional
     public void unlike(UUID id, WeatherFitUserDetails userDetails) {
-        log.info("피드 좋아요 취소 요청: feedId={}, userId={}", id, userDetails.getUserId());
+        log.info("피드 좋아요 취소 요청: feedId={}, authorId={}", id, userDetails.getUserId());
         Feed feed = getFeedOrThrow(id);
         User likeUser = getUserOrThrow(userDetails.getUserId());
-        if (!feedLikeRepository.existsByFeedAndUser(feed, likeUser))
+        if (!feedLikeRepository.existsByFeedAndLikedUser(feed, likeUser))
             throw new FeedLikeNotExistException(feed, likeUser);
-        feedLikeRepository.deleteByFeedAndUser(feed, likeUser);
-        log.info("피드 좋아요 취소 완료: feedId={}, userId={}", id, userDetails.getUserId());
+        feedLikeRepository.deleteByFeedAndLikedUser(feed, likeUser);
+        log.info("피드 좋아요 취소 완료: feedId={}, authorId={}", id, userDetails.getUserId());
     }
 
     private FeedDto toFeedDto(Feed feed, User loginUser) {
         return FeedDto.from(
                 feed,
                 feedClothesRepository.findAllByFeed(feed).stream()
-                        .map(fc -> {
-                            String url = fc.getImageKey() == null ? null : s3Service.getUrl(fc.getImageKey());
-                            return FeedClothesDto.from(fc, url);
-                        }).toList(),
+                        .map(this::getFeedClothesDto).toList(),
                 feedLikeRepository.countByFeed(feed),
                 commentRepository.countByFeed(feed),
-                feedLikeRepository.existsByFeedAndUser(feed, loginUser)
+                feedLikeRepository.existsByFeedAndLikedUser(feed, loginUser)
+        );
+    }
+
+    private @NonNull FeedClothesDto getFeedClothesDto(FeedClothes fc) {
+        Clothes c = clothesRepository.findById(fc.getClothes().getId())
+                .orElseThrow();
+        List<ClothesAttribute> byClothes = clothesAttributeRepository.findByClothes(c);
+        List<ClothesAttributeWithDefDto> defDtoList = byClothes.stream()
+                .map(this::getClothesAttributeWithDefDto)
+                .toList();
+        String imageKey = fc.getClothes().getImageKey();
+        String url = imageKey == null ? null : s3Service.getUrl(imageKey);
+        return FeedClothesDto.from(fc, url, defDtoList);
+    }
+
+    private ClothesAttributeWithDefDto getClothesAttributeWithDefDto(ClothesAttribute c) {
+        ClothesAttributeType clothesAttributeType = c.getOption().getClothesAttributeType();
+        UUID defId = clothesAttributeType.getId();
+        String defName = clothesAttributeType.getName();
+        List<String> selectableValues = selectableValueRepository.findByClothesAttributeType(clothesAttributeType).stream()
+                .map(SelectableValue::getOption) // 순서?
+                .toList();
+        String option = c.getOption().getOption();
+        return new ClothesAttributeWithDefDto(
+                defId,
+                defName,
+                selectableValues,
+                option
         );
     }
 
@@ -284,7 +315,7 @@ public class FeedServiceImpl implements FeedService {
     private User getUserOrThrow(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> {
-                    log.warn("유저 조회 실패: userId={}", userId);
+                    log.warn("유저 조회 실패: authorId={}", userId);
                     return new IllegalArgumentException("존재하지 않는 id입니다.");
                 }); // TODO 커스텀 에러로 수정
     }

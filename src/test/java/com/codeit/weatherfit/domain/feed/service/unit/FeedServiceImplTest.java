@@ -1,7 +1,12 @@
 package com.codeit.weatherfit.domain.feed.service.unit;
 
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesAttribute;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesAttributeType;
+import com.codeit.weatherfit.domain.clothes.entity.SelectableValue;
+import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
+import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepository;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.*;
 import com.codeit.weatherfit.domain.feed.dto.response.CommentGetResponse;
@@ -73,6 +78,12 @@ class FeedServiceImplTest {
     private ClothesRepository clothesRepository;
 
     @Mock
+    private ClothesAttributeRepository clothesAttributeRepository;
+
+    @Mock
+    private SelectableValueRepository selectableValueRepository;
+
+    @Mock
     private CommentRepository commentRepository;
 
     @Mock
@@ -121,7 +132,7 @@ class FeedServiceImplTest {
             feedService.create(request, userDetails);
 
             // then
-            verify(userRepository).findById(request.userId());
+            verify(userRepository).findById(request.authorId());
             verify(weatherRepository).findById(request.weatherId());
             verify(feedRepository).save(any(Feed.class));
             verify(feedClothesRepository).saveAll(anyList());
@@ -503,7 +514,7 @@ class FeedServiceImplTest {
                     .thenReturn(Optional.of(feed));
             when(userRepository.findById(author.getId()))
                     .thenReturn(Optional.of(author));
-            when(feedLikeRepository.existsByFeedAndUser(feed, author))
+            when(feedLikeRepository.existsByFeedAndLikedUser(feed, author))
                     .thenReturn(false);
 
             // when
@@ -557,7 +568,7 @@ class FeedServiceImplTest {
                         .thenReturn(Optional.of(feed));
                 when(userRepository.findById(author.getId()))
                         .thenReturn(Optional.of(author));
-                when(feedLikeRepository.existsByFeedAndUser(feed, author))
+                when(feedLikeRepository.existsByFeedAndLikedUser(feed, author))
                         .thenReturn(true);
 
                 // when & then
@@ -582,14 +593,14 @@ class FeedServiceImplTest {
                     .thenReturn(Optional.of(feed));
             when(userRepository.findById(author.getId()))
                     .thenReturn(Optional.of(author));
-            when(feedLikeRepository.existsByFeedAndUser(feed, author))
+            when(feedLikeRepository.existsByFeedAndLikedUser(feed, author))
                     .thenReturn(true);
 
             // when
             feedService.unlike(feed.getId(), userDetails);
 
             // then
-            verify(feedLikeRepository).deleteByFeedAndUser(feed, author);
+            verify(feedLikeRepository).existsByFeedAndLikedUser(feed, author);
         }
 
         @Nested
@@ -636,7 +647,7 @@ class FeedServiceImplTest {
                         .thenReturn(Optional.of(feed));
                 when(userRepository.findById(author.getId()))
                         .thenReturn(Optional.of(author));
-                when(feedLikeRepository.existsByFeedAndUser(feed, author))
+                when(feedLikeRepository.existsByFeedAndLikedUser(feed, author))
                         .thenReturn(false);
 
                 // when & then
@@ -649,11 +660,17 @@ class FeedServiceImplTest {
     private void stubToFeedDto() {
         when(feedClothesRepository.findAllByFeed(any(Feed.class)))
                 .thenReturn(Instancio.createList(FeedClothes.class));
+        when(clothesRepository.findById(any(UUID.class)))
+                .thenReturn(Optional.of(Instancio.create(Clothes.class)));
+        when(clothesAttributeRepository.findByClothes(any(Clothes.class)))
+                .thenReturn(Instancio.createList(ClothesAttribute.class));
+        when(selectableValueRepository.findByClothesAttributeType(any(ClothesAttributeType.class)))
+                .thenReturn(Instancio.createList(SelectableValue.class));
         when(feedLikeRepository.countByFeed(any(Feed.class)))
                 .thenReturn(0L);
         when(commentRepository.countByFeed(any(Feed.class)))
                 .thenReturn(0L);
-        when(feedLikeRepository.existsByFeedAndUser(any(Feed.class), any(User.class)))
+        when(feedLikeRepository.existsByFeedAndLikedUser(any(Feed.class), any(User.class)))
                 .thenReturn(false);
         when(s3Service.getUrl(any()))
                 .thenReturn("http://localhost:8080/image/1234567890");

@@ -1,6 +1,8 @@
 package com.codeit.weatherfit.global.s3;
 
+import com.codeit.weatherfit.global.s3.exception.S3DeleteException;
 import com.codeit.weatherfit.global.s3.exception.S3UploadException;
+import com.codeit.weatherfit.global.s3.exception.S3UrlException;
 import com.codeit.weatherfit.global.s3.properties.S3Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,16 +30,19 @@ public class S3ServiceImpl implements S3Service {
 
 
     @Override
-    public String put(byte[] bytes,String fileName) {
-        PutObjectRequest request = PutObjectRequest.builder()
-                .bucket(s3Properties.bucket())
-                .key(fileName)
-                .build();
+    public String put(byte[] bytes, String fileName) {
+        try {
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(s3Properties.bucket())
+                    .key(fileName)
+                    .build();
 
-        s3Client.putObject(
-                request,
-                RequestBody.fromBytes(bytes)
-        );
+            s3Client.putObject(request, RequestBody.fromBytes(bytes));
+        } catch (SdkClientException e) {
+            log.warn("파일 업로드에 실패함 : {}", fileName);
+            throw new S3UploadException(fileName);
+        }
+        log.info("S3 파일 업로드 완료 : {}", fileName);
         return fileName;
     }
 
@@ -62,26 +67,37 @@ public class S3ServiceImpl implements S3Service {
 
     @Override
     public String delete(String fileName) {
-        DeleteObjectRequest request = DeleteObjectRequest.builder()
-                .bucket(s3Properties.bucket())
-                .key(fileName)
-                .build();
-        s3Client.deleteObject(
-                request
-        );
+        try {
+            DeleteObjectRequest request = DeleteObjectRequest.builder()
+                    .bucket(s3Properties.bucket())
+                    .key(fileName)
+                    .build();
+            s3Client.deleteObject(request);
+        } catch (SdkClientException e) {
+            log.warn("파일 삭제에 실패함 : {}", fileName);
+            throw new S3DeleteException(fileName);
+        }
+        log.info("S3 파일 삭제 완료 : {}", fileName);
         return fileName;
     }
 
     @Override
     public String getUrl(String key) {
-        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofSeconds(s3Properties.presignedUrlExpirationTime()))
-                .getObjectRequest(GetObjectRequest.builder()
-                        .bucket(s3Properties.bucket())
-                        .key(key)
-                        .build())
-                .build();
+        if (key == null)
+            return null;
+        try {
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofSeconds(s3Properties.presignedUrlExpirationTime()))
+                    .getObjectRequest(GetObjectRequest.builder()
+                            .bucket(s3Properties.bucket())
+                            .key(key)
+                            .build())
+                    .build();
 
-        return s3Presigner.presignGetObject(presignRequest).url().toString();
+            return s3Presigner.presignGetObject(presignRequest).url().toString();
+        } catch (SdkClientException e) {
+            log.warn("파일 URL 생성에 실패함 : {}", key);
+            throw new S3UrlException(key);
+        }
     }
 }
