@@ -16,12 +16,12 @@ public interface FollowRepository extends JpaRepository<Follow, UUID>, FollowCus
     @Query("select count(f.id) from Follow  f" +
             " where f.followee.id = :userId")
     long getFollowerCount(
-            @Param("authorId") UUID userId);
+            @Param("userId") UUID userId);
 
     @Query("select count(f.id) from Follow  f" +
             " where f.follower.id = :userId")
     long getFollowingCount(
-            @Param("authorId") UUID userId);
+            @Param("userId") UUID userId);
 
     Optional<Follow> findByFolloweeIdAndFollowerId(UUID followeeId, UUID followerId);
 
