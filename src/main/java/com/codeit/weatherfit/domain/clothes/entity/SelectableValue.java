@@ -1,8 +1,6 @@
 package com.codeit.weatherfit.domain.clothes.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
-import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepositoryCustom;
-import io.lettuce.core.resource.Delay;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

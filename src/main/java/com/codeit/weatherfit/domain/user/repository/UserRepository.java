@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.user.repository;
 
 import com.codeit.weatherfit.domain.user.entity.User;
+import com.codeit.weatherfit.domain.user.entity.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -13,4 +14,6 @@ public interface UserRepository extends JpaRepository<User, UUID>, UserRepositor
     boolean existsByEmail(String email);
 
     Optional<User> findByEmail(String email);
+
+    boolean existsUserByRole(UserRole role);
 }
