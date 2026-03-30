@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -19,6 +21,7 @@ public class FeedClothes extends BaseEntity { // FeedCoordinate
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "clothes_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Clothes clothes;
 
     public static FeedClothes create(Feed feed, Clothes clothes) {

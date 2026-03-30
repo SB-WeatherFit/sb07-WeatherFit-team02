@@ -72,12 +72,12 @@ public class FeedServiceImpl implements FeedService {
     @Override
     @Transactional
     public FeedDto create(FeedCreateRequest request, WeatherFitUserDetails userDetails) {
-        log.info("피드 생성 요청: userId={}, weatherId={}, clothesCount={}", request.userId(), request.weatherId(), request.clothesIds().size());
-        if (!request.userId().equals(userDetails.getUserId())) {
-            log.warn("피드 생성 권한 불일치: requestUserId={}, loginUserId={}", request.userId(), userDetails.getUserId());
+        log.info("피드 생성 요청: authorId={}, weatherId={}, clothesCount={}", request.authorId(), request.weatherId(), request.clothesIds().size());
+        if (!request.authorId().equals(userDetails.getUserId())) {
+            log.warn("피드 생성 권한 불일치: requestUserId={}, loginUserId={}", request.authorId(), userDetails.getUserId());
             throw new RuntimeException("Bad request"); // 추후 인증 에러로 수정
         }
-        User author = getUserOrThrow(request.userId());
+        User author = getUserOrThrow(request.authorId());
         Weather weather = getWeatherOrThrow(request.weatherId());
         List<Clothes> clothes = getClothesOrThrow(request.clothesIds());
 
@@ -219,7 +219,7 @@ public class FeedServiceImpl implements FeedService {
     @Override
     @Transactional
     public void like(UUID id, WeatherFitUserDetails userDetails) {
-        log.info("피드 좋아요 요청: feedId={}, userId={}", id, userDetails.getUserId());
+        log.info("피드 좋아요 요청: feedId={}, authorId={}", id, userDetails.getUserId());
         Feed feed = getFeedOrThrow(id);
         User likeUser = getUserOrThrow(userDetails.getUserId());
         if (feedLikeRepository.existsByFeedAndLikedUser(feed, likeUser))
@@ -233,19 +233,19 @@ public class FeedServiceImpl implements FeedService {
                 feed.getContent()
         ));
 
-        log.info("피드 좋아요 완료: feedId={}, userId={}", id, userDetails.getUserId());
+        log.info("피드 좋아요 완료: feedId={}, authorId={}", id, userDetails.getUserId());
     }
 
     @Override
     @Transactional
     public void unlike(UUID id, WeatherFitUserDetails userDetails) {
-        log.info("피드 좋아요 취소 요청: feedId={}, userId={}", id, userDetails.getUserId());
+        log.info("피드 좋아요 취소 요청: feedId={}, authorId={}", id, userDetails.getUserId());
         Feed feed = getFeedOrThrow(id);
         User likeUser = getUserOrThrow(userDetails.getUserId());
         if (!feedLikeRepository.existsByFeedAndLikedUser(feed, likeUser))
             throw new FeedLikeNotExistException(feed, likeUser);
         feedLikeRepository.deleteByFeedAndLikedUser(feed, likeUser);
-        log.info("피드 좋아요 취소 완료: feedId={}, userId={}", id, userDetails.getUserId());
+        log.info("피드 좋아요 취소 완료: feedId={}, authorId={}", id, userDetails.getUserId());
     }
 
     private FeedDto toFeedDto(Feed feed, User loginUser) {
@@ -315,7 +315,7 @@ public class FeedServiceImpl implements FeedService {
     private User getUserOrThrow(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> {
-                    log.warn("유저 조회 실패: userId={}", userId);
+                    log.warn("유저 조회 실패: authorId={}", userId);
                     return new IllegalArgumentException("존재하지 않는 id입니다.");
                 }); // TODO 커스텀 에러로 수정
     }

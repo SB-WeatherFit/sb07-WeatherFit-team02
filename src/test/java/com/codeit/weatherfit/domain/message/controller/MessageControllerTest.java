@@ -77,7 +77,7 @@ class MessageControllerTest {
                         .uri("/api/direct-messages")
                         .with(csrf())
                         .with(user(details))
-                        .param("userId", user.getId().toString())
+                        .param("authorId", user.getId().toString())
                         .param("limit", "20"))
                 .apply(print())
                 .hasStatusOk()

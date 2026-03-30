@@ -123,7 +123,7 @@ class FollowControllerTest {
                 mvcTester.get()
                         .uri("/api/follows/summary")
                         .with(csrf())
-                        .param("userId", user.getId().toString())
+                        .param("authorId", user.getId().toString())
                         .with(user(details))
         )
                 .hasStatusOk()

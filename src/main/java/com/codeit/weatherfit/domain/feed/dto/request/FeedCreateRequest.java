@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public record FeedCreateRequest(
         @NotNull
-        UUID userId,
+        UUID authorId,
         @NotNull
         UUID weatherId,
         @NotEmpty
