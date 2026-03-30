@@ -73,12 +73,23 @@ public class WeatherServiceImpl implements WeatherService {
 
     @Override
     public LocationResponse getWeatherLocation(WeatherRequest request) {
-        Weather weather = weatherRepository.getSingleWeatherByLocation(
-                request.longitude(),
-                request.latitude()
+        KakaoLocationResponse response = locationApiCallService.getKaKaoResponse(request);
+        var document = response.documents().getFirst();
+        double longitude = Double.parseDouble(document.x());
+        double latitude = Double.parseDouble(document.y());
+        List<String> address = List.of(
+                document.region_1depth_name(),
+                document.region_2depth_name(),
+                document.region_3depth_name()
         );
-        if (weather == null) return null;
-        return WeatherResponse.from(weather).location();
+
+        return new LocationResponse(
+                latitude,
+                longitude,
+                (int) longitude,
+                (int) latitude,
+                address
+        );
     }
 
     @Override
