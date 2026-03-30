@@ -67,9 +67,9 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public MessageCursorResponse searchMessages(MessageGetRequest request, UUID myId) {
         List<Message> messages = messageRepository.searchMessages(request, myId);
-        Profile receiverProfile = profileRepository.findWithUser(request.userId()).orElseThrow();
-        Profile senderProfile = profileRepository.findWithUser(myId).orElseThrow();
-        long totalCount = messageRepository.countMessage(senderProfile.getUser().getId(), receiverProfile.getUser().getId());
+        Profile myProfile = profileRepository.findWithUser(request.userId()).orElseThrow();
+        Profile theirProfile = profileRepository.findWithUser(myId).orElseThrow();
+        long totalCount = messageRepository.countMessage(myProfile.getUser().getId(), theirProfile.getUser().getId());
 
         boolean hasNext = false;
         if (messages.size() == request.limit() + 1) {
@@ -78,13 +78,16 @@ public class MessageServiceImpl implements MessageService {
         }
 
         List<MessageDto> data = messages.stream()
-                .map(message -> MessageDto.from(
-                                message,
-                                senderProfile.getUser(),
-                                s3Service.getUrl(senderProfile.getProfileImageKey()),
-                                receiverProfile.getUser(),
-                                s3Service.getUrl(receiverProfile.getProfileImageKey())
-                        )
+                .map(message -> {
+                    boolean isMySend = message.getSender().getId().equals(myId);
+                            return MessageDto.from(
+                                    message,
+                                    message.getSender(),
+                                    s3Service.getUrl(isMySend ? myProfile.getProfileImageKey() : theirProfile.getProfileImageKey()),
+                                    message.getReceiver(),
+                                    s3Service.getUrl(isMySend ? theirProfile.getProfileImageKey() : myProfile.getProfileImageKey())
+                            );
+                        }
                 )
                 .toList();
 
