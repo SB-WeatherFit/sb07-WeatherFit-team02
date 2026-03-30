@@ -12,7 +12,7 @@ spring:
       base-url: https://openrouter.ai/api
       chat:
         options:
-          model: minimax/minimax-m2.5:free
+          model: nvidia/nemotron-3-super-120b-a12b:free
 
 
 open-administration-map:
