@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.feed.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
+import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,16 +17,14 @@ public class FeedClothes extends BaseEntity { // FeedCoordinate
     @JoinColumn(name = "feed_id", nullable = false)
     private Feed feed;
 
-    @Column(nullable = false)
-    private String name;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "clothes_id", nullable = false)
+    private Clothes clothes;
 
-    private String imageKey;
-
-    public static FeedClothes create(Feed feed, String name, String imageKey) {
+    public static FeedClothes create(Feed feed, Clothes clothes) {
         FeedClothes coordinate = new FeedClothes();
         coordinate.feed = feed;
-        coordinate.name = name;
-        coordinate.imageKey = imageKey;
+        coordinate.clothes = clothes;
         return coordinate;
     }
 }
