@@ -12,6 +12,7 @@ import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
+import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     private final WeatherRepository weatherRepository;
     private final ClothesRecommender clothesRecommender;
     private final ProfileRepository profileRepository;
+    private final S3Service  s3Service;
 
     @Override
     public RecommendationDto getRecommendations(UUID weatherId, UUID userId) {
@@ -53,7 +55,7 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .map(clothe -> new RecommendedClothes(
                         clothe.getId(),
                         clothe.getName(),
-                        clothe.getImageKey(),
+                        s3Service.getUrl(clothe.getImageKey()),
                         clothe.getType(),
                         List.of()
                         )
