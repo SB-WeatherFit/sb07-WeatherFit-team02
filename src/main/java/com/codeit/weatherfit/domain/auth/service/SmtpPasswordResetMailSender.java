@@ -16,13 +16,11 @@ public class SmtpPasswordResetMailSender implements PasswordResetMailSender {
 
     private final JavaMailSender javaMailSender;
 
-    @Value("${weatherfit.mail.from}")
+    @Value("${weatherfit.mail.from:${MAIL_USERNAME:}}")
     private String from;
 
     @Override
     public void send(String email, String temporaryPassword) {
-        System.out.println("[SMTP 메일 발송기 호출] to=" + email);
-
         try {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             MimeMessageHelper messageHelper = new MimeMessageHelper(mimeMessage, false, "UTF-8");
