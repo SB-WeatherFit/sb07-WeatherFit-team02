@@ -21,9 +21,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -104,6 +104,8 @@ class AuthServiceImplTest {
             assertThat(result.jwtDto().userDto().email()).isEqualTo("test3@test.com");
             assertThat(result.jwtDto().accessToken()).isEqualTo("access-token");
             assertThat(result.refreshToken()).isEqualTo("refresh-token");
+
+            verify(temporaryPasswordRepository).delete(temporaryPassword);
         }
 
         @Test
@@ -237,16 +239,18 @@ class AuthServiceImplTest {
         @Test
         @DisplayName("비밀번호 초기화에 성공한다")
         void resetPassword() {
+            ReflectionTestUtils.setField(authService, "temporaryPasswordExpiresInSeconds", 180L);
+
             User user = User.create("test3@test.com", "test3", UserRole.USER, "old-encoded-password");
 
             when(userRepository.findByEmail("test3@test.com")).thenReturn(Optional.of(user));
-            when(temporaryPasswordRepository.findAllByUserIdAndUsedFalse(user.getId())).thenReturn(List.of());
             when(temporaryPasswordGenerator.generate()).thenReturn("temporary1234");
             when(passwordEncoder.encode("temporary1234")).thenReturn("encoded-temporary1234");
 
             authService.resetPassword(new ResetPasswordRequest("test3@test.com"));
 
             ArgumentCaptor<TemporaryPassword> captor = ArgumentCaptor.forClass(TemporaryPassword.class);
+            verify(temporaryPasswordRepository).deleteAllByUserIdAndUsedFalse(user.getId());
             verify(temporaryPasswordRepository).save(captor.capture());
 
             TemporaryPassword savedTemporaryPassword = captor.getValue();
@@ -259,25 +263,21 @@ class AuthServiceImplTest {
         }
 
         @Test
-        @DisplayName("기존 활성 임시 비밀번호가 있으면 사용 처리 후 새로 저장한다")
-        void resetPasswordMarksPreviousTemporaryPasswordUsed() {
+        @DisplayName("기존 활성 임시 비밀번호가 있으면 삭제 후 새로 저장한다")
+        void resetPasswordDeletesPreviousTemporaryPasswords() {
+            ReflectionTestUtils.setField(authService, "temporaryPasswordExpiresInSeconds", 180L);
+
             User user = User.create("test3@test.com", "test3", UserRole.USER, "old-encoded-password");
-            TemporaryPassword previousTemporaryPassword = TemporaryPassword.create(
-                    user,
-                    "encoded-old-temp",
-                    Instant.now().plusSeconds(180)
-            );
 
             when(userRepository.findByEmail("test3@test.com")).thenReturn(Optional.of(user));
-            when(temporaryPasswordRepository.findAllByUserIdAndUsedFalse(user.getId()))
-                    .thenReturn(List.of(previousTemporaryPassword));
             when(temporaryPasswordGenerator.generate()).thenReturn("temporary1234");
             when(passwordEncoder.encode("temporary1234")).thenReturn("encoded-temporary1234");
 
             authService.resetPassword(new ResetPasswordRequest("test3@test.com"));
 
-            assertThat(previousTemporaryPassword.isUsed()).isTrue();
+            verify(temporaryPasswordRepository).deleteAllByUserIdAndUsedFalse(user.getId());
             verify(temporaryPasswordRepository).save(any(TemporaryPassword.class));
+            verify(passwordResetMailSender).send("test3@test.com", "temporary1234");
         }
 
         @Test

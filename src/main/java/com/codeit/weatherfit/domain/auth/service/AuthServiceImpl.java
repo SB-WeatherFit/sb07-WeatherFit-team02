@@ -14,12 +14,12 @@ import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.global.exception.ErrorCode;
 import com.codeit.weatherfit.global.exception.WeatherFitException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -27,7 +27,8 @@ import java.util.UUID;
 @Transactional
 public class AuthServiceImpl implements AuthService {
 
-    private static final long TEMPORARY_PASSWORD_EXPIRES_IN_SECONDS = 60L * 3L;
+    @Value("${weatherfit.auth.temporary-password-expiration-seconds:180}")
+    private long temporaryPasswordExpiresInSeconds;
 
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
@@ -107,7 +108,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.RESET_PASSWORD_USER_NOT_FOUND));
 
-        markActiveTemporaryPasswordsUsed(user.getId());
+        temporaryPasswordRepository.deleteAllByUserIdAndUsedFalse(user.getId());
 
         String temporaryPassword = temporaryPasswordGenerator.generate();
         String encodedTemporaryPassword = passwordEncoder.encode(temporaryPassword);
@@ -115,7 +116,7 @@ public class AuthServiceImpl implements AuthService {
         TemporaryPassword savedTemporaryPassword = TemporaryPassword.create(
                 user,
                 encodedTemporaryPassword,
-                Instant.now().plusSeconds(TEMPORARY_PASSWORD_EXPIRES_IN_SECONDS)
+                Instant.now().plusSeconds(temporaryPasswordExpiresInSeconds)
         );
         temporaryPasswordRepository.save(savedTemporaryPassword);
 
@@ -127,17 +128,22 @@ public class AuthServiceImpl implements AuthService {
             return true;
         }
 
-        return temporaryPasswordRepository.findTopByUserIdAndUsedFalseOrderByCreatedAtDesc(user.getId())
-                .filter(temporaryPassword -> temporaryPassword.isAvailable(Instant.now()))
-                .filter(temporaryPassword -> passwordEncoder.matches(rawPassword, temporaryPassword.getEncodedPassword()))
-                .isPresent();
-    }
+        TemporaryPassword temporaryPassword = temporaryPasswordRepository
+                .findTopByUserIdAndUsedFalseOrderByCreatedAtDesc(user.getId())
+                .filter(savedTemporaryPassword -> savedTemporaryPassword.isAvailable(Instant.now()))
+                .orElse(null);
 
-    private void markActiveTemporaryPasswordsUsed(UUID userId) {
-        List<TemporaryPassword> temporaryPasswords = temporaryPasswordRepository.findAllByUserIdAndUsedFalse(userId);
-        for (TemporaryPassword temporaryPassword : temporaryPasswords) {
-            temporaryPassword.markUsed();
+        if (temporaryPassword == null) {
+            return false;
         }
+
+        boolean matched = passwordEncoder.matches(rawPassword, temporaryPassword.getEncodedPassword());
+
+        if (matched) {
+            temporaryPasswordRepository.delete(temporaryPassword);
+        }
+
+        return matched;
     }
 
     private void validateSignInRequest(SignInRequest request) {

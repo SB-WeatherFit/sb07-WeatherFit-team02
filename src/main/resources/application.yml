@@ -45,6 +45,8 @@ weatherfit:
     type: ${STORAGE_TYPE:s3}
   mail:
     from: ${MAIL_FROM:${MAIL_USERNAME:}}
+  auth:
+    temporary-password-expiration-seconds: ${TEMPORARY_PASSWORD_EXPIRATION_SECONDS:180}
 
 info:
   app:
