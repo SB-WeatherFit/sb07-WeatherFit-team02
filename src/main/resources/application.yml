@@ -13,6 +13,19 @@ spring:
       chat:
         options:
           model: nvidia/nemotron-3-super-120b-a12b:free
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          starttls:
+            enable: false
 
 
 open-administration-map:
@@ -32,6 +45,8 @@ s3:
 weatherfit:
   storage:
     type: ${STORAGE_TYPE:s3}
+  mail:
+    from: ${MAIL_FROM:${MAIL_USERNAME:}}
 
 info:
   app:
@@ -54,4 +69,3 @@ management:
   info:
     env:
       enabled: true
-
