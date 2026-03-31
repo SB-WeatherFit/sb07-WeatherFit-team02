@@ -3,6 +3,8 @@ package com.codeit.weatherfit.domain.auth.service;
 import com.codeit.weatherfit.domain.auth.dto.request.ResetPasswordRequest;
 import com.codeit.weatherfit.domain.auth.dto.request.SignInRequest;
 import com.codeit.weatherfit.domain.auth.dto.response.JwtDto;
+import com.codeit.weatherfit.domain.auth.entity.TemporaryPassword;
+import com.codeit.weatherfit.domain.auth.repository.TemporaryPasswordRepository;
 import com.codeit.weatherfit.domain.auth.security.InMemoryAuthTokenStore;
 import com.codeit.weatherfit.domain.auth.security.JwtTokenProvider;
 import com.codeit.weatherfit.domain.auth.security.TemporaryPasswordGenerator;
@@ -16,6 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -23,12 +27,15 @@ import java.util.UUID;
 @Transactional
 public class AuthServiceImpl implements AuthService {
 
+    private static final long TEMPORARY_PASSWORD_EXPIRES_IN_SECONDS = 60L * 3L;
+
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final InMemoryAuthTokenStore inMemoryAuthTokenStore;
     private final TemporaryPasswordGenerator temporaryPasswordGenerator;
     private final PasswordResetMailSender passwordResetMailSender;
     private final PasswordEncoder passwordEncoder;
+    private final TemporaryPasswordRepository temporaryPasswordRepository;
 
     @Override
     public AuthTokenResult signIn(SignInRequest request) {
@@ -41,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
             throw new WeatherFitException(ErrorCode.SIGN_IN_FAILED);
         }
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+        if (!isValidPassword(user, request.password())) {
             throw new WeatherFitException(ErrorCode.SIGN_IN_FAILED);
         }
 
@@ -100,12 +107,37 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.RESET_PASSWORD_USER_NOT_FOUND));
 
+        markActiveTemporaryPasswordsUsed(user.getId());
+
         String temporaryPassword = temporaryPasswordGenerator.generate();
         String encodedTemporaryPassword = passwordEncoder.encode(temporaryPassword);
 
-        user.updatePassword(encodedTemporaryPassword);
+        TemporaryPassword savedTemporaryPassword = TemporaryPassword.create(
+                user,
+                encodedTemporaryPassword,
+                Instant.now().plusSeconds(TEMPORARY_PASSWORD_EXPIRES_IN_SECONDS)
+        );
+        temporaryPasswordRepository.save(savedTemporaryPassword);
 
         passwordResetMailSender.send(user.getEmail(), temporaryPassword);
+    }
+
+    private boolean isValidPassword(User user, String rawPassword) {
+        if (passwordEncoder.matches(rawPassword, user.getPassword())) {
+            return true;
+        }
+
+        return temporaryPasswordRepository.findTopByUserIdAndUsedFalseOrderByCreatedAtDesc(user.getId())
+                .filter(temporaryPassword -> temporaryPassword.isAvailable(Instant.now()))
+                .filter(temporaryPassword -> passwordEncoder.matches(rawPassword, temporaryPassword.getEncodedPassword()))
+                .isPresent();
+    }
+
+    private void markActiveTemporaryPasswordsUsed(UUID userId) {
+        List<TemporaryPassword> temporaryPasswords = temporaryPasswordRepository.findAllByUserIdAndUsedFalse(userId);
+        for (TemporaryPassword temporaryPassword : temporaryPasswords) {
+            temporaryPassword.markUsed();
+        }
     }
 
     private void validateSignInRequest(SignInRequest request) {

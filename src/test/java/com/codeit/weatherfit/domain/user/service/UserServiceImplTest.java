@@ -1,5 +1,7 @@
 package com.codeit.weatherfit.domain.user.service;
 
+import com.codeit.weatherfit.domain.auth.entity.TemporaryPassword;
+import com.codeit.weatherfit.domain.auth.repository.TemporaryPasswordRepository;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.dto.request.ChangePasswordRequest;
@@ -14,6 +16,7 @@ import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.user.repository.UserSearchCondition;
 import com.codeit.weatherfit.global.exception.ErrorCode;
 import com.codeit.weatherfit.global.exception.WeatherFitException;
+import com.codeit.weatherfit.global.s3.S3Service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,6 +27,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,6 +48,12 @@ class UserServiceImplTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private S3Service s3Service;
+
+    @Mock
+    private TemporaryPasswordRepository temporaryPasswordRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -194,13 +204,21 @@ class UserServiceImplTest {
         void updatePassword() {
             UUID userId = UUID.randomUUID();
             User user = User.create("user@test.com", "tester", UserRole.USER, "encoded-old-password");
+            TemporaryPassword temporaryPassword = TemporaryPassword.create(
+                    user,
+                    "encoded-temporary-password",
+                    Instant.now().plusSeconds(180)
+            );
 
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             when(passwordEncoder.encode("new-password")).thenReturn("encoded-new-password");
+            when(temporaryPasswordRepository.findAllByUserIdAndUsedFalse(userId))
+                    .thenReturn(List.of(temporaryPassword));
 
             userService.updatePassword(userId, new ChangePasswordRequest("new-password"));
 
             assertThat(user.getPassword()).isEqualTo("encoded-new-password");
+            assertThat(temporaryPassword.isUsed()).isTrue();
         }
 
         @Test
