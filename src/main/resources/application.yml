@@ -8,30 +8,43 @@ spring:
       enabled: false
   ai:
     openai:
-      api-key: ${OPENROUTER_API_KEY}
+      api-key: ${OPENROUTER_API_KEY:}
       base-url: https://openrouter.ai/api
       chat:
         options:
           model: nvidia/nemotron-3-super-120b-a12b:free
-
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          starttls:
+            enable: false
 
 open-administration-map:
-  api-key: ${WEATHER_ADMINISTRATION_API_KEY}
+  api-key: ${WEATHER_ADMINISTRATION_API_KEY:}
 
 kakao:
-  api-key: ${KAKAO_API_KEY}
+  api-key: ${KAKAO_API_KEY:}
 
 s3:
-  bucket: ${AWS_S3_BUCKET}
-  region: ${AWS_S3_REGION}
-  access-key: ${AWS_S3_ACCESS_KEY}
-  secret-key: ${AWS_S3_SECRET_KEY}
+  bucket: ${AWS_S3_BUCKET:}
+  region: ${AWS_S3_REGION:}
+  access-key: ${AWS_S3_ACCESS_KEY:}
+  secret-key: ${AWS_S3_SECRET_KEY:}
   presigned-url-expiration-time: ${AWS_S3_PRESIGNED_URL_EXPIRATION:1000}
-
 
 weatherfit:
   storage:
     type: ${STORAGE_TYPE:s3}
+  mail:
+    from: ${MAIL_FROM:${MAIL_USERNAME:}}
 
 info:
   app:
@@ -40,7 +53,6 @@ info:
     version: 1.0.0
     encoding: UTF-8
     java-version: 21
-
     company:
       name: SB07-team02
       email: genius5375@gmail.com
@@ -50,8 +62,6 @@ management:
     web:
       exposure:
         include: health,info,metrics
-
   info:
     env:
       enabled: true
-

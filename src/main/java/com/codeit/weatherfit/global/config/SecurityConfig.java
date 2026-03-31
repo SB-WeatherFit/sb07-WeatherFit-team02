@@ -49,7 +49,8 @@ public class SecurityConfig {
                                 "/*.png",
                                 "/*.jpg",
                                 "/*.jpeg",
-                                "/*.webp"
+                                "/*.webp",
+                                "/actuator/health"
                         ).permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
