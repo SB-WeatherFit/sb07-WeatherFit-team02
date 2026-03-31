@@ -12,4 +12,6 @@ public interface TemporaryPasswordRepository extends JpaRepository<TemporaryPass
     Optional<TemporaryPassword> findTopByUserIdAndUsedFalseOrderByCreatedAtDesc(UUID userId);
 
     List<TemporaryPassword> findAllByUserIdAndUsedFalse(UUID userId);
+
+    void deleteAllByUserIdAndUsedFalse(UUID userId);
 }

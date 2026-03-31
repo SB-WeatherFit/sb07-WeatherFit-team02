@@ -1,6 +1,5 @@
 package com.codeit.weatherfit.domain.user.service;
 
-import com.codeit.weatherfit.domain.auth.entity.TemporaryPassword;
 import com.codeit.weatherfit.domain.auth.repository.TemporaryPasswordRepository;
 import com.codeit.weatherfit.domain.profile.entity.Location;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
@@ -144,11 +143,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
 
         user.updatePassword(passwordEncoder.encode(request.password()));
-
-        List<TemporaryPassword> temporaryPasswords = temporaryPasswordRepository.findAllByUserIdAndUsedFalse(userId);
-        for (TemporaryPassword temporaryPassword : temporaryPasswords) {
-            temporaryPassword.markUsed();
-        }
+        temporaryPasswordRepository.deleteAllByUserIdAndUsedFalse(userId);
     }
 
     @Override
@@ -211,7 +206,7 @@ public class UserServiceImpl implements UserService {
 
     @EventListener(ApplicationReadyEvent.class)
     protected void initializeAdmin() {
-        if(userRepository.existsUserByRole(UserRole.ADMIN)) return;
+        if(userRepository.existsUserByRole(UserRole.ADMIN)) {return;}
 
         User user = User.create(
                 "admin@admin.com",
