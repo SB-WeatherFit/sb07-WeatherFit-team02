@@ -1,5 +1,7 @@
 package com.codeit.weatherfit.domain.user.service;
 
+import com.codeit.weatherfit.domain.auth.entity.TemporaryPassword;
+import com.codeit.weatherfit.domain.auth.repository.TemporaryPasswordRepository;
 import com.codeit.weatherfit.domain.profile.entity.Location;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
@@ -36,6 +38,7 @@ public class UserServiceImpl implements UserService {
     private final ProfileRepository profileRepository;
     private final PasswordEncoder passwordEncoder;
     private final S3Service s3Service;
+    private final TemporaryPasswordRepository temporaryPasswordRepository;
 
     @Override
     public UserDto create(UserCreateRequest request) {
@@ -141,6 +144,11 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
 
         user.updatePassword(passwordEncoder.encode(request.password()));
+
+        List<TemporaryPassword> temporaryPasswords = temporaryPasswordRepository.findAllByUserIdAndUsedFalse(userId);
+        for (TemporaryPassword temporaryPassword : temporaryPasswords) {
+            temporaryPassword.markUsed();
+        }
     }
 
     @Override
@@ -214,7 +222,6 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
         Profile profile = Profile.create(savedUser, null, null,
-
                 Location.create(
                         37.2911,
                         127.0089,
