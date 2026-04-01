@@ -10,6 +10,7 @@ import com.codeit.weatherfit.domain.follow.entity.Follow;
 import com.codeit.weatherfit.domain.follow.entity.FollowCreateParam;
 import com.codeit.weatherfit.domain.follow.exception.FollowUserNotExistException;
 import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
+import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +49,8 @@ class FollowServiceTest {
     EntityManager em;
     @MockitoBean
     private S3Service s3Service;
+    @MockitoBean
+    private KafkaTemplate<String, MessageCreatedEvent> kafkaTemplate;
 
     @BeforeEach
     void setUp() {
