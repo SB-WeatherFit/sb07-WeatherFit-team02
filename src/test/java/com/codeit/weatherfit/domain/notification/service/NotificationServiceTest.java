@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.notification.service;
 
 import com.codeit.weatherfit.domain.message.entity.UserFixture;
+import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
 import com.codeit.weatherfit.domain.notification.dto.request.NotificationSearchCondition;
 import com.codeit.weatherfit.domain.notification.dto.response.NotificationCursorResponse;
 import com.codeit.weatherfit.domain.notification.dto.response.NotificationDto;
@@ -13,6 +14,8 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
@@ -34,6 +37,8 @@ class NotificationServiceTest {
     NotificationRepository notificationRepository;
     @Autowired
     EntityManager em;
+    @MockitoBean
+    private KafkaTemplate<String, MessageCreatedEvent> kafkaTemplate;
 
 
     @Test

@@ -6,6 +6,7 @@ import com.codeit.weatherfit.domain.message.entity.Message;
 import com.codeit.weatherfit.domain.message.repository.MessageRepository;
 import com.codeit.weatherfit.domain.message.service.MessageService;
 import com.codeit.weatherfit.domain.message.service.ProfileFixture;
+import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +49,8 @@ class MessageControllerTest {
 
     @MockitoBean
     private S3Service s3Service;
+    @MockitoBean
+    private KafkaTemplate<String, MessageCreatedEvent> kafkaTemplate;
 
     @BeforeEach
     void setUp() {

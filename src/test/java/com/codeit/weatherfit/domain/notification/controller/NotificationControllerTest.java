@@ -2,6 +2,7 @@ package com.codeit.weatherfit.domain.notification.controller;
 
 import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
 import com.codeit.weatherfit.domain.message.entity.UserFixture;
+import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
 import com.codeit.weatherfit.domain.notification.dto.request.NotificationSearchCondition;
 import com.codeit.weatherfit.domain.notification.dto.response.NotificationCursorResponse;
 import com.codeit.weatherfit.domain.notification.entity.Notification;
@@ -17,8 +18,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -46,6 +49,8 @@ class NotificationControllerTest {
     EntityManager em;
     @Autowired
     ObjectMapper objectMapper;
+    @MockitoBean
+    private KafkaTemplate<String, MessageCreatedEvent> kafkaTemplate;
 
     @Test
     void search() {

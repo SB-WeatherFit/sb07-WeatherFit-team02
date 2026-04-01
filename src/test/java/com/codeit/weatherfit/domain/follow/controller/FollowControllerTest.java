@@ -12,6 +12,7 @@ import com.codeit.weatherfit.domain.follow.entity.FollowCreateParam;
 import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
 import com.codeit.weatherfit.domain.message.entity.UserFixture;
 import com.codeit.weatherfit.domain.message.service.ProfileFixture;
+import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.dto.request.UserCreateRequest;
@@ -29,6 +30,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
@@ -63,6 +65,8 @@ class FollowControllerTest {
     FollowRepository followRepository;
     @MockitoBean
     private S3Service s3Service;
+    @MockitoBean
+    private KafkaTemplate<String, MessageCreatedEvent> kafkaTemplate;
 
     @BeforeEach
     void setUp() {
