@@ -26,6 +26,18 @@ spring:
             enable: true
           starttls:
             enable: false
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:test-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:test-client-secret}
+            scope:
+              - email
+              - profile
+              - openid
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
 
 open-administration-map:
   api-key: ${WEATHER_ADMINISTRATION_API_KEY:}
@@ -47,6 +59,8 @@ weatherfit:
     from: ${MAIL_FROM:${MAIL_USERNAME:}}
   auth:
     temporary-password-expiration-seconds: ${TEMPORARY_PASSWORD_EXPIRATION_SECONDS:180}
+    social:
+      success-redirect-uri: ${SOCIAL_LOGIN_SUCCESS_REDIRECT_URI:http://localhost:8080/index.html}
 
 info:
   app:

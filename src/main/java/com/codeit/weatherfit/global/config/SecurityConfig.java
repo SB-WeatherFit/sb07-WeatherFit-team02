@@ -1,8 +1,10 @@
 package com.codeit.weatherfit.global.config;
 
 import com.codeit.weatherfit.domain.auth.security.JwtAuthenticationFilter;
+import com.codeit.weatherfit.domain.auth.security.OAuth2AuthenticationSuccessHandler;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,8 +12,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -24,60 +25,82 @@ import org.springframework.util.StringUtils;
 import java.util.function.Supplier;
 
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http,
-            ObjectProvider<JwtAuthenticationFilter> jwtAuthenticationFilterProvider
+            ObjectProvider<JwtAuthenticationFilter> jwtAuthenticationFilterProvider,
+            ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider
     ) throws Exception {
         CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         csrfTokenRepository.setCookiePath("/");
         csrfTokenRepository.setHeaderName("X-XSRF-TOKEN");
 
+        boolean oauth2Enabled = clientRegistrationRepositoryProvider.getIfAvailable() != null;
+
         http
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(
-                                "/",
-                                "/index.html",
-                                "/favicon.ico",
-                                "/assets/**",
-                                "/css/**",
-                                "/js/**",
-                                "/images/**",
-                                "/*.svg",
-                                "/*.png",
-                                "/*.jpg",
-                                "/*.jpeg",
-                                "/*.webp",
-                                "/actuator/health"
-                        ).permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers("/api/auth/sign-in").permitAll()
-                        .requestMatchers("/api/auth/sign-out").permitAll()
-                        .requestMatchers("/api/auth/refresh").permitAll()
-                        .requestMatchers("/api/auth/reset-password").permitAll()
-                        .requestMatchers("/api/auth/csrf-token").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
-                        .anyRequest().authenticated()
-                )
+                .authorizeHttpRequests(authorize -> {
+                    authorize
+                            .requestMatchers(
+                                    "/",
+                                    "/index.html",
+                                    "/favicon.ico",
+                                    "/assets/**",
+                                    "/css/**",
+                                    "/js/**",
+                                    "/images/**",
+                                    "/*.svg",
+                                    "/*.png",
+                                    "/*.jpg",
+                                    "/*.jpeg",
+                                    "/*.webp",
+                                    "/actuator/health"
+                            ).permitAll()
+                            .requestMatchers("/h2-console/**").permitAll()
+                            .requestMatchers("/ws/**").permitAll()
+                            .requestMatchers("/api/auth/sign-in").permitAll()
+                            .requestMatchers("/api/auth/sign-out").permitAll()
+                            .requestMatchers("/api/auth/refresh").permitAll()
+                            .requestMatchers("/api/auth/reset-password").permitAll()
+                            .requestMatchers("/api/auth/csrf-token").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/users").permitAll();
+
+                    if (oauth2Enabled) {
+                        authorize
+                                .requestMatchers("/oauth2/authorization/**").permitAll()
+                                .requestMatchers("/login/oauth2/code/**").permitAll();
+                    }
+
+                    authorize.anyRequest().authenticated();
+                })
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
                 )
                 .csrf(csrf -> csrf
                         .ignoringRequestMatchers(
                                 "/h2-console/**",
-                                "/ws/**"
+                                "/ws/**",
+                                "/oauth2/**",
+                                "/login/oauth2/**"
                         )
                         .csrfTokenRepository(csrfTokenRepository)
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable());
+
+        if (oauth2Enabled) {
+            http.oauth2Login(oauth2 -> oauth2
+                    .successHandler(oAuth2AuthenticationSuccessHandler)
+            );
+        }
 
         JwtAuthenticationFilter jwtAuthenticationFilter = jwtAuthenticationFilterProvider.getIfAvailable();
         if (jwtAuthenticationFilter != null) {
@@ -85,11 +108,6 @@ public class SecurityConfig {
         }
 
         return http.build();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 
     private static final class SpaCsrfTokenRequestHandler implements CsrfTokenRequestHandler {
