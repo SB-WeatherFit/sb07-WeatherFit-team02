@@ -7,6 +7,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Getter
 @Entity
 @Table(name = "notifications")
@@ -27,7 +29,14 @@ public class Notification extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private NotificationLevel level;
 
+    @Column(nullable = false)
+    private UUID groupId;
+
     public static Notification create(User receiver, String title, String content, NotificationLevel level) {
+        return Notification.create(receiver, title, content, level, UUID.randomUUID());
+    }
+
+    public static Notification create(User receiver, String title, String content, NotificationLevel level, UUID groupId) {
         validateReceiverNull(receiver);
         validateTitle(title);
         validateContent(content);
@@ -39,6 +48,7 @@ public class Notification extends BaseEntity {
         notification.title = title;
         notification.content = content;
         notification.level = level;
+        notification.groupId = groupId;
 
         return notification;
     }
