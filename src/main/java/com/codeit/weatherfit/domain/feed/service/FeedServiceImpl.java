@@ -42,6 +42,7 @@ import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -150,6 +151,7 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "feedCommentCount", key = "#id.toString()")
     public CommentDto createComment(UUID id, CommentCreateRequest request, WeatherFitUserDetails userDetails) {
         log.info("댓글 생성 요청: authorId={}, feedId={}", request.authorId(), request.feedId());
         if (!id.equals(request.feedId())) {
@@ -218,6 +220,7 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "feedLikeCount", key = "#id.toString()")
     public void like(UUID id, WeatherFitUserDetails userDetails) {
         log.info("피드 좋아요 요청: feedId={}, authorId={}", id, userDetails.getUserId());
         Feed feed = getFeedOrThrow(id);
@@ -238,6 +241,7 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "feedLikeCount", key = "#id.toString()")
     public void unlike(UUID id, WeatherFitUserDetails userDetails) {
         log.info("피드 좋아요 취소 요청: feedId={}, authorId={}", id, userDetails.getUserId());
         Feed feed = getFeedOrThrow(id);
@@ -311,6 +315,7 @@ public class FeedServiceImpl implements FeedService {
                     return new WeatherNotFoundException(weatherId);
                 });
     }
+
 
     private User getUserOrThrow(UUID userId) {
         return userRepository.findById(userId)
