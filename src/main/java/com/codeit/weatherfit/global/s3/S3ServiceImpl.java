@@ -7,6 +7,7 @@ import com.codeit.weatherfit.global.s3.properties.S3Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -82,6 +83,7 @@ public class S3ServiceImpl implements S3Service {
     }
 
     @Override
+    @Cacheable(value = "presignedUrl", key = "#key", condition = "#key != null")
     public String getUrl(String key) {
         if (key == null)
             return null;

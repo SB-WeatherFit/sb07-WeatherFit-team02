@@ -49,6 +49,14 @@ public class FeedController {
         return ResponseEntity.status(HttpStatus.CREATED).body(feedService.createComment(id, request, userDetails));
     }
 
+    @DeleteMapping("/{id}/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable UUID id,
+                                              @PathVariable UUID commentId,
+                                              @AuthenticationPrincipal WeatherFitUserDetails userDetails) {
+        feedService.deleteComment(id, commentId, userDetails);
+        return ResponseEntity.noContent().build();
+    }
+
 
     @PostMapping("/{id}/like")
     public ResponseEntity<Void> like(@PathVariable UUID id,

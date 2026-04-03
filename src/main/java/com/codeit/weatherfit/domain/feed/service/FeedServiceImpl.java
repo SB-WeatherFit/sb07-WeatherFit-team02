@@ -42,6 +42,7 @@ import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -150,6 +151,7 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "feedCommentCount", key = "#id.toString()")
     public CommentDto createComment(UUID id, CommentCreateRequest request, WeatherFitUserDetails userDetails) {
         log.info("댓글 생성 요청: authorId={}, feedId={}", request.authorId(), request.feedId());
         if (!id.equals(request.feedId())) {
@@ -158,7 +160,7 @@ public class FeedServiceImpl implements FeedService {
         }
         if (!userDetails.getUserId().equals(request.authorId())) {
             log.warn("댓글 생성 권한 불일치: requestAuthorId={}, loginUserId={}", request.authorId(), userDetails.getUserId());
-            throw new RuntimeException("Bad Request"); // 추후 인증 오류로 변경
+            throw new RuntimeException("Bad Request"); // TODO 추후 인증 오류로 변경
         }
         User commenter = getUserOrThrow(request.authorId());
         Feed feed = getFeedOrThrow(request.feedId());
@@ -178,6 +180,24 @@ public class FeedServiceImpl implements FeedService {
         ));
 
         return CommentDto.from(saved, userService.getUserSummary(saved.getAuthor()));
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "feedCommentCount", key = "#id.toString()")
+    public void deleteComment(UUID id, UUID commentId, WeatherFitUserDetails userDetails) {
+        log.info("댓글 삭제 요청: feedId={}, commentId={}", id, commentId);
+        Comment comment = getCommentOrThrow(commentId);
+        if (!id.equals(comment.getFeed().getId())) {
+            log.warn("댓글 삭제 feedId 불일치: pathFeedId={}, commentFeedId={}", id, comment.getFeed().getId());
+            throw new FeedBadRequestException("해당 feed의 comment가 아닙니다.");
+        }
+        if (!comment.getAuthor().getId().equals(userDetails.getUserId())) {
+            log.warn("댓글 삭제 권한 불일치: commentAuthorId={}, loginUserId={}", comment.getAuthor().getId(), userDetails.getUserId());
+            throw new RuntimeException("댓글을 작성한 사람만 삭제할 수 있습니다."); // TODO 추후 인증 에러로 바꿈
+        }
+        commentRepository.deleteById(commentId);
+        log.info("댓글 삭제 완료: commentId={}", commentId);
     }
 
     @Override
@@ -218,6 +238,7 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "feedLikeCount", key = "#id.toString()")
     public void like(UUID id, WeatherFitUserDetails userDetails) {
         log.info("피드 좋아요 요청: feedId={}, authorId={}", id, userDetails.getUserId());
         Feed feed = getFeedOrThrow(id);
@@ -238,6 +259,7 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "feedLikeCount", key = "#id.toString()")
     public void unlike(UUID id, WeatherFitUserDetails userDetails) {
         log.info("피드 좋아요 취소 요청: feedId={}, authorId={}", id, userDetails.getUserId());
         Feed feed = getFeedOrThrow(id);
@@ -312,6 +334,7 @@ public class FeedServiceImpl implements FeedService {
                 });
     }
 
+
     private User getUserOrThrow(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> {
@@ -320,4 +343,8 @@ public class FeedServiceImpl implements FeedService {
                 }); // TODO 커스텀 에러로 수정
     }
 
+    private Comment getCommentOrThrow(UUID commentId) {
+        return commentRepository.findById(commentId)
+                .orElseThrow(() -> new FeedNotExistException(commentId));
+    }
 }

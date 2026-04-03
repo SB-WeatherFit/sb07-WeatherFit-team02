@@ -18,6 +18,8 @@ public interface FeedService {
 
     CommentDto createComment(UUID id, CommentCreateRequest request, WeatherFitUserDetails userDetails);
 
+    void deleteComment(UUID id, UUID commentId, WeatherFitUserDetails userDetails);
+
     CommentGetResponse getCommentsByCursor(CommentGetRequest request, WeatherFitUserDetails userDetails);
 
     void delete(UUID id, WeatherFitUserDetails userDetails);
