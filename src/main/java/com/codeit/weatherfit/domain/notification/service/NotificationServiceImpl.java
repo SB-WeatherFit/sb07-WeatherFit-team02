@@ -41,17 +41,15 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public List<NotificationDto> broadcast(String title, String content, NotificationLevel level, Set<UUID> targetUserIds) {
+    public UUID broadcast(String title, String content, NotificationLevel level) {
+        UUID groupId = UUID.randomUUID();
         List<Notification> notifications = userRepository.findAll().stream()
-                .map(user -> Notification.create(user, title, content, level))
+                .map(user -> Notification.create(user, title, content, level, groupId))
                 .toList();
 
         List<Notification> savedNotifications = notificationRepository.saveAll(notifications);
 
-        return savedNotifications.stream()
-                .filter(n -> targetUserIds.contains(n.getReceiver().getId()))
-                .map(NotificationDto::create)
-                .toList();
+        return groupId;
     }
 
     @Override
