@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
@@ -60,23 +61,21 @@ class NotificationServiceTest {
 
     @Test
     void broadcast() {
-        Set<UUID> targetUserIds = new HashSet<>();
-        UUID firstUserId = null;
         for (int i = 0; i < 10; i++) {
             User user = UserFixture.createUser("test@gmail.com" + i);
             User saved = userRepository.save(user);
-            targetUserIds.add(saved.getId());
-            if (i == 0) {
-                firstUserId = saved.getId();
-            }
         }
         em.flush();
         em.clear();
 
-        List<NotificationDto> result = notificationService.broadcast("title", "content", NotificationLevel.INFO, targetUserIds);
+        UUID uuid = notificationService.broadcast("title", "content", NotificationLevel.INFO);
 
-        assertThat(result.size()).isEqualTo(10);
-        assertThat(result.getFirst().receiverId()).isEqualTo(firstUserId);
+        List<Notification> notifications = notificationRepository.findAll();
+        assertThat(notifications).allSatisfy(
+                notification -> {
+                    assertThat(notification.getGroupId()).isEqualTo(uuid);
+                }
+        );
     }
 
     @Test
