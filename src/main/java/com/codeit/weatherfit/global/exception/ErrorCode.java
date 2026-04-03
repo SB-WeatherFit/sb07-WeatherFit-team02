@@ -29,6 +29,11 @@ public enum ErrorCode {
     INVALID_PROFILE_GENDER(HttpStatus.BAD_REQUEST, "성별은 필수입니다.", "P-003"),
     INVALID_PROFILE_TEMPERATURE_SENSITIVITY(HttpStatus.BAD_REQUEST, "온도 민감도는 1 이상 5 이하여야 합니다.", "P-004"),
 
+    INVALID_SOCIAL_ACCOUNT_USER(HttpStatus.BAD_REQUEST, "소셜 계정 사용자 정보가 올바르지 않습니다.", "S-001"),
+    INVALID_SOCIAL_PROVIDER(HttpStatus.BAD_REQUEST, "소셜 제공자 정보가 올바르지 않습니다.", "S-002"),
+    INVALID_SOCIAL_PROVIDER_USER_ID(HttpStatus.BAD_REQUEST, "소셜 제공자 사용자 식별자가 올바르지 않습니다.", "S-003"),
+    INVALID_SOCIAL_PROVIDER_EMAIL(HttpStatus.BAD_REQUEST, "소셜 제공자 이메일 정보가 올바르지 않습니다.", "S-004"),
+
     // Feed
     FEED_NOT_EXIST(HttpStatus.NOT_FOUND, "피드를 찾을 수 없습니다.", "FE-001"),
     ALREADY_LIKED(HttpStatus.BAD_REQUEST, "이미 좋아요한 피드입니다.", "FE-002"),
@@ -42,6 +47,9 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "리프레시 토큰이 올바르지 않습니다.", "A-004"),
     INVALID_RESET_PASSWORD_REQUEST(HttpStatus.BAD_REQUEST, "이메일은 필수입니다.", "A-005"),
     RESET_PASSWORD_USER_NOT_FOUND(HttpStatus.NOT_FOUND, "비밀번호를 초기화할 사용자를 찾을 수 없습니다.", "A-006"),
+    UNSUPPORTED_SOCIAL_PROVIDER(HttpStatus.BAD_REQUEST, "지원하지 않는 소셜 제공자입니다.", "A-007"),
+    SOCIAL_SIGN_IN_FAILED(HttpStatus.UNAUTHORIZED, "소셜 로그인에 실패했습니다.", "A-008"),
+    SOCIAL_ACCOUNT_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "동일한 이메일의 기존 계정이 있어 소셜 로그인을 진행할 수 없습니다.", "A-009"),
     // Global
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001"),
 

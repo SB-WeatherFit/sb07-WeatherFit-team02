@@ -53,12 +53,7 @@ public class AuthServiceImpl implements AuthService {
             throw new WeatherFitException(ErrorCode.SIGN_IN_FAILED);
         }
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
-        inMemoryAuthTokenStore.register(user.getId(), accessToken, refreshToken);
-
-        JwtDto jwtDto = JwtDto.of(UserDto.from(user), accessToken);
-        return AuthTokenResult.of(jwtDto, refreshToken);
+        return issueTokens(user);
     }
 
     @Override
@@ -121,6 +116,15 @@ public class AuthServiceImpl implements AuthService {
         temporaryPasswordRepository.save(savedTemporaryPassword);
 
         passwordResetMailSender.send(user.getEmail(), temporaryPassword);
+    }
+
+    private AuthTokenResult issueTokens(User user) {
+        String accessToken = jwtTokenProvider.generateAccessToken(user);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+        inMemoryAuthTokenStore.register(user.getId(), accessToken, refreshToken);
+
+        JwtDto jwtDto = JwtDto.of(UserDto.from(user), accessToken);
+        return AuthTokenResult.of(jwtDto, refreshToken);
     }
 
     private boolean isValidPassword(User user, String rawPassword) {

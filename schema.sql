@@ -215,3 +215,19 @@ create table profile_location_names
 
     constraint fk_profile_location_names_profiles foreign key (profile_id) references profiles (id)
 );
+
+create table social_accounts
+(
+    id               uuid primary key,
+    created_at       timestamp with time zone not null default CURRENT_TIMESTAMP,
+    updated_at       timestamp with time zone not null default CURRENT_TIMESTAMP,
+    user_id          uuid                     not null,
+    provider         varchar(20)              not null,
+    provider_user_id varchar(255)             not null,
+    provider_email   varchar(255)             not null,
+
+    constraint fk_social_accounts_users foreign key (user_id) references users (id),
+    constraint uk_social_accounts_provider_user_id unique (provider, provider_user_id),
+    constraint uk_social_accounts_user_provider unique (user_id, provider),
+    constraint check_social_provider check (provider in ('GOOGLE'))
+);
