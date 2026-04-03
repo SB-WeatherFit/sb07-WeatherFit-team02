@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+/**
+ * 카프카를 이용하기 위해 eventListener는 코드만 남겨두고 빈 등록하지 않도록 했습니다
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j

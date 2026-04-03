@@ -28,6 +28,7 @@ spring:
             enable: false
   kafka:
     bootstrap-servers: ${KAFKA_SERVER:localhost:9092}
+
   security:
     oauth2:
       client:

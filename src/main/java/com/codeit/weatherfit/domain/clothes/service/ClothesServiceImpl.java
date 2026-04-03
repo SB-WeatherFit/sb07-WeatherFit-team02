@@ -85,7 +85,6 @@ public class ClothesServiceImpl implements ClothesService {
                                 key
                         )
                 );
-        clothes.updateImageKey(publishImageUploadEvent(clothes.getId(), image));
 
         List<ClothesAttributeDto> attributeDtos = request.attributes();
 

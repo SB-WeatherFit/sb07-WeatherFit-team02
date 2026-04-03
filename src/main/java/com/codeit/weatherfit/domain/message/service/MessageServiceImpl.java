@@ -15,7 +15,7 @@ import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,9 +31,9 @@ public class MessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final ProfileRepository profileRepository;
     private final S3Service s3Service;
+    private final KafkaTemplate<String, MessageCreatedEvent>  kafkaTemplate;
 
     @Transactional
     public void send(MessageCreateRequest request) {
@@ -60,8 +60,8 @@ public class MessageServiceImpl implements MessageService {
 
 
         String dmKey = generateDmKey(senderId, receiverId);
-        eventPublisher.publishEvent(new MessageCreatedEvent(dmKey, messageDto));
-        eventPublisher.publishEvent(new MessageSentEvent(receiverId, sender.getName(), save.getContent()));
+        kafkaTemplate.send("message.send", new MessageCreatedEvent(dmKey, messageDto));
+//        eventPublisher.publishEvent(new MessageSentEvent(receiverId, sender.getName(), save.getContent()));
     }
 
     @Override
