@@ -13,12 +13,12 @@ public record RoleChangedEvent (UUID receiverId) implements PersonalNotification
 
     @Override
     public String getTitle() {
-        return "";
+        return "권한이 변경되었습니다";
     }
 
     @Override
     public String getContent() {
-        return "";
+        return "확인해보세요";
     }
 
     @Override
