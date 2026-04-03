@@ -657,6 +657,89 @@ class FeedServiceImplTest {
         }
     }
 
+    @Nested
+    @DisplayName("댓글 삭제")
+    class deleteComment {
+        @Test
+        @DisplayName("성공")
+        void success() {
+            // given
+            Feed feed = Instancio.create(Feed.class);
+            User commenter = Instancio.create(User.class);
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(commenter);
+            Comment comment = Instancio.of(Comment.class)
+                    .set(all(Feed.class), feed)
+                    .set(all(User.class), commenter)
+                    .create();
+
+            when(commentRepository.findById(comment.getId()))
+                    .thenReturn(Optional.of(comment));
+
+            // when
+            feedService.deleteComment(feed.getId(), comment.getId(), userDetails);
+
+            // then
+            verify(commentRepository).deleteById(comment.getId());
+        }
+
+        @Nested
+        @DisplayName("실패 - 비즈니스 로직")
+        class BusinessLogicFailure {
+            @Test
+            @DisplayName("존재하지 않는 댓글은 삭제할 수 없다.")
+            void commentNotFound() {
+                // given
+                User user = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(user);
+                when(commentRepository.findById(any(UUID.class)))
+                        .thenReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> feedService.deleteComment(UUID.randomUUID(), UUID.randomUUID(), userDetails))
+                        .isInstanceOf(FeedNotExistException.class);
+            }
+
+            @Test
+            @DisplayName("해당 피드의 댓글이 아니면 삭제할 수 없다.")
+            void feedIdMismatch() {
+                // given
+                Feed feed = Instancio.create(Feed.class);
+                User commenter = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(commenter);
+                Comment comment = Instancio.of(Comment.class)
+                        .set(all(Feed.class), feed)
+                        .set(all(User.class), commenter)
+                        .create();
+                when(commentRepository.findById(comment.getId()))
+                        .thenReturn(Optional.of(comment));
+
+                UUID differentFeedId = UUID.randomUUID();
+
+                // when & then
+                assertThatThrownBy(() -> feedService.deleteComment(differentFeedId, comment.getId(), userDetails))
+                        .isInstanceOf(FeedBadRequestException.class);
+            }
+
+            @Test
+            @DisplayName("댓글 작성자가 아니면 삭제할 수 없다.")
+            void notCommentAuthor() {
+                // given
+                Feed feed = Instancio.create(Feed.class);
+                Comment comment = Instancio.of(Comment.class)
+                        .set(all(Feed.class), feed)
+                        .create();
+                User otherUser = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(otherUser);
+                when(commentRepository.findById(comment.getId()))
+                        .thenReturn(Optional.of(comment));
+
+                // when & then
+                assertThatThrownBy(() -> feedService.deleteComment(feed.getId(), comment.getId(), userDetails))
+                        .isInstanceOf(RuntimeException.class);
+            }
+        }
+    }
+
     private void stubToFeedDto() {
         when(feedClothesRepository.findAllByFeed(any(Feed.class)))
                 .thenReturn(Instancio.createList(FeedClothes.class));
