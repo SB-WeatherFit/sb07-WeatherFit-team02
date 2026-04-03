@@ -170,10 +170,13 @@ create table notifications
     receiver_id uuid                     not null,
     content     varchar(1000)            not null,
     title       varchar(255)             not null,
+    group_id    uuid                     not null,
 
     CONSTRAINT fk_receiver_id FOREIGN key (receiver_id) REFERENCES users (id),
     CONSTRAINT check_notification_level CHECK (level IN ('INFO', 'WARNING', 'ERROR'))
 );
+
+CREATE INDEX idx_notifications_group_id ON notification(group_id);
 
 create table feed_clothes
 (

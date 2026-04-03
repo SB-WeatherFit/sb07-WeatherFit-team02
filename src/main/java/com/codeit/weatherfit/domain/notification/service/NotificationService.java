@@ -5,14 +5,13 @@ import com.codeit.weatherfit.domain.notification.dto.response.NotificationCursor
 import com.codeit.weatherfit.domain.notification.dto.response.NotificationDto;
 import com.codeit.weatherfit.domain.notification.entity.NotificationLevel;
 
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 public interface NotificationService {
     NotificationDto send(UUID receiverId, String title, String content, NotificationLevel level);
 
-    List<NotificationDto> broadcast(String title, String content, NotificationLevel level, Set<UUID> targetUserIds);
+    UUID broadcast(String title, String content, NotificationLevel level);
 
     NotificationCursorResponse search(NotificationSearchCondition condition, UUID userId);
 

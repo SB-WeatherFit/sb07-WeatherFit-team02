@@ -13,6 +13,7 @@ import com.codeit.weatherfit.domain.follow.exception.FollowProfileNotExistExcept
 import com.codeit.weatherfit.domain.follow.exception.FollowUserNotExistException;
 import com.codeit.weatherfit.domain.follow.exception.NotExistFollowException;
 import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
+import com.codeit.weatherfit.domain.notification.event.clothes.AttributeChangedEvent;
 import com.codeit.weatherfit.domain.notification.event.follow.FollowerCreatedEvent;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
@@ -76,16 +77,16 @@ public class FollowServiceImpl implements FollowService {
         long followerCount = followRepository.getFollowerCount(userId);
         long followingCount = followRepository.getFollowingCount(userId);
         boolean followedByMe = false;
-        UUID followId = null;
+        UUID followedByMeId = null;
 
         Optional<Follow> optionalFollow = followRepository.findByFolloweeIdAndFollowerId(userId, myId);
         if (optionalFollow.isPresent()) {
             followedByMe = true;
-            followId = optionalFollow.get().getId();
+            followedByMeId = optionalFollow.get().getId();
         }
 
         boolean followingMe = checkFollowExist(myId, userId);
-        return FollowSummaryDto.create(userId, followerCount, followingCount, followedByMe, followId, followingMe);
+        return FollowSummaryDto.create(userId, followerCount, followingCount, followedByMe, followedByMeId, followingMe);
     }
 
     private void checkExistUser(UUID userId) {

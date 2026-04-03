@@ -39,6 +39,8 @@ services:
       # 4. 데이터 저장 경로 및 클러스터 ID (KRaft 필수)
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+
+      KAFKA_OFFSETS_RETENTION_MINUTES: 60000
     networks:
       - weatherfit-net
 

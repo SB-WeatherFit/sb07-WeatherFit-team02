@@ -17,6 +17,10 @@ public class SseEmitterRepository {
         emitters.put(userId, emitter);
     }
 
+    public boolean existsById(UUID userId) {
+        return emitters.containsKey(userId);
+    }
+
     public SseEmitter findByUserId(UUID userId) {
         return emitters.get(userId);
     }

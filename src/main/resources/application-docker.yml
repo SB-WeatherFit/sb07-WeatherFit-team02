@@ -12,11 +12,12 @@ spring:
       enable-statistics: true
       time-to-live: 6000  #ttl 10분
       cache-null-values: false
-    data:
-      redis:
-        host: ${REDIS_HOST:localhost}
-        port: ${REDIS_PORT:6379}
-        ssl: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      ssl:
+        enabled: true
 
   jpa:
     hibernate:
