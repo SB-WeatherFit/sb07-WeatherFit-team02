@@ -5,9 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public interface ProfileRepository extends JpaRepository<Profile, UUID> {
 
@@ -22,4 +20,8 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID> {
             " join fetch p.user u" +
             " where u.id in :ids")
     List<Profile> findByUserIds(@Param("ids") List<UUID> ids);
+
+    @Query("select p.profileImageKey from Profile p" +
+            " where p.profileImageKey is not null")
+    Set<String> findAllImageKeys();
 }
