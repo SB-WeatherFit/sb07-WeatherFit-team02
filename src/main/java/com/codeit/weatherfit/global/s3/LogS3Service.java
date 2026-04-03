@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.global.s3;
 
 import com.codeit.weatherfit.global.s3.exception.S3UploadException;
+import com.codeit.weatherfit.global.s3.properties.S3Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class LogS3Service {
     private final S3Service s3Service;
+    private final S3Properties s3Properties;
 
     public void uploadLogFile() {
         Path logDir = Paths.get("./logs");
@@ -44,4 +46,6 @@ public class LogS3Service {
             throw new S3UploadException(logDir.toString());
         }
     }
+
+
 }

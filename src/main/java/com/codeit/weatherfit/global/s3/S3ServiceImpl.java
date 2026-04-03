@@ -4,6 +4,7 @@ import com.codeit.weatherfit.global.s3.exception.S3DeleteException;
 import com.codeit.weatherfit.global.s3.exception.S3UploadException;
 import com.codeit.weatherfit.global.s3.exception.S3UrlException;
 import com.codeit.weatherfit.global.s3.properties.S3Properties;
+import com.codeit.weatherfit.global.s3.util.S3KeyGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,13 +23,12 @@ import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name="weatherfit.storage.type", havingValue = "s3")
+@ConditionalOnProperty(name = "weatherfit.storage.type", havingValue = "s3")
 @Slf4j
 public class S3ServiceImpl implements S3Service {
     private final S3Presigner s3Presigner;
     private final S3Properties s3Properties;
     private final S3Client s3Client;
-
 
     @Override
     public String put(byte[] bytes, String fileName) {
@@ -49,10 +49,11 @@ public class S3ServiceImpl implements S3Service {
 
     @Override
     public String put(String fileName, String contentType, byte[] bytes) {
+        String key = S3KeyGenerator.generateKey(fileName);
         try {
             s3Client.putObject(
                     PutObjectRequest.builder()
-                            .key(fileName)
+                            .key(key)
                             .bucket(s3Properties.bucket())
                             .contentType(contentType)
                             .build(),
@@ -62,24 +63,24 @@ public class S3ServiceImpl implements S3Service {
             log.warn("파일 업로드에 실패함 : {}", fileName);
             throw new S3UploadException(fileName);
         }
-        log.info("S3 파일 업로드 완료 : {}", fileName);
-        return fileName;
+        log.info("S3 파일 업로드 완료 : {}", key);
+        return key;
     }
 
     @Override
-    public String delete(String fileName) {
+    public String delete(String key) {
         try {
             DeleteObjectRequest request = DeleteObjectRequest.builder()
                     .bucket(s3Properties.bucket())
-                    .key(fileName)
+                    .key(key)
                     .build();
             s3Client.deleteObject(request);
         } catch (SdkClientException e) {
-            log.warn("파일 삭제에 실패함 : {}", fileName);
-            throw new S3DeleteException(fileName);
+            log.warn("파일 삭제에 실패함 : {}", key);
+            throw new S3DeleteException(key);
         }
-        log.info("S3 파일 삭제 완료 : {}", fileName);
-        return fileName;
+        log.info("S3 파일 삭제 완료 : {}", key);
+        return key;
     }
 
     @Override

@@ -172,12 +172,15 @@ public class FeedServiceImpl implements FeedService {
         Comment saved = commentRepository.save(comment);
         log.info("댓글 생성 완료: commentId={}", saved.getId());
 
-        log.info("댓글 알림 이벤트 발행: feedAuthorId={}, commenterId={}", feed.getAuthor().getId(), commenter.getId());
-        eventPublisher.publishEvent(new FeedCommentedEvent(
-                feed.getAuthor().getId(),
-                commenter.getName(),
-                comment.getContent()
-        ));
+        // 자기 자신이 덧글을 단 경우엔 알람 발생 X
+        if (!commenter.getId().equals(feed.getAuthor().getId())) {
+            log.info("댓글 알림 이벤트 발행: feedAuthorId={}, commenterId={}", feed.getAuthor().getId(), commenter.getId());
+            eventPublisher.publishEvent(new FeedCommentedEvent(
+                    feed.getAuthor().getId(),
+                    commenter.getName(),
+                    comment.getContent()
+            ));
+        }
 
         return CommentDto.from(saved, userService.getUserSummary(saved.getAuthor()));
     }
@@ -247,12 +250,15 @@ public class FeedServiceImpl implements FeedService {
             throw new FeedLikeAlreadyExistException(feed, likeUser);
         feedLikeRepository.save(FeedLike.create(feed, likeUser));
 
-        log.info("좋아요 알림 이벤트 발행: feedAuthorId={}, likeUserId={}", feed.getAuthor().getId(), likeUser.getId());
-        eventPublisher.publishEvent(new FeedLikedEvent(
-                feed.getAuthor().getId(),
-                likeUser.getName(),
-                feed.getContent()
-        ));
+        // 자기 자신이 좋아요를 한 경우엔 알람 발생 X
+        if (!likeUser.getId().equals(feed.getAuthor().getId())) {
+            log.info("좋아요 알림 이벤트 발행: feedAuthorId={}, likeUserId={}", feed.getAuthor().getId(), likeUser.getId());
+            eventPublisher.publishEvent(new FeedLikedEvent(
+                    feed.getAuthor().getId(),
+                    likeUser.getName(),
+                    feed.getContent()
+            ));
+        }
 
         log.info("피드 좋아요 완료: feedId={}, authorId={}", id, userDetails.getUserId());
     }

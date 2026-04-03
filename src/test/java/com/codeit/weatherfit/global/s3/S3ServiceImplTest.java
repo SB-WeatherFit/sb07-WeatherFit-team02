@@ -49,7 +49,7 @@ class S3ServiceImplTest {
     class PutWithContentType {
 
         @Test
-        @DisplayName("성공 - 파일을 업로드하고 fileName을 반환한다")
+        @DisplayName("성공 - 파일을 업로드하고 생성된 key를 반환한다")
         void success() {
             // given
             String fileName = "1711234567_photo.jpg";
@@ -63,12 +63,12 @@ class S3ServiceImplTest {
             String result = s3Service.put(fileName, contentType, bytes);
 
             // then
-            assertThat(result).isEqualTo(fileName);
+            assertThat(result).startsWith("images/").endsWith(fileName);
             ArgumentCaptor<PutObjectRequest> captor = ArgumentCaptor.forClass(PutObjectRequest.class);
             verify(s3Client).putObject(captor.capture(), any(RequestBody.class));
             assertThat(captor.getValue().bucket()).isEqualTo("test-bucket");
             assertThat(captor.getValue().contentType()).isEqualTo("image/jpeg");
-            assertThat(captor.getValue().key()).isEqualTo(fileName);
+            assertThat(captor.getValue().key()).isEqualTo(result);
         }
 
         @Nested
