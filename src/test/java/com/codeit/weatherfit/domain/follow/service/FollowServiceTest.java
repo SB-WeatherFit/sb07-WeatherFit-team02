@@ -10,21 +10,28 @@ import com.codeit.weatherfit.domain.follow.entity.Follow;
 import com.codeit.weatherfit.domain.follow.entity.FollowCreateParam;
 import com.codeit.weatherfit.domain.follow.exception.FollowUserNotExistException;
 import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
+import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.entity.UserRole;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.global.s3.S3Service;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 
 @SpringBootTest
 @Transactional
@@ -40,6 +47,16 @@ class FollowServiceTest {
     ProfileRepository profileRepository;
     @Autowired
     EntityManager em;
+    @MockitoBean
+    private S3Service s3Service;
+    @MockitoBean
+    private KafkaTemplate<String, MessageCreatedEvent> kafkaTemplate;
+
+    @BeforeEach
+    void setUp() {
+        given(s3Service.getUrl(any()))
+                .willReturn("https://mock-s3-url.com/default-image.jpg");
+    }
 
     @Test
     void follow() {
@@ -60,11 +77,12 @@ class FollowServiceTest {
 
         FollowDto followDto = followService.follow(followCreateRequest);
 
-        //profileRepository 후에...
         assertThat(followDto.follower().userId()).isEqualTo(saved2.getId());
         assertThat(followDto.followee().userId()).isEqualTo(saved.getId());
         assertThat(followDto.follower().name()).isEqualTo(saved2.getName());
         assertThat(followDto.followee().name()).isEqualTo(saved.getName());
+        assertThat(followDto.follower()).isNotNull();
+        assertThat(followDto.followee()).isNotNull();
     }
 
     @Test
@@ -106,8 +124,8 @@ class FollowServiceTest {
 
     @Test
     void summaryFail() {
-        assertThatThrownBy(()-> followService.getFollowSummary(UUID.randomUUID(), UUID.randomUUID()))
-        .isInstanceOf(FollowUserNotExistException.class);
+        assertThatThrownBy(() -> followService.getFollowSummary(UUID.randomUUID(), UUID.randomUUID()))
+                .isInstanceOf(FollowUserNotExistException.class);
     }
 
     @Test
@@ -127,7 +145,7 @@ class FollowServiceTest {
         boolean result = followRepository.existsById(savedFollow.getId());
         assertThat(result).isFalse();
     }
-    
+
     @Test
     void getFollowers() {
         User user = User.create("test@gmail.com", "nickname2", UserRole.USER, "password");
@@ -135,17 +153,16 @@ class FollowServiceTest {
         Profile profile = ProfileFixture.createProfile(saved);
         profileRepository.save(profile);
         for (int i = 0; i < 50; i++) {
-            User userI = User.create("test@gmail.com"+i, "nickname", UserRole.USER, "password");
+            User userI = User.create("test@gmail.com" + i, "nickname", UserRole.USER, "password");
             User savedI = userRepository.save(userI);
             Profile profileI = ProfileFixture.createProfile(savedI);
             profileRepository.save(profileI);
-           
             followRepository.save(Follow.create(new FollowCreateParam(saved, savedI)));
         }
-        
+
         FollowerSearchCondition condition = new FollowerSearchCondition(saved.getId(), null, null, 20, null);
         FollowListResponse result = followService.getFollowers(condition);
-        
+
         assertThat(result.data().getFirst().followee().userId()).isEqualTo(saved.getId());
         assertThat(result.data().getFirst().follower().userId()).isNotEqualTo(saved.getId());
         assertThat(result.hasNext()).isTrue();

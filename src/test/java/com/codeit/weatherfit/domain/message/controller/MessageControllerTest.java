@@ -1,56 +1,96 @@
 package com.codeit.weatherfit.domain.message.controller;
 
+import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
 import com.codeit.weatherfit.domain.message.dto.response.MessageCursorResponse;
+import com.codeit.weatherfit.domain.message.entity.Message;
+import com.codeit.weatherfit.domain.message.repository.MessageRepository;
 import com.codeit.weatherfit.domain.message.service.MessageService;
+import com.codeit.weatherfit.domain.message.service.ProfileFixture;
+import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
+import com.codeit.weatherfit.domain.profile.entity.Profile;
+import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
+import com.codeit.weatherfit.domain.user.entity.User;
+import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.global.s3.S3Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
+import static com.codeit.weatherfit.domain.message.entity.UserFixture.createUser;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
+@SpringBootTest
+@Transactional
+@AutoConfigureMockMvc
 class MessageControllerTest {
 
-    private MessageService messageService;
+    @Autowired
+    MessageService messageService;
+    @Autowired
+    UserRepository userRepository;
+    @Autowired
+    ProfileRepository profileRepository;
+    @Autowired
+    MessageRepository messageRepository;
 
-    private MockMvcTester mvcTester;
+    @Autowired
+    MockMvcTester mvcTester;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @MockitoBean
+    private S3Service s3Service;
+    @MockitoBean
+    private KafkaTemplate<String, MessageCreatedEvent> kafkaTemplate;
 
     @BeforeEach
     void setUp() {
-        messageService = Mockito.mock(MessageService.class);
-
-        MessageController messageController = new MessageController(messageService);
-
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(messageController)
-                .build();
-
-        mvcTester = MockMvcTester.create(mockMvc);
+        given(s3Service.getUrl(any()))
+                .willReturn("https://mock-s3-url.com/default-image.jpg");
     }
 
     @Test
-    void getMessageTest() throws Exception {
-        when(messageService.searchMessages(any(), any()))
-                .thenReturn(new MessageCursorResponse(null, null, null, false, 10));
+    void getMessageTest() {
+        User user = createUser();
+        User user2 = createUser("test2@gmail.com");
+        Profile profile = ProfileFixture.createProfile(user);
+        Profile profile2 = ProfileFixture.createProfile(user2);
+        userRepository.save(user);
+        userRepository.save(user2);
+        profileRepository.save(profile);
+        profileRepository.save(profile2);
+        for (int i = 0; i < 21; i++) {
+            Message message;
+            if (i % 2 == 0) message = Message.create(user, user2, "content" + i);
+            else message = Message.create(user2, user, "content" + i);
+            messageRepository.save(message);
+        }
+        WeatherFitUserDetails details = WeatherFitUserDetails.from(user2);
 
         assertThat(
                 mvcTester.get()
                         .uri("/api/direct-messages")
-                        .param("userId", String.valueOf(UUID.randomUUID()))
+                        .with(csrf())
+                        .with(user(details))
+                        .param("userId", user.getId().toString())
                         .param("limit", "20"))
                 .apply(print())
-                .hasStatusOk();
-
-        verify(messageService).searchMessages(any(), any());
+                .hasStatusOk()
+                .bodyJson()
+                .convertTo(MessageCursorResponse.class)
+                .satisfies(result -> {
+                    assertThat(result.data().size()).isEqualTo(20);
+                    assertThat(result.totalCount()).isEqualTo(21);
+                    assertThat(result.hasNext()).isTrue();
+                });
     }
 }

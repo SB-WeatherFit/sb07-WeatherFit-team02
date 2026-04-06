@@ -22,7 +22,7 @@ public record FollowerCreatedEvent(
 
     @Override
     public String getContent(){
-        return "";
+        return "인사를 건네보세요";
     }
 
     @Override

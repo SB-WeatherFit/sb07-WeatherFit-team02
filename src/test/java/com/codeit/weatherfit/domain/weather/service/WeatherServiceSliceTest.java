@@ -14,8 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
@@ -92,15 +90,27 @@ class WeatherServiceSliceTest {
         WeatherRequest request = testFixture.requestWeatherFactory();
         WeatherResponse weatherResponse = testFixture.weatherFactory();
 
-        given(weatherRepository.getSingleWeatherByLocation(
+        given(locationApiCallService.getKaKaoResponse(any(WeatherRequest.class)))
+                .willReturn(
+                        new KakaoLocationResponse(
+                                List.of(
 
-                any(Double.class),any(Double.class)
-        )).willReturn(Weather.create(weatherResponse));
+                                        new KakaoLocationResponse.KakaoDocument(
+                                                weatherResponse.location().locationNames().getFirst(),
+                                                weatherResponse.location().locationNames().get(1),
+                                                weatherResponse.location().locationNames().get(2),
+                                                String.valueOf(weatherResponse.location().longitude()),
+                                                String.valueOf(weatherResponse.location().latitude())
+                                        )
+                                )
+                        )
+
+                );
 
         LocationResponse result = weatherService.getWeatherLocation(request);
 
-        then(weatherRepository).should(times(1))
-                .getSingleWeatherByLocation(any(Double.class),any(Double.class));
+        then(locationApiCallService).should(times(1))
+                .getKaKaoResponse(any(WeatherRequest.class));
         assertThat(result).isEqualTo(weatherResponse.location());
 
     }

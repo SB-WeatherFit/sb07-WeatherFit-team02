@@ -18,7 +18,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/weathers")
@@ -37,7 +40,7 @@ public class WeatherController {
         return ResponseEntity.ok().body(response);
     }
     @GetMapping
-    public ResponseEntity<List<WeatherResponse>> getWeather(@AuthenticationPrincipal UserDetails userDetails){
+    public ResponseEntity<List<WeatherResponse>> getWeather(@AuthenticationPrincipal (expression = "userId") UUID userId) {
 
         //todo 현재 접속중인 유저 id 조회
 
@@ -71,6 +74,11 @@ public class WeatherController {
     public ResponseEntity<List<WeatherResponse>> testUpdateScheduler(){
         List<WeatherResponse> response = weatherScheduler.updateWeather();
         return ResponseEntity.ok().body(response);
+    }
+
+    @GetMapping("/test/who")
+    public String who() throws UnknownHostException {
+        return InetAddress.getLocalHost().getHostName();
     }
 
 //    @GetMapping("/test/scheduler/delete")

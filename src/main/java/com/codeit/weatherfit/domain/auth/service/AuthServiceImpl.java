@@ -3,6 +3,8 @@ package com.codeit.weatherfit.domain.auth.service;
 import com.codeit.weatherfit.domain.auth.dto.request.ResetPasswordRequest;
 import com.codeit.weatherfit.domain.auth.dto.request.SignInRequest;
 import com.codeit.weatherfit.domain.auth.dto.response.JwtDto;
+import com.codeit.weatherfit.domain.auth.entity.TemporaryPassword;
+import com.codeit.weatherfit.domain.auth.repository.TemporaryPasswordRepository;
 import com.codeit.weatherfit.domain.auth.security.InMemoryAuthTokenStore;
 import com.codeit.weatherfit.domain.auth.security.JwtTokenProvider;
 import com.codeit.weatherfit.domain.auth.security.TemporaryPasswordGenerator;
@@ -12,10 +14,12 @@ import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.global.exception.ErrorCode;
 import com.codeit.weatherfit.global.exception.WeatherFitException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -23,12 +27,16 @@ import java.util.UUID;
 @Transactional
 public class AuthServiceImpl implements AuthService {
 
+    @Value("${weatherfit.auth.temporary-password-expiration-seconds:180}")
+    private long temporaryPasswordExpiresInSeconds;
+
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final InMemoryAuthTokenStore inMemoryAuthTokenStore;
     private final TemporaryPasswordGenerator temporaryPasswordGenerator;
     private final PasswordResetMailSender passwordResetMailSender;
     private final PasswordEncoder passwordEncoder;
+    private final TemporaryPasswordRepository temporaryPasswordRepository;
 
     @Override
     public AuthTokenResult signIn(SignInRequest request) {
@@ -41,16 +49,11 @@ public class AuthServiceImpl implements AuthService {
             throw new WeatherFitException(ErrorCode.SIGN_IN_FAILED);
         }
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+        if (!isValidPassword(user, request.password())) {
             throw new WeatherFitException(ErrorCode.SIGN_IN_FAILED);
         }
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
-        inMemoryAuthTokenStore.register(user.getId(), accessToken, refreshToken);
-
-        JwtDto jwtDto = JwtDto.of(UserDto.from(user), accessToken);
-        return AuthTokenResult.of(jwtDto, refreshToken);
+        return issueTokens(user);
     }
 
     @Override
@@ -67,9 +70,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthTokenResult refresh(String refreshToken) {
-        if (refreshToken == null || refreshToken.isBlank()) {
-            throw new WeatherFitException(ErrorCode.INVALID_REFRESH_TOKEN);
-        }
+        validateRefreshToken(refreshToken);
 
         UUID userId = inMemoryAuthTokenStore.findUserIdByRefreshToken(refreshToken);
         if (userId == null) {
@@ -78,6 +79,10 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.INVALID_REFRESH_TOKEN));
+
+        if (user.isLocked()) {
+            throw new WeatherFitException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
 
         String newAccessToken = jwtTokenProvider.generateAccessToken(user);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(user);
@@ -98,12 +103,51 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.RESET_PASSWORD_USER_NOT_FOUND));
 
+        temporaryPasswordRepository.deleteAllByUserIdAndUsedFalse(user.getId());
+
         String temporaryPassword = temporaryPasswordGenerator.generate();
         String encodedTemporaryPassword = passwordEncoder.encode(temporaryPassword);
 
-        user.updatePassword(encodedTemporaryPassword);
+        TemporaryPassword savedTemporaryPassword = TemporaryPassword.create(
+                user,
+                encodedTemporaryPassword,
+                Instant.now().plusSeconds(temporaryPasswordExpiresInSeconds)
+        );
+        temporaryPasswordRepository.save(savedTemporaryPassword);
 
         passwordResetMailSender.send(user.getEmail(), temporaryPassword);
+    }
+
+    private AuthTokenResult issueTokens(User user) {
+        String accessToken = jwtTokenProvider.generateAccessToken(user);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+        inMemoryAuthTokenStore.register(user.getId(), accessToken, refreshToken);
+
+        JwtDto jwtDto = JwtDto.of(UserDto.from(user), accessToken);
+        return AuthTokenResult.of(jwtDto, refreshToken);
+    }
+
+    private boolean isValidPassword(User user, String rawPassword) {
+        if (passwordEncoder.matches(rawPassword, user.getPassword())) {
+            return true;
+        }
+
+        TemporaryPassword temporaryPassword = temporaryPasswordRepository
+                .findTopByUserIdAndUsedFalseOrderByCreatedAtDesc(user.getId())
+                .filter(savedTemporaryPassword -> savedTemporaryPassword.isAvailable(Instant.now()))
+                .orElse(null);
+
+        if (temporaryPassword == null) {
+            return false;
+        }
+
+        boolean matched = passwordEncoder.matches(rawPassword, temporaryPassword.getEncodedPassword());
+
+        if (matched) {
+            temporaryPasswordRepository.delete(temporaryPassword);
+        }
+
+        return matched;
     }
 
     private void validateSignInRequest(SignInRequest request) {
@@ -113,6 +157,16 @@ public class AuthServiceImpl implements AuthService {
                 || request.password() == null
                 || request.password().isBlank()) {
             throw new WeatherFitException(ErrorCode.INVALID_SIGN_IN_REQUEST);
+        }
+    }
+
+    private void validateRefreshToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new WeatherFitException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        if (!jwtTokenProvider.isValidRefreshToken(refreshToken)) {
+            throw new WeatherFitException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
     }
 

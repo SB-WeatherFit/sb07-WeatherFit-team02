@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.user.service;
 
+import com.codeit.weatherfit.domain.auth.repository.TemporaryPasswordRepository;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.dto.request.ChangePasswordRequest;
@@ -14,6 +15,7 @@ import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.user.repository.UserSearchCondition;
 import com.codeit.weatherfit.global.exception.ErrorCode;
 import com.codeit.weatherfit.global.exception.WeatherFitException;
+import com.codeit.weatherfit.global.s3.S3Service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -44,6 +46,12 @@ class UserServiceImplTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private S3Service s3Service;
+
+    @Mock
+    private TemporaryPasswordRepository temporaryPasswordRepository;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -201,6 +209,7 @@ class UserServiceImplTest {
             userService.updatePassword(userId, new ChangePasswordRequest("new-password"));
 
             assertThat(user.getPassword()).isEqualTo("encoded-new-password");
+            verify(temporaryPasswordRepository).deleteAllByUserIdAndUsedFalse(userId);
         }
 
         @Test

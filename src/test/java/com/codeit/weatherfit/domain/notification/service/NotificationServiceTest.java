@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.notification.service;
 
 import com.codeit.weatherfit.domain.message.entity.UserFixture;
+import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
 import com.codeit.weatherfit.domain.notification.dto.request.NotificationSearchCondition;
 import com.codeit.weatherfit.domain.notification.dto.response.NotificationCursorResponse;
 import com.codeit.weatherfit.domain.notification.dto.response.NotificationDto;
@@ -13,10 +14,10 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,7 +25,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Transactional
@@ -38,6 +38,9 @@ class NotificationServiceTest {
     NotificationRepository notificationRepository;
     @Autowired
     EntityManager em;
+    @MockitoBean
+    private KafkaTemplate<String, MessageCreatedEvent> kafkaTemplate;
+
 
     @Test
     void send() {
@@ -58,23 +61,21 @@ class NotificationServiceTest {
 
     @Test
     void broadcast() {
-        Set<UUID> targetUserIds = new HashSet<>();
-        UUID firstUserId = null;
         for (int i = 0; i < 10; i++) {
             User user = UserFixture.createUser("test@gmail.com" + i);
             User saved = userRepository.save(user);
-            targetUserIds.add(saved.getId());
-            if (i == 0) {
-                firstUserId = saved.getId();
-            }
         }
         em.flush();
         em.clear();
 
-        List<NotificationDto> result = notificationService.broadcast("title", "content", NotificationLevel.INFO, targetUserIds);
+        UUID uuid = notificationService.broadcast("title", "content", NotificationLevel.INFO);
 
-        assertThat(result.size()).isEqualTo(10);
-        assertThat(result.getFirst().receiverId()).isEqualTo(firstUserId);
+        List<Notification> notifications = notificationRepository.findAll();
+        assertThat(notifications).allSatisfy(
+                notification -> {
+                    assertThat(notification.getGroupId()).isEqualTo(uuid);
+                }
+        );
     }
 
     @Test
@@ -85,7 +86,6 @@ class NotificationServiceTest {
         for (int i = 0; i < 40; i++) {
             Notification notification = Notification.create(user, "title" + i, "content", NotificationLevel.INFO);
             notificationRepository.save(notification);
-            ReflectionTestUtils.setField(notification, "createdAt", Instant.now().minusSeconds(40 - i));
         }
 
         em.flush();
@@ -114,9 +114,9 @@ class NotificationServiceTest {
     @Test
     void delete() {
         User user = UserFixture.createUser();
-        User saved = userRepository.save(user);
+        userRepository.save(user);
 
-        Notification notification = Notification.create(user, "title" , "content", NotificationLevel.INFO);
+        Notification notification = Notification.create(user, "title", "content", NotificationLevel.INFO);
         Notification save = notificationRepository.save(notification);
 
         em.flush();

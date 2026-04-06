@@ -3,7 +3,6 @@ package com.codeit.weatherfit.domain.auth.controller;
 import com.codeit.weatherfit.domain.auth.dto.request.ResetPasswordRequest;
 import com.codeit.weatherfit.domain.auth.dto.request.SignInRequest;
 import com.codeit.weatherfit.domain.auth.dto.response.JwtDto;
-import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
 import com.codeit.weatherfit.domain.auth.service.AuthService;
 import com.codeit.weatherfit.domain.auth.service.AuthTokenResult;
 import jakarta.validation.Valid;
@@ -11,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -72,6 +70,7 @@ public class AuthController {
 
     @GetMapping("/csrf-token")
     public ResponseEntity<Void> csrfToken(CsrfToken csrfToken) {
+        csrfToken.getToken();
         return ResponseEntity.noContent().build();
     }
 

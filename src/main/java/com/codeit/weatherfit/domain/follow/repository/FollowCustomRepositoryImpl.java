@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 import static com.codeit.weatherfit.domain.follow.entity.QFollow.follow;
 import static com.codeit.weatherfit.domain.user.entity.QUser.user;
@@ -27,9 +28,9 @@ public class FollowCustomRepositoryImpl implements FollowCustomRepository {
                 .join(follow.followee, user).fetchJoin()
                 .where(
                         follow.follower.id.eq(condition.followerId()),
-                        cursorCondition(condition.cursor()),
-                        nameLike(condition.nameLike()))
-                .orderBy(follow.createdAt.asc())
+                        cursorCondition(condition.cursor(), condition.idAfter()),
+                        nameLikeFollowee(condition.nameLike()))
+                .orderBy(follow.createdAt.asc(), follow.id.asc())
                 .limit(condition.limit() + 1)
                 .fetch();
     }
@@ -42,24 +43,31 @@ public class FollowCustomRepositoryImpl implements FollowCustomRepository {
                 .join(follow.follower, user).fetchJoin()
                 .where(
                         follow.followee.id.eq(condition.followeeId()),
-                        cursorCondition(condition.cursor()),
-                        nameLike(condition.nameLike()))
+                        cursorCondition(condition.cursor(), condition.idAfter()),
+                        nameLikeFollowers(condition.nameLike()))
                 .orderBy(follow.createdAt.asc(), follow.id.asc())
                 .limit(condition.limit() + 1)
                 .fetch();
     }
 
-    private BooleanExpression nameLike(String nameLike) {
+    private BooleanExpression nameLikeFollowee(String nameLike) {
+        if (nameLike == null || nameLike.isBlank()) {
+            return null;
+        }
+        return follow.followee.name.contains(nameLike);
+    }
+
+    private BooleanExpression nameLikeFollowers(String nameLike) {
         if (nameLike == null) {
             return null;
         }
-        return follow.follower.name.like(nameLike);
+        return follow.follower.name.contains(nameLike);
     }
 
-    private BooleanExpression cursorCondition(Instant cursor) {
+    private BooleanExpression cursorCondition(Instant cursor, UUID idAfter) {
         if (cursor == null) {
             return null;
         }
-        return follow.createdAt.gt(cursor);
+        return follow.createdAt.gt(cursor).or(follow.createdAt.eq(cursor).and(follow.id.gt(idAfter)));
     }
 }

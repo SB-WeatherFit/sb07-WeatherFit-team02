@@ -2,6 +2,8 @@ package com.codeit.weatherfit.domain.auth.service;
 
 import com.codeit.weatherfit.domain.auth.dto.request.ResetPasswordRequest;
 import com.codeit.weatherfit.domain.auth.dto.request.SignInRequest;
+import com.codeit.weatherfit.domain.auth.entity.TemporaryPassword;
+import com.codeit.weatherfit.domain.auth.repository.TemporaryPasswordRepository;
 import com.codeit.weatherfit.domain.auth.security.InMemoryAuthTokenStore;
 import com.codeit.weatherfit.domain.auth.security.JwtTokenProvider;
 import com.codeit.weatherfit.domain.auth.security.TemporaryPasswordGenerator;
@@ -14,11 +16,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -47,6 +52,9 @@ class AuthServiceImplTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private TemporaryPasswordRepository temporaryPasswordRepository;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
@@ -71,6 +79,54 @@ class AuthServiceImplTest {
 
             verify(inMemoryAuthTokenStore, times(1))
                     .register(user.getId(), "access-token", "refresh-token");
+        }
+
+        @Test
+        @DisplayName("임시 비밀번호로 로그인에 성공한다")
+        void signInWithTemporaryPassword() {
+            User user = User.create("test3@test.com", "test3", UserRole.USER, "encoded-password");
+            TemporaryPassword temporaryPassword = TemporaryPassword.create(
+                    user,
+                    "encoded-temporary-password",
+                    Instant.now().plusSeconds(180)
+            );
+
+            when(userRepository.findByEmail("test3@test.com")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("temporary-password", "encoded-password")).thenReturn(false);
+            when(temporaryPasswordRepository.findTopByUserIdAndUsedFalseOrderByCreatedAtDesc(user.getId()))
+                    .thenReturn(Optional.of(temporaryPassword));
+            when(passwordEncoder.matches("temporary-password", "encoded-temporary-password")).thenReturn(true);
+            when(jwtTokenProvider.generateAccessToken(user)).thenReturn("access-token");
+            when(jwtTokenProvider.generateRefreshToken(user)).thenReturn("refresh-token");
+
+            AuthTokenResult result = authService.signIn(new SignInRequest("test3@test.com", "temporary-password"));
+
+            assertThat(result.jwtDto().userDto().email()).isEqualTo("test3@test.com");
+            assertThat(result.jwtDto().accessToken()).isEqualTo("access-token");
+            assertThat(result.refreshToken()).isEqualTo("refresh-token");
+
+            verify(temporaryPasswordRepository).delete(temporaryPassword);
+        }
+
+        @Test
+        @DisplayName("만료된 임시 비밀번호면 로그인에 실패한다")
+        void signInFailWhenTemporaryPasswordExpired() {
+            User user = User.create("test3@test.com", "test3", UserRole.USER, "encoded-password");
+            TemporaryPassword temporaryPassword = TemporaryPassword.create(
+                    user,
+                    "encoded-temporary-password",
+                    Instant.now().minusSeconds(1)
+            );
+
+            when(userRepository.findByEmail("test3@test.com")).thenReturn(Optional.of(user));
+            when(passwordEncoder.matches("temporary-password", "encoded-password")).thenReturn(false);
+            when(temporaryPasswordRepository.findTopByUserIdAndUsedFalseOrderByCreatedAtDesc(user.getId()))
+                    .thenReturn(Optional.of(temporaryPassword));
+
+            assertThatThrownBy(() -> authService.signIn(new SignInRequest("test3@test.com", "temporary-password")))
+                    .isInstanceOf(WeatherFitException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.SIGN_IN_FAILED);
         }
 
         @Test
@@ -100,6 +156,8 @@ class AuthServiceImplTest {
 
             when(userRepository.findByEmail("test3@test.com")).thenReturn(Optional.of(user));
             when(passwordEncoder.matches("wrong-password", "encoded-password")).thenReturn(false);
+            when(temporaryPasswordRepository.findTopByUserIdAndUsedFalseOrderByCreatedAtDesc(user.getId()))
+                    .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> authService.signIn(new SignInRequest("test3@test.com", "wrong-password")))
                     .isInstanceOf(WeatherFitException.class)
@@ -139,6 +197,7 @@ class AuthServiceImplTest {
             UUID userId = UUID.randomUUID();
             User user = User.create("test3@test.com", "test3", UserRole.USER, "encoded-password");
 
+            when(jwtTokenProvider.isValidRefreshToken("refresh-token")).thenReturn(true);
             when(inMemoryAuthTokenStore.findUserIdByRefreshToken("refresh-token")).thenReturn(userId);
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
             when(jwtTokenProvider.generateAccessToken(user)).thenReturn("new-access-token");
@@ -165,7 +224,7 @@ class AuthServiceImplTest {
         @Test
         @DisplayName("저장된 리프레시 토큰이 아니면 실패한다")
         void refreshFailWhenTokenInvalid() {
-            when(inMemoryAuthTokenStore.findUserIdByRefreshToken("refresh-token")).thenReturn(null);
+            when(jwtTokenProvider.isValidRefreshToken("refresh-token")).thenReturn(false);
 
             assertThatThrownBy(() -> authService.refresh("refresh-token"))
                     .isInstanceOf(WeatherFitException.class)
@@ -180,6 +239,8 @@ class AuthServiceImplTest {
         @Test
         @DisplayName("비밀번호 초기화에 성공한다")
         void resetPassword() {
+            ReflectionTestUtils.setField(authService, "temporaryPasswordExpiresInSeconds", 180L);
+
             User user = User.create("test3@test.com", "test3", UserRole.USER, "old-encoded-password");
 
             when(userRepository.findByEmail("test3@test.com")).thenReturn(Optional.of(user));
@@ -188,9 +249,35 @@ class AuthServiceImplTest {
 
             authService.resetPassword(new ResetPasswordRequest("test3@test.com"));
 
-            assertThat(user.getPassword()).isEqualTo("encoded-temporary1234");
+            ArgumentCaptor<TemporaryPassword> captor = ArgumentCaptor.forClass(TemporaryPassword.class);
+            verify(temporaryPasswordRepository).deleteAllByUserIdAndUsedFalse(user.getId());
+            verify(temporaryPasswordRepository).save(captor.capture());
+
+            TemporaryPassword savedTemporaryPassword = captor.getValue();
+            assertThat(savedTemporaryPassword.getUser()).isEqualTo(user);
+            assertThat(savedTemporaryPassword.getEncodedPassword()).isEqualTo("encoded-temporary1234");
+            assertThat(savedTemporaryPassword.isUsed()).isFalse();
+
             verify(passwordResetMailSender, times(1))
                     .send("test3@test.com", "temporary1234");
+        }
+
+        @Test
+        @DisplayName("기존 활성 임시 비밀번호가 있으면 삭제 후 새로 저장한다")
+        void resetPasswordDeletesPreviousTemporaryPasswords() {
+            ReflectionTestUtils.setField(authService, "temporaryPasswordExpiresInSeconds", 180L);
+
+            User user = User.create("test3@test.com", "test3", UserRole.USER, "old-encoded-password");
+
+            when(userRepository.findByEmail("test3@test.com")).thenReturn(Optional.of(user));
+            when(temporaryPasswordGenerator.generate()).thenReturn("temporary1234");
+            when(passwordEncoder.encode("temporary1234")).thenReturn("encoded-temporary1234");
+
+            authService.resetPassword(new ResetPasswordRequest("test3@test.com"));
+
+            verify(temporaryPasswordRepository).deleteAllByUserIdAndUsedFalse(user.getId());
+            verify(temporaryPasswordRepository).save(any(TemporaryPassword.class));
+            verify(passwordResetMailSender).send("test3@test.com", "temporary1234");
         }
 
         @Test

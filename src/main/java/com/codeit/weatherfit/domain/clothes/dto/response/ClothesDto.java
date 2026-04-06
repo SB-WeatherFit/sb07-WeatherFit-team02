@@ -7,7 +7,7 @@ import com.codeit.weatherfit.domain.clothes.entity.ClothesType;
 import java.util.List;
 import java.util.UUID;
 
-public record ClothesDto (
+public record ClothesDto(
         UUID id,
         UUID ownerId,
         String name,
@@ -16,22 +16,18 @@ public record ClothesDto (
         List<ClothesAttributeDto> attributes
 ) {
     public static ClothesDto from(Clothes clothes,
-                                  List<ClothesAttribute> attributes) {
+                                  List<ClothesAttribute> attributes,
+                                  String imageUrl) {
 
         List<ClothesAttributeDto> attributesDtos = attributes.stream()
-                .map(attr -> new ClothesAttributeDto(
-                        attr.getOption()
-                                .getClothesAttributeType()
-                                .getId(),
-                        attr.getOption()
-                                .getOption()
-                )).toList();
+                .map(ClothesAttributeDto::from)
+                .toList();
 
         return new ClothesDto(
                 clothes.getId(),
                 clothes.getOwner().getId(),
                 clothes.getName(),
-                clothes.getImageUrl(),
+                imageUrl,
                 clothes.getType(),
                 attributesDtos
         );

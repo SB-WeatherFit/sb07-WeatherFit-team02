@@ -13,8 +13,9 @@ import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,8 +31,9 @@ public class MessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final ProfileRepository profileRepository;
+    private final S3Service s3Service;
+    private final KafkaTemplate<String, MessageCreatedEvent>  kafkaTemplate;
 
     @Transactional
     public void send(MessageCreateRequest request) {
@@ -40,29 +42,34 @@ public class MessageServiceImpl implements MessageService {
         String content = request.content();
 
         User sender = userRepository.findById(senderId)
-                .orElseThrow(); // todo
+                .orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다."));
 
         User receiver = userRepository.findById(receiverId)
-                .orElseThrow(); // todo
+                .orElseThrow(() -> new IllegalArgumentException("유저가 존재하지 않습니다."));
 
         Message message = Message.create(sender, receiver, content);
         Message save = messageRepository.save(message);
         Profile receiverProfile = profileRepository.findWithUser(save.getReceiver().getId()).orElseThrow();
         Profile senderProfile = profileRepository.findWithUser(save.getSender().getId()).orElseThrow();
-        DmDto messageDto = DmDto.from(save, senderProfile, receiverProfile);
+        DmDto messageDto = DmDto.from(save,
+                senderProfile.getUser(),
+                s3Service.getUrl(senderProfile.getProfileImageKey()),
+                receiverProfile.getUser(),
+                s3Service.getUrl(receiverProfile.getProfileImageKey())
+        );
 
 
         String dmKey = generateDmKey(senderId, receiverId);
-        eventPublisher.publishEvent(new MessageCreatedEvent(dmKey, messageDto));
-        eventPublisher.publishEvent(new MessageSentEvent(receiverId, sender.getName(), save.getContent()));
+        kafkaTemplate.send("message.send", new MessageCreatedEvent(dmKey, messageDto));
+//        eventPublisher.publishEvent(new MessageSentEvent(receiverId, sender.getName(), save.getContent()));
     }
 
     @Override
     public MessageCursorResponse searchMessages(MessageGetRequest request, UUID myId) {
         List<Message> messages = messageRepository.searchMessages(request, myId);
-        Profile receiverProfile = profileRepository.findWithUser(request.userId()).orElseThrow();
-        Profile senderProfile = profileRepository.findWithUser(myId).orElseThrow();
-        long totalCount = messageRepository.countMessage(senderProfile.getUser().getId(), receiverProfile.getUser().getId());
+        Profile myProfile = profileRepository.findWithUser(request.userId()).orElseThrow();
+        Profile theirProfile = profileRepository.findWithUser(myId).orElseThrow();
+        long totalCount = messageRepository.countMessage(myProfile.getUser().getId(), theirProfile.getUser().getId());
 
         boolean hasNext = false;
         if (messages.size() == request.limit() + 1) {
@@ -71,7 +78,17 @@ public class MessageServiceImpl implements MessageService {
         }
 
         List<MessageDto> data = messages.stream()
-                .map(message -> MessageDto.from(message, senderProfile, receiverProfile))
+                .map(message -> {
+                    boolean isMySend = message.getSender().getId().equals(myId);
+                            return MessageDto.from(
+                                    message,
+                                    message.getSender(),
+                                    s3Service.getUrl(isMySend ? myProfile.getProfileImageKey() : theirProfile.getProfileImageKey()),
+                                    message.getReceiver(),
+                                    s3Service.getUrl(isMySend ? theirProfile.getProfileImageKey() : myProfile.getProfileImageKey())
+                            );
+                        }
+                )
                 .toList();
 
         return new MessageCursorResponse(

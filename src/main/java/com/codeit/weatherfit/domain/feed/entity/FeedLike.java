@@ -18,13 +18,13 @@ public class FeedLike extends BaseEntity {
     private Feed feed;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "liked_user_id", nullable = false)
+    private User likedUser;
 
     public static FeedLike create(Feed feed, User user) {
         FeedLike feedLike = new FeedLike();
         feedLike.feed = feed;
-        feedLike.user = user;
+        feedLike.likedUser = user;
         return feedLike;
     }
 }

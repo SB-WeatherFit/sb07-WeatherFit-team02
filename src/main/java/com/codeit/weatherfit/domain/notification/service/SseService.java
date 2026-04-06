@@ -41,6 +41,10 @@ public class SseService {
         return emitter;
     }
 
+    public boolean isConnected(UUID userId) {
+        return sseEmitterRepository.existsById(userId);
+    }
+
     public void send(NotificationDto notificationDto) {
         SseEmitter emitter = sseEmitterRepository.findByUserId(notificationDto.receiverId());
 
@@ -61,12 +65,6 @@ public class SseService {
 
     public Set<UUID> findSetUserIds(){
         return sseEmitterRepository.findAll().keySet();
-    }
-
-    public void broadcast(List<NotificationDto> notificationDtos) {
-        for (NotificationDto notificationDto : notificationDtos) {
-            send(notificationDto);
-        }
     }
 
     @Scheduled(fixedDelay = 600000)

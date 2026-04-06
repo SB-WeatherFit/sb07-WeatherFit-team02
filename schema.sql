@@ -63,7 +63,7 @@ create table clothes
     updated_at timestamp with time zone not null default CURRENT_TIMESTAMP,
     type       varchar(255)             not null,
     owner_id   uuid                     not null,
-    image_url  TEXT,
+    image_key  TEXT,
     name       varchar(255)             not null,
 
     constraint check_clothes_type check (type in
@@ -170,10 +170,13 @@ create table notifications
     receiver_id uuid                     not null,
     content     varchar(1000)            not null,
     title       varchar(255)             not null,
+    group_id    uuid                     not null,
 
     CONSTRAINT fk_receiver_id FOREIGN key (receiver_id) REFERENCES users (id),
     CONSTRAINT check_notification_level CHECK (level IN ('INFO', 'WARNING', 'ERROR'))
 );
+
+CREATE INDEX idx_notifications_group_id ON notification(group_id);
 
 create table feed_clothes
 (
@@ -181,11 +184,10 @@ create table feed_clothes
     created_at timestamp with time zone not null default CURRENT_TIMESTAMP,
     updated_at timestamp with time zone not null default CURRENT_TIMESTAMP,
     feed_id    uuid                     not null,
-    name       varchar(255)             not null,
-    image_url  TEXT,
+    clothes_id uuid                     not null,
 
-    constraint fk_feed_clothes_feeds foreign key (feed_id) references feeds (id) on DELETE cascade
-
+    constraint fk_feed_clothes_feeds foreign key (feed_id) references feeds (id) on DELETE cascade,
+    constraint fk_feed_clothes_clothes foreign key (clothes_id) references clothes (id) on DELETE cascade
 );
 
 create table profiles
@@ -202,7 +204,7 @@ create table profiles
     y                       integer,
     temperature_sensitivity smallint                 not null default 3,
     user_id                 uuid                     not null unique,
-    profile_image_url       text,
+    profile_image_key       text,
 
     constraint check_sensitivity_range check ((temperature_sensitivity between 1 and 5)),
     constraint check_gender check (gender in ('MALE', 'FEMALE', 'OTHER')),
@@ -215,4 +217,20 @@ create table profile_location_names
     location_name varchar(255) not null,
 
     constraint fk_profile_location_names_profiles foreign key (profile_id) references profiles (id)
+);
+
+create table social_accounts
+(
+    id               uuid primary key,
+    created_at       timestamp with time zone not null default CURRENT_TIMESTAMP,
+    updated_at       timestamp with time zone not null default CURRENT_TIMESTAMP,
+    user_id          uuid                     not null,
+    provider         varchar(20)              not null,
+    provider_user_id varchar(255)             not null,
+    provider_email   varchar(255)             not null,
+
+    constraint fk_social_accounts_users foreign key (user_id) references users (id),
+    constraint uk_social_accounts_provider_user_id unique (provider, provider_user_id),
+    constraint uk_social_accounts_user_provider unique (user_id, provider),
+    constraint check_social_provider check (provider in ('GOOGLE'))
 );

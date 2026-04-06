@@ -22,9 +22,9 @@ public class MessageCustomRepositoryImpl implements MessageCustomRepository {
         return queryFactory.selectFrom(message)
                 .where(
                         cursorCondition(request.cursor(), request.idAfter()),
-                        message.receiver.id.eq(request.userId())
-                                .and(message.sender.id.eq(senderId)))
-                .orderBy(message.createdAt.desc(), message.id.desc())
+                        (message.receiver.id.eq(request.userId()).and(message.sender.id.eq(senderId)))
+                                .or(message.receiver.id.eq(senderId).and(message.sender.id.eq(request.userId()))))
+                .orderBy(message.createdAt.desc(), message.id.asc())
                 .limit(request.limit() + 1)
                 .fetch();
     }
@@ -33,6 +33,6 @@ public class MessageCustomRepositoryImpl implements MessageCustomRepository {
         if (cursor == null || idAfter == null)
             return null;
         return message.createdAt.lt(cursor)
-                .or(message.createdAt.eq(cursor).and(message.id.ne(idAfter)));
+                .or(message.createdAt.eq(cursor).and(message.id.gt(idAfter)));
     }
 }

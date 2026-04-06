@@ -8,10 +8,9 @@ import com.codeit.weatherfit.domain.clothes.dto.response.SortBy;
 import com.codeit.weatherfit.domain.clothes.dto.response.SortDirection;
 import com.codeit.weatherfit.domain.clothes.entity.ClothesAttributeType;
 import com.codeit.weatherfit.domain.clothes.entity.SelectableValue;
-import com.codeit.weatherfit.domain.clothes.exception.ClothesAttributeDefInUseException;
+import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeTypeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepository;
-import com.codeit.weatherfit.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,33 +24,39 @@ import java.util.UUID;
 public class AttributeDefServiceImpl implements AttributeDefService {
     private final ClothesAttributeTypeRepository typeRepository;
     private final SelectableValueRepository valueRepository;
+    private final ClothesAttributeRepository repository;
+
 
     @Override
     public void deleteAttributeDef(UUID defId) {
-        if (typeRepository.existsById(defId)){
-            throw new ClothesAttributeDefInUseException(ErrorCode.CLOTHES_ATTRIBUTE_DEF_IN_USE);
-        }
-        typeRepository.deleteById(defId);
+
+        ClothesAttributeType type = typeRepository.findById(defId)
+                .orElseThrow();
+
+        repository.deleteByAttributeType(defId);
+        valueRepository.deleteSelectableValuesByType(defId);
+        typeRepository.delete(type);
     }
 
     @Override
     public ClothesAttributeDefDto patchAttributeDef(UUID defId, ClothesAttributeDefUpdateRequest request) {
-        List<String> stringList = request.selectableValues();
-        String newName = request.name();
-        ClothesAttributeType attributeType = typeRepository.findById(defId).orElseThrow();
-        attributeType.updateName(newName);
+
+        ClothesAttributeType attributeType = typeRepository.findById(defId)
+                .orElseThrow();
+
+        attributeType.updateName(request.name());
+        repository.deleteByAttributeType(defId);
         valueRepository.deleteSelectableValuesByType(defId);
-        List<SelectableValue> selectableValueList = stringList.stream()
-                .map(
-                        x -> SelectableValue.create(attributeType, x)
-                )
+
+        List<SelectableValue> selectableValueList = request.selectableValues().stream()
+                .map(x -> SelectableValue.create(attributeType, x))
                 .toList();
-        ;
-        List<SelectableValue> savedSelectableValues = valueRepository.saveAll(selectableValueList);
 
-        return ClothesAttributeDefDto.from(attributeType, savedSelectableValues);
+        List<SelectableValue> saved =
+                valueRepository.saveAll(selectableValueList);
+
+        return ClothesAttributeDefDto.from(attributeType, saved);
     }
-
 
     @Override
     @Transactional(readOnly = true)

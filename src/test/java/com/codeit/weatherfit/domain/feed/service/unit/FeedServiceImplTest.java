@@ -1,7 +1,13 @@
 package com.codeit.weatherfit.domain.feed.service.unit;
 
+import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesAttribute;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesAttributeType;
+import com.codeit.weatherfit.domain.clothes.entity.SelectableValue;
+import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
+import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepository;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.*;
 import com.codeit.weatherfit.domain.feed.dto.response.CommentGetResponse;
@@ -9,18 +15,26 @@ import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
 import com.codeit.weatherfit.domain.feed.entity.Comment;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
+import com.codeit.weatherfit.domain.feed.entity.FeedLike;
+import com.codeit.weatherfit.domain.feed.exception.FeedBadRequestException;
+import com.codeit.weatherfit.domain.feed.exception.FeedLikeAlreadyExistException;
+import com.codeit.weatherfit.domain.feed.exception.FeedLikeNotExistException;
+import com.codeit.weatherfit.domain.feed.exception.FeedNotExistException;
 import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
 import com.codeit.weatherfit.domain.feed.service.FeedServiceImpl;
-import com.codeit.weatherfit.domain.profile.entity.Profile;
+import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
+import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
+import com.codeit.weatherfit.domain.user.service.UserService;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
+import com.codeit.weatherfit.global.s3.S3Service;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -29,6 +43,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -65,6 +80,12 @@ class FeedServiceImplTest {
     private ClothesRepository clothesRepository;
 
     @Mock
+    private ClothesAttributeRepository clothesAttributeRepository;
+
+    @Mock
+    private SelectableValueRepository selectableValueRepository;
+
+    @Mock
     private CommentRepository commentRepository;
 
     @Mock
@@ -73,6 +94,18 @@ class FeedServiceImplTest {
     @InjectMocks
     private FeedServiceImpl feedService;
 
+    @Mock
+    UserService userService;
+
+    @Mock
+    S3Service s3Service;
+
+    @Mock
+    ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    FollowRepository followRepository;
+
     @Nested
     @DisplayName("생성")
     class create {
@@ -80,23 +113,28 @@ class FeedServiceImplTest {
         @DisplayName("성공")
         void success() {
             // given
-            FeedCreateRequest request = Instancio.create(FeedCreateRequest.class);
-            when(userRepository.findById(any(UUID.class)))
-                    .thenReturn(Optional.of(Instancio.create(User.class)));
+            User author = Instancio.create(User.class);
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
+            FeedCreateRequest request = new FeedCreateRequest(
+                    author.getId(), UUID.randomUUID(), List.of(UUID.randomUUID()), "content"
+            );
+            when(userRepository.findById(author.getId()))
+                    .thenReturn(Optional.of(author));
             when(weatherRepository.findById(any(UUID.class)))
                     .thenReturn(Optional.of(Instancio.create(Weather.class)));
             when(feedRepository.save(any(Feed.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
-
             when(clothesRepository.findAllById(request.clothesIds()))
                     .thenAnswer(invocation -> Instancio.ofList(Clothes.class).size(request.clothesIds().size()).create());
+            when(followRepository.findAllByFollowee(any(User.class)))
+                    .thenReturn(List.of());
             stubToFeedDto();
 
             // when
-            feedService.create(request);
+            feedService.create(request, userDetails);
 
             // then
-            verify(userRepository).findById(request.userId());
+            verify(userRepository).findById(request.authorId());
             verify(weatherRepository).findById(request.weatherId());
             verify(feedRepository).save(any(Feed.class));
             verify(feedClothesRepository).saveAll(anyList());
@@ -109,11 +147,16 @@ class FeedServiceImplTest {
             @DisplayName("피드를 만든 유저는 존재해야한다.")
             void user() {
                 // given
-                when(userRepository.findById(any(UUID.class)))
+                User author = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
+                FeedCreateRequest request = new FeedCreateRequest(
+                        author.getId(), UUID.randomUUID(), List.of(UUID.randomUUID()), "content"
+                );
+                when(userRepository.findById(author.getId()))
                         .thenReturn(Optional.empty());
 
                 // when & then
-                assertThatThrownBy(() -> feedService.create(Instancio.create(FeedCreateRequest.class)))
+                assertThatThrownBy(() -> feedService.create(request, userDetails))
                         .isInstanceOf(IllegalArgumentException.class); // 추후 커스텀 에러로 수정
             }
 
@@ -121,13 +164,18 @@ class FeedServiceImplTest {
             @DisplayName("weather가 존재해야한다")
             void weather() {
                 // given
-                when(userRepository.findById(any()))
-                        .thenReturn(Optional.of(Instancio.create(User.class)));
+                User author = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
+                FeedCreateRequest request = new FeedCreateRequest(
+                        author.getId(), UUID.randomUUID(), List.of(UUID.randomUUID()), "content"
+                );
+                when(userRepository.findById(author.getId()))
+                        .thenReturn(Optional.of(author));
                 when(weatherRepository.findById(any(UUID.class)))
                         .thenReturn(Optional.empty());
 
                 // when & then
-                assertThatThrownBy(() -> feedService.create(Instancio.create(FeedCreateRequest.class)))
+                assertThatThrownBy(() -> feedService.create(request, userDetails))
                         .isInstanceOf(WeatherNotFoundException.class);
             }
 
@@ -135,19 +183,21 @@ class FeedServiceImplTest {
             @DisplayName("옷이 존재해야한다")
             void clothes() {
                 // given
+                User author = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
                 List<UUID> clothesIds = List.of(UUID.randomUUID(), UUID.randomUUID());
                 FeedCreateRequest request = new FeedCreateRequest(
-                        UUID.randomUUID(), UUID.randomUUID(), clothesIds, "내용"
+                        author.getId(), UUID.randomUUID(), clothesIds, "내용"
                 );
-                when(userRepository.findById(any()))
-                        .thenReturn(Optional.of(Instancio.create(User.class)));
+                when(userRepository.findById(author.getId()))
+                        .thenReturn(Optional.of(author));
                 when(weatherRepository.findById(any(UUID.class)))
                         .thenReturn(Optional.of(Instancio.create(Weather.class)));
                 when(clothesRepository.findAllById(any()))
                         .thenReturn(List.of(Instancio.create(Clothes.class))); // 2개 요청, 1개만 반환
 
                 // when & then
-                assertThatThrownBy(() -> feedService.create(request))
+                assertThatThrownBy(() -> feedService.create(request, userDetails))
                         .isInstanceOf(IllegalArgumentException.class); // 추후 커스텀 에러로 수정
             }
 
@@ -164,6 +214,8 @@ class FeedServiceImplTest {
             Feed feed = Instancio.of(Feed.class)
                     .set(all(Instant.class), Instant.now().minus(3, ChronoUnit.DAYS))
                     .create();
+            User author = feed.getAuthor();
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
             String oldContent = feed.getContent();
             String newContent = "새로바뀝";
             when(feedRepository.findById(any(UUID.class)))
@@ -172,7 +224,7 @@ class FeedServiceImplTest {
             FeedUpdateRequest feedUpdateRequest = new FeedUpdateRequest(newContent);
 
             // when
-            FeedDto update = feedService.update(UUID.randomUUID(), feedUpdateRequest);
+            FeedDto update = feedService.update(UUID.randomUUID(), feedUpdateRequest, userDetails);
 
             // then
             assertThat(update.content()).isNotEqualTo(oldContent);
@@ -186,12 +238,14 @@ class FeedServiceImplTest {
             @DisplayName("존재하지 않는 피드는 수정할 수 없다.")
             void feedNotFound() {
                 // given
+                User user = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(user);
                 when(feedRepository.findById(any(UUID.class)))
                         .thenReturn(Optional.empty());
                 FeedUpdateRequest request = new FeedUpdateRequest("내용 수정");
 
                 // when & then
-                assertThatThrownBy(() -> feedService.update(UUID.randomUUID(), request))
+                assertThatThrownBy(() -> feedService.update(UUID.randomUUID(), request, userDetails))
                         .isInstanceOf(com.codeit.weatherfit.domain.feed.exception.FeedNotExistException.class);
             }
         }
@@ -206,6 +260,8 @@ class FeedServiceImplTest {
         void successWithNextPage() {
             // given
             int limit = 3;
+            User loginUser = Instancio.create(User.class);
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(loginUser);
             FeedGetRequest request = new FeedGetRequest(
                     null, null, limit, SortBy.createdAt, SortDirection.DESCENDING,
                     null, null, null, null
@@ -215,10 +271,12 @@ class FeedServiceImplTest {
                     .set(all(Instant.class), Instant.now().minus(1, ChronoUnit.DAYS))
                     .create();
             when(feedRepository.findWithCursor(request)).thenReturn(feeds);
+            when(userRepository.findById(loginUser.getId()))
+                    .thenReturn(Optional.of(loginUser));
             stubToFeedDto();
 
             // when
-            FeedGetResponse response = feedService.getFeedsByCursor(request);
+            FeedGetResponse response = feedService.getFeedsByCursor(request, userDetails);
 
             // then
             Feed expectedLastFeed = feeds.get(limit - 1);
@@ -234,6 +292,8 @@ class FeedServiceImplTest {
         void successWithoutNextPage() {
             // given
             int limit = 3;
+            User loginUser = Instancio.create(User.class);
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(loginUser);
             FeedGetRequest request = new FeedGetRequest(
                     null, null, limit, SortBy.createdAt, SortDirection.DESCENDING,
                     null, null, null, null
@@ -243,10 +303,12 @@ class FeedServiceImplTest {
                     .set(all(Instant.class), Instant.now().minus(1, ChronoUnit.DAYS))
                     .create();
             when(feedRepository.findWithCursor(request)).thenReturn(feeds);
+            when(userRepository.findById(loginUser.getId()))
+                    .thenReturn(Optional.of(loginUser));
             stubToFeedDto();
 
             // when
-            FeedGetResponse response = feedService.getFeedsByCursor(request);
+            FeedGetResponse response = feedService.getFeedsByCursor(request, userDetails);
 
             // then
             assertThat(response.hasNext()).isFalse();
@@ -259,14 +321,18 @@ class FeedServiceImplTest {
         @DisplayName("성공 - 결과가 없는 경우")
         void successEmpty() {
             // given
+            User loginUser = Instancio.create(User.class);
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(loginUser);
             FeedGetRequest request = new FeedGetRequest(
                     null, null, 10, SortBy.createdAt, SortDirection.DESCENDING,
                     null, null, null, null
             );
             when(feedRepository.findWithCursor(request)).thenReturn(List.of());
+            when(userRepository.findById(loginUser.getId()))
+                    .thenReturn(Optional.of(loginUser));
 
             // when
-            FeedGetResponse response = feedService.getFeedsByCursor(request);
+            FeedGetResponse response = feedService.getFeedsByCursor(request, userDetails);
 
             // then
             assertThat(response.hasNext()).isFalse();
@@ -282,11 +348,13 @@ class FeedServiceImplTest {
         void success() {
             // given
             Feed feed = Instancio.create(Feed.class);
+            User author = feed.getAuthor();
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
             when(feedRepository.findById(any(UUID.class)))
                     .thenReturn(Optional.of(feed));
 
             // when
-            feedService.delete(feed.getId());
+            feedService.delete(feed.getId(), userDetails);
 
             // then
             verify(feedRepository).delete(feed);
@@ -299,11 +367,13 @@ class FeedServiceImplTest {
             @DisplayName("존재하지 않는 피드는 삭제할 수 없다.")
             void feedNotFound() {
                 // given
+                User user = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(user);
                 when(feedRepository.findById(any(UUID.class)))
                         .thenReturn(Optional.empty());
 
                 // when & then
-                assertThatThrownBy(() -> feedService.delete(UUID.randomUUID()))
+                assertThatThrownBy(() -> feedService.delete(UUID.randomUUID(), userDetails))
                         .isInstanceOf(com.codeit.weatherfit.domain.feed.exception.FeedNotExistException.class);
             }
         }
@@ -317,24 +387,28 @@ class FeedServiceImplTest {
         void success() {
             // given
             Feed feed = Instancio.create(Feed.class);
-            when(feedRepository.findById(any(UUID.class)))
+            User commenter = feed.getAuthor();
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(commenter);
+            CommentCreateRequest request = new CommentCreateRequest(
+                    feed.getId(),
+                    commenter.getId(),
+                    "content"
+            );
+            when(feedRepository.findById(feed.getId()))
                     .thenReturn(Optional.of(feed));
-            when(userRepository.findById(any(UUID.class)))
-                    .thenReturn(Optional.of(feed.getAuthor()));
+            when(userRepository.findById(commenter.getId()))
+                    .thenReturn(Optional.of(commenter));
             when(commentRepository.save(any()))
                     .thenReturn(Instancio.create(Comment.class));
-            stubGetUserSummary();
+            when(userService.getUserSummary(any(User.class)))
+                    .thenReturn(Instancio.create(UserSummary.class));
 
             // when
-            feedService.createComment(new CommentCreateRequest(
-                    feed.getId(),
-                    feed.getAuthor().getId(),
-                    "content"
-            ));
+            feedService.createComment(feed.getId(), request, userDetails);
 
             // then
             verify(feedRepository).findById(feed.getId());
-            verify(userRepository).findById(feed.getAuthor().getId());
+            verify(userRepository).findById(commenter.getId());
             verify(commentRepository).save(any());
         }
 
@@ -344,17 +418,6 @@ class FeedServiceImplTest {
 //            @Test // TODO : 커스텀 에러 생기면 작성
 //            @DisplayName("feed Id가 존재해야한다.")
 //            void feed() {
-//                // given
-//                when(userRepository.findById(any(UUID.class)))
-//                        .thenReturn(Optional.empty());
-//
-//                // when
-//                feedService.createComment(Instancio.create(CommentCreateRequest.class));
-//
-//                // then
-//                assertThatThrownBy(() -> feedService.createComment(Instancio.create(CommentCreateRequest.class)))
-//
-//
 //            }
         }
     }
@@ -368,6 +431,8 @@ class FeedServiceImplTest {
             // given
             int limit = 3;
             UUID feedId = UUID.randomUUID();
+            User user = Instancio.create(User.class);
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(user);
             CommentGetRequest request = new CommentGetRequest(feedId, null, null, limit);
 
             List<Comment> comments = Instancio.ofList(Comment.class)
@@ -375,10 +440,11 @@ class FeedServiceImplTest {
                     .set(all(Instant.class), Instant.now().minus(1, ChronoUnit.DAYS))
                     .create();
             when(commentRepository.getCommentsByCursor(request)).thenReturn(comments);
-            stubGetUserSummary();
+            when(userService.getUserSummary(any(User.class)))
+                    .thenReturn(Instancio.create(UserSummary.class));
 
             // when
-            CommentGetResponse response = feedService.getCommentsByCursor(request);
+            CommentGetResponse response = feedService.getCommentsByCursor(request, userDetails);
 
             // then
             Comment expectedLast = comments.get(limit - 1);
@@ -394,6 +460,8 @@ class FeedServiceImplTest {
             // given
             int limit = 3;
             UUID feedId = UUID.randomUUID();
+            User user = Instancio.create(User.class);
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(user);
             CommentGetRequest request = new CommentGetRequest(feedId, null, null, limit);
 
             List<Comment> comments = Instancio.ofList(Comment.class)
@@ -401,10 +469,11 @@ class FeedServiceImplTest {
                     .set(all(Instant.class), Instant.now().minus(1, ChronoUnit.DAYS))
                     .create();
             when(commentRepository.getCommentsByCursor(request)).thenReturn(comments);
-            stubGetUserSummary();
+            when(userService.getUserSummary(any(User.class)))
+                    .thenReturn(Instancio.create(UserSummary.class));
 
             // when
-            CommentGetResponse response = feedService.getCommentsByCursor(request);
+            CommentGetResponse response = feedService.getCommentsByCursor(request, userDetails);
 
             // then
             assertThat(response.hasNext()).isFalse();
@@ -418,11 +487,13 @@ class FeedServiceImplTest {
         void successEmpty() {
             // given
             UUID feedId = UUID.randomUUID();
+            User user = Instancio.create(User.class);
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(user);
             CommentGetRequest request = new CommentGetRequest(feedId, null, null, 10);
             when(commentRepository.getCommentsByCursor(request)).thenReturn(List.of());
 
             // when
-            CommentGetResponse response = feedService.getCommentsByCursor(request);
+            CommentGetResponse response = feedService.getCommentsByCursor(request, userDetails);
 
             // then
             assertThat(response.hasNext()).isFalse();
@@ -430,20 +501,264 @@ class FeedServiceImplTest {
         }
     }
 
-    private void stubGetUserSummary() {
-        when(profileRepository.findByUserId(any(UUID.class)))
-                .thenReturn(Optional.of(Instancio.create(Profile.class)));
+    @Nested
+    @DisplayName("좋아요")
+    class like {
+        @Test
+        @DisplayName("성공")
+        void success() {
+            // given
+            Feed feed = Instancio.create(Feed.class);
+            User author = feed.getAuthor();
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
+
+            when(feedRepository.findById(feed.getId()))
+                    .thenReturn(Optional.of(feed));
+            when(userRepository.findById(author.getId()))
+                    .thenReturn(Optional.of(author));
+            when(feedLikeRepository.existsByFeedAndLikedUser(feed, author))
+                    .thenReturn(false);
+
+            // when
+            feedService.like(feed.getId(), userDetails);
+
+            // then
+            verify(feedLikeRepository).save(any(FeedLike.class));
+        }
+
+        @Nested
+        @DisplayName("실패 - 비즈니스 로직")
+        class BusinessLogicFailure {
+            @Test
+            @DisplayName("존재하지 않는 피드에 좋아요할 수 없다.")
+            void feedNotFound() {
+                // given
+                User user = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(user);
+                when(feedRepository.findById(any(UUID.class)))
+                        .thenReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> feedService.like(UUID.randomUUID(), userDetails))
+                        .isInstanceOf(com.codeit.weatherfit.domain.feed.exception.FeedNotExistException.class);
+            }
+
+            @Test
+            @DisplayName("피드 작성자가 아니면 좋아요할 수 없다.")
+            void notAuthor() {
+                // given
+                Feed feed = Instancio.create(Feed.class);
+                User otherUser = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(otherUser);
+                when(feedRepository.findById(feed.getId()))
+                        .thenReturn(Optional.of(feed));
+
+                // when & then
+                assertThatThrownBy(() -> feedService.like(feed.getId(), userDetails))
+                        .isInstanceOf(RuntimeException.class);
+            }
+
+            @Test
+            @DisplayName("이미 좋아요한 피드에 다시 좋아요할 수 없다.")
+            void alreadyLiked() {
+                // given
+                Feed feed = Instancio.create(Feed.class);
+                User author = feed.getAuthor();
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
+
+                when(feedRepository.findById(feed.getId()))
+                        .thenReturn(Optional.of(feed));
+                when(userRepository.findById(author.getId()))
+                        .thenReturn(Optional.of(author));
+                when(feedLikeRepository.existsByFeedAndLikedUser(feed, author))
+                        .thenReturn(true);
+
+                // when & then
+                assertThatThrownBy(() -> feedService.like(feed.getId(), userDetails))
+                        .isInstanceOf(FeedLikeAlreadyExistException.class);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("좋아요 취소")
+    class unlike {
+        @Test
+        @DisplayName("성공")
+        void success() {
+            // given
+            Feed feed = Instancio.create(Feed.class);
+            User author = feed.getAuthor();
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
+
+            when(feedRepository.findById(feed.getId()))
+                    .thenReturn(Optional.of(feed));
+            when(userRepository.findById(author.getId()))
+                    .thenReturn(Optional.of(author));
+            when(feedLikeRepository.existsByFeedAndLikedUser(feed, author))
+                    .thenReturn(true);
+
+            // when
+            feedService.unlike(feed.getId(), userDetails);
+
+            // then
+            verify(feedLikeRepository).existsByFeedAndLikedUser(feed, author);
+        }
+
+        @Nested
+        @DisplayName("실패 - 비즈니스 로직")
+        class BusinessLogicFailure {
+            @Test
+            @DisplayName("존재하지 않는 피드의 좋아요는 취소할 수 없다.")
+            void feedNotFound() {
+                // given
+                User user = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(user);
+                when(feedRepository.findById(any(UUID.class)))
+                        .thenReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> feedService.unlike(UUID.randomUUID(), userDetails))
+                        .isInstanceOf(com.codeit.weatherfit.domain.feed.exception.FeedNotExistException.class);
+            }
+
+            @Test
+            @DisplayName("피드 작성자가 아니면 좋아요를 취소할 수 없다.")
+            void notAuthor() {
+                // given
+                Feed feed = Instancio.create(Feed.class);
+                User otherUser = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(otherUser);
+                when(feedRepository.findById(feed.getId()))
+                        .thenReturn(Optional.of(feed));
+
+                // when & then
+                assertThatThrownBy(() -> feedService.unlike(feed.getId(), userDetails))
+                        .isInstanceOf(RuntimeException.class);
+            }
+
+            @Test
+            @DisplayName("좋아요하지 않은 피드의 좋아요는 취소할 수 없다.")
+            void notLiked() {
+                // given
+                Feed feed = Instancio.create(Feed.class);
+                User author = feed.getAuthor();
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(author);
+
+                when(feedRepository.findById(feed.getId()))
+                        .thenReturn(Optional.of(feed));
+                when(userRepository.findById(author.getId()))
+                        .thenReturn(Optional.of(author));
+                when(feedLikeRepository.existsByFeedAndLikedUser(feed, author))
+                        .thenReturn(false);
+
+                // when & then
+                assertThatThrownBy(() -> feedService.unlike(feed.getId(), userDetails))
+                        .isInstanceOf(FeedLikeNotExistException.class);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("댓글 삭제")
+    class deleteComment {
+        @Test
+        @DisplayName("성공")
+        void success() {
+            // given
+            Feed feed = Instancio.create(Feed.class);
+            User commenter = Instancio.create(User.class);
+            WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(commenter);
+            Comment comment = Instancio.of(Comment.class)
+                    .set(all(Feed.class), feed)
+                    .set(all(User.class), commenter)
+                    .create();
+
+            when(commentRepository.findById(comment.getId()))
+                    .thenReturn(Optional.of(comment));
+
+            // when
+            feedService.deleteComment(feed.getId(), comment.getId(), userDetails);
+
+            // then
+            verify(commentRepository).deleteById(comment.getId());
+        }
+
+        @Nested
+        @DisplayName("실패 - 비즈니스 로직")
+        class BusinessLogicFailure {
+            @Test
+            @DisplayName("존재하지 않는 댓글은 삭제할 수 없다.")
+            void commentNotFound() {
+                // given
+                User user = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(user);
+                when(commentRepository.findById(any(UUID.class)))
+                        .thenReturn(Optional.empty());
+
+                // when & then
+                assertThatThrownBy(() -> feedService.deleteComment(UUID.randomUUID(), UUID.randomUUID(), userDetails))
+                        .isInstanceOf(FeedNotExistException.class);
+            }
+
+            @Test
+            @DisplayName("해당 피드의 댓글이 아니면 삭제할 수 없다.")
+            void feedIdMismatch() {
+                // given
+                Feed feed = Instancio.create(Feed.class);
+                User commenter = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(commenter);
+                Comment comment = Instancio.of(Comment.class)
+                        .set(all(Feed.class), feed)
+                        .set(all(User.class), commenter)
+                        .create();
+                when(commentRepository.findById(comment.getId()))
+                        .thenReturn(Optional.of(comment));
+
+                UUID differentFeedId = UUID.randomUUID();
+
+                // when & then
+                assertThatThrownBy(() -> feedService.deleteComment(differentFeedId, comment.getId(), userDetails))
+                        .isInstanceOf(FeedBadRequestException.class);
+            }
+
+            @Test
+            @DisplayName("댓글 작성자가 아니면 삭제할 수 없다.")
+            void notCommentAuthor() {
+                // given
+                Feed feed = Instancio.create(Feed.class);
+                Comment comment = Instancio.of(Comment.class)
+                        .set(all(Feed.class), feed)
+                        .create();
+                User otherUser = Instancio.create(User.class);
+                WeatherFitUserDetails userDetails = WeatherFitUserDetails.from(otherUser);
+                when(commentRepository.findById(comment.getId()))
+                        .thenReturn(Optional.of(comment));
+
+                // when & then
+                assertThatThrownBy(() -> feedService.deleteComment(feed.getId(), comment.getId(), userDetails))
+                        .isInstanceOf(RuntimeException.class);
+            }
+        }
     }
 
     private void stubToFeedDto() {
         when(feedClothesRepository.findAllByFeed(any(Feed.class)))
                 .thenReturn(Instancio.createList(FeedClothes.class));
+        when(clothesRepository.findById(any(UUID.class)))
+                .thenReturn(Optional.of(Instancio.create(Clothes.class)));
+        when(clothesAttributeRepository.findByClothes(any(Clothes.class)))
+                .thenReturn(Instancio.createList(ClothesAttribute.class));
+        when(selectableValueRepository.findByClothesAttributeType(any(ClothesAttributeType.class)))
+                .thenReturn(Instancio.createList(SelectableValue.class));
         when(feedLikeRepository.countByFeed(any(Feed.class)))
                 .thenReturn(0L);
         when(commentRepository.countByFeed(any(Feed.class)))
                 .thenReturn(0L);
-        when(feedLikeRepository.existsByFeedAndUser(any(Feed.class), any(User.class)))
+        when(feedLikeRepository.existsByFeedAndLikedUser(any(Feed.class), any(User.class)))
                 .thenReturn(false);
+        when(s3Service.getUrl(any()))
+                .thenReturn("http://localhost:8080/image/1234567890");
     }
 
 }

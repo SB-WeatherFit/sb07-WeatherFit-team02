@@ -1,15 +1,13 @@
 package com.codeit.weatherfit.domain.clothes.repository;
 
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
-import com.codeit.weatherfit.domain.clothes.entity.ClothesType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public interface ClothesRepository extends JpaRepository<Clothes, UUID>, ClothesRepositoryCustom {
@@ -19,4 +17,15 @@ public interface ClothesRepository extends JpaRepository<Clothes, UUID>, Clothes
             UUID ownerId,
             Pageable pageable
     );
+
+    List<Clothes> findByOwnerId(UUID ownerId);
+
+    @Query("select c from Clothes c" +
+            " where c.id in :clothesIds")
+    List<Clothes> findAllByIds(
+            @Param("clothesIds") List<UUID> clothesIds);
+
+    @Query("select c.imageKey from Clothes c " +
+            "where c.imageKey is not null")
+    Set<String> findAllImageKeys();
 }
