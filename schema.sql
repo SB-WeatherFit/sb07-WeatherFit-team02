@@ -45,12 +45,13 @@ create table weathers
 
 create table feeds
 (
-    id         uuid PRIMARY KEY,
-    created_at timestamp with time zone not null DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    author_id  uuid                     not null,
-    content    text                     not null,
-    weather_id uuid                     not null,
+    id               uuid PRIMARY KEY,
+    created_at       timestamp with time zone not null DEFAULT CURRENT_TIMESTAMP,
+    updated_at       timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    author_id        uuid                     not null default '00000000-0000-0000-0000-000000000000',
+    content          text                     not null,
+    weather_id       uuid                     not null,
+    weather_snapshot JSONB                    not null,
 
     CONSTRAINT fk_feeds_users foreign key (author_id) references users (id),
     constraint fk_feeds_weathers foreign key (weather_id) references weathers (id)
@@ -180,11 +181,12 @@ CREATE INDEX idx_notifications_group_id ON notifications (group_id);
 
 create table feed_clothes
 (
-    id         uuid primary key,
-    created_at timestamp with time zone not null default CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone not null default CURRENT_TIMESTAMP,
-    feed_id    uuid                     not null,
-    clothes_id uuid                     not null,
+    id               uuid primary key,
+    created_at       timestamp with time zone not null default CURRENT_TIMESTAMP,
+    updated_at       timestamp with time zone not null default CURRENT_TIMESTAMP,
+    feed_id          uuid                     not null,
+    clothes_id       uuid                     not null, -- 마이그레이션 후 삭제
+    clothes_snapshot JSONB                    not null,
 
     constraint fk_feed_clothes_feeds foreign key (feed_id) references feeds (id) on delete cascade,
     constraint fk_feed_clothes_clothes foreign key (clothes_id) references clothes (id) -- 마이그레이션 후 삭제
