@@ -28,6 +28,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -98,5 +99,9 @@ class NotificationControllerTest {
                 mvcTester.delete().uri("/api/notifications/{notificationId}", save.getId())
                         .with(csrf())
         ).hasStatus(HttpStatus.NO_CONTENT);
+
+        Optional<Notification> result = notificationRepository.findById(save.getId());
+        assertThat(result).isEmpty();
+
     }
 }
