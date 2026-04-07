@@ -36,7 +36,7 @@ public class NotificationController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @DeleteMapping("/{userId}")
+    @DeleteMapping("/{userId}/all")
     public ResponseEntity<Void> deleteAllNotification(
             @PathVariable UUID userId) {
 
