@@ -176,7 +176,7 @@ create table notifications
     CONSTRAINT check_notification_level CHECK (level IN ('INFO', 'WARNING', 'ERROR'))
 );
 
-CREATE INDEX idx_notifications_group_id ON notification(group_id);
+CREATE INDEX idx_notifications_group_id ON notifications (group_id);
 
 create table feed_clothes
 (
@@ -232,5 +232,5 @@ create table social_accounts
     constraint fk_social_accounts_users foreign key (user_id) references users (id),
     constraint uk_social_accounts_provider_user_id unique (provider, provider_user_id),
     constraint uk_social_accounts_user_provider unique (user_id, provider),
-    constraint check_social_provider check (provider in ('GOOGLE'))
+    constraint check_social_provider check (provider in ('GOOGLE', 'KAKAO'))
 );
