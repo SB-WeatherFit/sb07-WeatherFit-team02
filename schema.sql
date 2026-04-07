@@ -53,8 +53,8 @@ create table feeds
     weather_id       uuid                     not null,
     weather_snapshot JSONB                    not null,
 
-    CONSTRAINT fk_feeds_users foreign key (author_id) references users (id),
-    constraint fk_feeds_weathers foreign key (weather_id) references weathers (id)
+    CONSTRAINT fk_feeds_users foreign key (author_id) references users (id) on delete set default,
+    constraint fk_feeds_weathers foreign key (weather_id) references weathers (id) on delete cascade
 );
 
 create table clothes
@@ -114,12 +114,12 @@ create table comments
     id         uuid PRIMARY KEY,
     created_at timestamp with time zone not null DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    author_id  uuid,
-    feed_id    uuid,
-    content    TEXT,
+    author_id  uuid                     not null default '00000000-0000-0000-0000-000000000000',
+    feed_id    uuid                     not null,
+    content    TEXT                     not null,
 
-    constraint fk_comments_users foreign key (author_id) references users (id),
-    constraint fk_comments_feeds foreign key (feed_id) references feeds (id)
+    constraint fk_comments_users foreign key (author_id) references users (id) on delete set default,
+    constraint fk_comments_feeds foreign key (feed_id) references feeds (id) on delete cascade
 );
 
 create table feed_likes
@@ -130,7 +130,7 @@ create table feed_likes
     feed_id       uuid                     not null,
     liked_user_id uuid                     not null,
 
-    constraint fk_feed_likes_feeds foreign key (feed_id) references feeds (id),
+    constraint fk_feed_likes_feeds foreign key (feed_id) references feeds (id) on delete cascade,
     CONSTRAINT fk_feed_likes_users foreign key (liked_user_id) references users (id)
 );
 
