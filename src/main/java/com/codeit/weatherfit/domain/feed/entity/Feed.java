@@ -7,6 +7,10 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.type.SqlTypes;
 
 @Table(name = "feeds")
 @Getter
@@ -16,6 +20,7 @@ public class Feed extends BaseEntity {
 
     @JoinColumn(name = "author_id", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
+    @OnDelete(action = OnDeleteAction.SET_DEFAULT) // TODO Default 유저 세팅
     private User author;
 
     @JoinColumn(name = "weather_id", nullable = false)
