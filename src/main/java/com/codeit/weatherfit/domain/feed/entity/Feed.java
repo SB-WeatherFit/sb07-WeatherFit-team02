@@ -24,8 +24,12 @@ public class Feed extends BaseEntity {
     private User author;
 
     @JoinColumn(name = "weather_id", nullable = false)
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY) // TODO 스냅샷 변경
     private Weather weather;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private WeatherSnapshot weatherSnapshot;
 
     @Column(nullable = false)
     private String content;
@@ -35,10 +39,12 @@ public class Feed extends BaseEntity {
         feed.author = author;
         feed.weather = weather;
         feed.content = content;
+        feed.weatherSnapshot = WeatherSnapshot.from(weather);
         return feed;
     }
 
     public void update(String content) {
         this.content = content;
     }
+
 }
