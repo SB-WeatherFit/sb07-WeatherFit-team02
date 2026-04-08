@@ -13,6 +13,7 @@ import com.codeit.weatherfit.domain.user.dto.response.UserDtoCursorResponse;
 import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.entity.UserRole;
+import com.codeit.weatherfit.domain.user.event.UserRoleChangedEvent;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.user.repository.UserSearchCondition;
 import com.codeit.weatherfit.global.exception.ErrorCode;
@@ -20,6 +21,7 @@ import com.codeit.weatherfit.global.exception.WeatherFitException;
 import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -38,6 +40,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final S3Service s3Service;
     private final TemporaryPasswordRepository temporaryPasswordRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     public UserDto create(UserCreateRequest request) {
@@ -122,7 +125,16 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
 
-        user.updateRole(request.role());
+        UserRole beforeRole = user.getRole();
+        UserRole afterRole = request.role();
+
+        user.updateRole(afterRole);
+
+        if (beforeRole != afterRole) {
+            applicationEventPublisher.publishEvent(
+                    new UserRoleChangedEvent(user.getId(), beforeRole, afterRole)
+            );
+        }
 
         return UserDto.from(user);
     }
@@ -223,10 +235,8 @@ public class UserServiceImpl implements UserService {
                         127,
                         37,
                         List.of("경기도", "로날도", "수원")
-
-                )
-
-                , null, null);
+                ),
+                null, null);
         profileRepository.save(profile);
     }
 }
