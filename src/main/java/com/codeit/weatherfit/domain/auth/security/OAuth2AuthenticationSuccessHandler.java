@@ -84,6 +84,11 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         if ("google".equalsIgnoreCase(registrationId)) {
             return SocialProvider.GOOGLE;
         }
+
+        if ("kakao".equalsIgnoreCase(registrationId)) {
+            return SocialProvider.KAKAO;
+        }
+
         throw new WeatherFitException(ErrorCode.UNSUPPORTED_SOCIAL_PROVIDER);
     }
 

@@ -16,4 +16,6 @@ public interface NotificationService {
     NotificationCursorResponse search(NotificationSearchCondition condition, UUID userId);
 
     void delete(UUID notificationId);
+
+    void deleteAllNotifications(UUID userId);
 }

@@ -16,6 +16,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -31,8 +32,8 @@ public class OAuth2SocialLoginServiceImpl implements OAuth2SocialLoginService {
     @Override
     public User loadOrCreateUser(SocialProvider provider, OAuth2User oAuth2User) {
         String providerUserId = extractProviderUserId(provider, oAuth2User);
-        String email = extractEmail(oAuth2User);
-        String name = extractName(oAuth2User);
+        String email = extractEmail(provider, oAuth2User);
+        String name = extractName(provider, oAuth2User);
 
         SocialAccount socialAccount = socialAccountRepository
                 .findByProviderAndProviderUserId(provider, providerUserId)
@@ -81,22 +82,79 @@ public class OAuth2SocialLoginServiceImpl implements OAuth2SocialLoginService {
                 return stringValue;
             }
         }
+
+        if (provider == SocialProvider.KAKAO) {
+            Object value = oAuth2User.getAttributes().get("id");
+            if (value instanceof Number numberValue) {
+                return String.valueOf(numberValue.longValue());
+            }
+            if (value instanceof String stringValue && !stringValue.isBlank()) {
+                return stringValue;
+            }
+        }
+
         throw new WeatherFitException(ErrorCode.SOCIAL_SIGN_IN_FAILED);
     }
 
-    private String extractEmail(OAuth2User oAuth2User) {
-        Object value = oAuth2User.getAttributes().get("email");
-        if (value instanceof String stringValue && !stringValue.isBlank()) {
-            return stringValue;
+    private String extractEmail(SocialProvider provider, OAuth2User oAuth2User) {
+        if (provider == SocialProvider.GOOGLE) {
+            Object value = oAuth2User.getAttributes().get("email");
+            if (value instanceof String stringValue && !stringValue.isBlank()) {
+                return stringValue;
+            }
         }
+
+        if (provider == SocialProvider.KAKAO) {
+            Map<String, Object> kakaoAccount = getMap(oAuth2User.getAttributes(), "kakao_account");
+            Object email = kakaoAccount.get("email");
+
+            if (email instanceof String stringValue && !stringValue.isBlank()) {
+                return stringValue;
+            }
+        }
+
         throw new WeatherFitException(ErrorCode.SOCIAL_SIGN_IN_FAILED);
     }
 
-    private String extractName(OAuth2User oAuth2User) {
-        Object value = oAuth2User.getAttributes().get("name");
-        if (value instanceof String stringValue && !stringValue.isBlank()) {
-            return stringValue;
+    private String extractName(SocialProvider provider, OAuth2User oAuth2User) {
+        if (provider == SocialProvider.GOOGLE) {
+            Object value = oAuth2User.getAttributes().get("name");
+            if (value instanceof String stringValue && !stringValue.isBlank()) {
+                return stringValue;
+            }
+            return extractEmail(provider, oAuth2User);
         }
-        return extractEmail(oAuth2User);
+
+        if (provider == SocialProvider.KAKAO) {
+            Map<String, Object> properties = getMap(oAuth2User.getAttributes(), "properties");
+            Object nickname = properties.get("nickname");
+
+            if (nickname instanceof String stringValue && !stringValue.isBlank()) {
+                return stringValue;
+            }
+
+            Map<String, Object> kakaoAccount = getMap(oAuth2User.getAttributes(), "kakao_account");
+            Map<String, Object> profile = getMap(kakaoAccount, "profile");
+            Object profileNickname = profile.get("nickname");
+
+            if (profileNickname instanceof String stringValue && !stringValue.isBlank()) {
+                return stringValue;
+            }
+
+            return extractEmail(provider, oAuth2User);
+        }
+
+        throw new WeatherFitException(ErrorCode.SOCIAL_SIGN_IN_FAILED);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getMap(Map<String, Object> source, String key) {
+        Object value = source.get(key);
+
+        if (value instanceof Map<?, ?> mapValue) {
+            return (Map<String, Object>) mapValue;
+        }
+
+        return Map.of();
     }
 }

@@ -3,6 +3,7 @@ package com.codeit.weatherfit.domain.notification.repository;
 import com.codeit.weatherfit.domain.notification.entity.Notification;
 import com.codeit.weatherfit.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -21,4 +22,8 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
             @Param("groupId") UUID groupId,
             @Param("receiverIds") Collection<UUID> receiverIds
     );
+
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM Notification n WHERE n.receiver.id = :userId")
+    void deleteNotificationsByReceiverId(@Param("userId") UUID userId);
 }
