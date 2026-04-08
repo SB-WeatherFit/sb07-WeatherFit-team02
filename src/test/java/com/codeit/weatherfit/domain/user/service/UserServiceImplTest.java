@@ -11,6 +11,7 @@ import com.codeit.weatherfit.domain.user.dto.response.UserDto;
 import com.codeit.weatherfit.domain.user.dto.response.UserDtoCursorResponse;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.entity.UserRole;
+import com.codeit.weatherfit.domain.user.event.UserRoleChangedEvent;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.user.repository.UserSearchCondition;
 import com.codeit.weatherfit.global.exception.ErrorCode;
@@ -24,6 +25,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -52,6 +54,9 @@ class UserServiceImplTest {
 
     @Mock
     private TemporaryPasswordRepository temporaryPasswordRepository;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -148,6 +153,14 @@ class UserServiceImplTest {
             UserDto result = userService.updateRole(userId, new UserRoleUpdateRequest(UserRole.ADMIN));
 
             assertThat(result.role()).isEqualTo(UserRole.ADMIN);
+
+            ArgumentCaptor<UserRoleChangedEvent> captor = ArgumentCaptor.forClass(UserRoleChangedEvent.class);
+            verify(applicationEventPublisher).publishEvent(captor.capture());
+
+            UserRoleChangedEvent event = captor.getValue();
+            assertThat(event.receiverId()).isEqualTo(user.getId());
+            assertThat(event.beforeRole()).isEqualTo(UserRole.USER);
+            assertThat(event.afterRole()).isEqualTo(UserRole.ADMIN);
         }
 
         @Test
@@ -161,6 +174,8 @@ class UserServiceImplTest {
                     .isInstanceOf(WeatherFitException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+            verify(applicationEventPublisher, never()).publishEvent(any());
         }
     }
 
