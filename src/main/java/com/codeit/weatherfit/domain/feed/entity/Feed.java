@@ -23,10 +23,6 @@ public class Feed extends BaseEntity {
     @OnDelete(action = OnDeleteAction.SET_DEFAULT) // TODO Default 유저 세팅
     private User author;
 
-    @JoinColumn(name = "weather_id", nullable = false)
-    @ManyToOne(fetch = FetchType.LAZY) // TODO 스냅샷 변경
-    private Weather weather;
-
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
     private WeatherSnapshot weatherSnapshot;
@@ -37,7 +33,6 @@ public class Feed extends BaseEntity {
     public static Feed create(User author, Weather weather, String content) {
         Feed feed = new Feed();
         feed.author = author;
-        feed.weather = weather;
         feed.content = content;
         feed.weatherSnapshot = WeatherSnapshot.from(weather);
         return feed;
