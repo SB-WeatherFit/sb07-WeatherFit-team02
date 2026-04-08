@@ -15,4 +15,9 @@ public interface FeedClothesRepository extends JpaRepository<FeedClothes, UUID> 
     @Query("select fs from FeedClothes fs " +
             "where fs.feed = :feed")
     List<FeedClothes> findAllSnapshotsByFeed(@Param("feed") Feed feed);
+
+    @Query(value = "select fc.clothes_snapshot->>'imageKey' from feed_clothes fc " +
+            "where fc.clothes_snapshot->>'imageKey' is not null",
+            nativeQuery = true)
+    List<String> findAllImageKeys();
 }
