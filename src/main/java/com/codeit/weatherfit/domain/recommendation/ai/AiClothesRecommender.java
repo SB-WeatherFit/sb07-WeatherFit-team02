@@ -2,14 +2,11 @@ package com.codeit.weatherfit.domain.recommendation.ai;
 
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
+import com.codeit.weatherfit.domain.recommendation.service.ClothesRecommender;
 import com.codeit.weatherfit.domain.weather.entity.PrecipitationType;
 import com.codeit.weatherfit.domain.weather.entity.SkyStatus;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.messages.SystemMessage;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
@@ -17,7 +14,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.UUID;
 
-@Component
+//@Component
 public class AiClothesRecommender implements ClothesRecommender {
 
     private final ChatClient chatClient;
@@ -28,11 +25,12 @@ public class AiClothesRecommender implements ClothesRecommender {
     }
 
     @Override
-    public List<UUID> recommendClothes(List<Clothes> clothesList, Weather weather, Profile profile) {
+    public List<List<UUID>> recommendClothes(List<Clothes> clothesList, Weather weather, Profile profile) {
 
         List<PromptClothesInfo> list = clothesList.stream()
                 .map(PromptClothesInfo::from)
                 .toList();
+
 //        WeatherInfo weatherInfo = WeatherInfo.from(weather); // todo: 우선은 고정된 날씨 정보 전달
         WeatherInfo weatherInfo = new WeatherInfo(12, 13, 10, SkyStatus.CLEAR.name(), PrecipitationType.NONE.name(), 3.3, 10, "서울");
         UserInfo userInfo = UserInfo.from(profile);
@@ -47,7 +45,11 @@ public class AiClothesRecommender implements ClothesRecommender {
                 .user(userMessage)
                 .call()
                 .entity(outputConverter);
-        assert entity != null;
-        return entity.getFirst().items();
+
+        if(entity==null) {
+            throw new RuntimeException("");
+        }
+
+        return entity.stream().map(ClothesSetResponse::items).toList();
     }
 }
