@@ -25,7 +25,4 @@ public interface ClothesAttributeRepository extends JpaRepository <ClothesAttrib
     @Query("delete from ClothesAttribute ca where ca.option.clothesAttributeType.id = :defId")
     void deleteByAttributeType(UUID defId);
 
-    @Query(
-            "select ca.option.option from ClothesAttribute ca " + "where ca.clothes = :clothes")
-    List<String> getClothesOptions(@Param("clothes") Clothes clothes);
 }
