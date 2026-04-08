@@ -2,12 +2,8 @@ package com.codeit.weatherfit.domain.feed.service.unit;
 
 import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
-import com.codeit.weatherfit.domain.clothes.entity.ClothesAttribute;
-import com.codeit.weatherfit.domain.clothes.entity.ClothesAttributeType;
-import com.codeit.weatherfit.domain.clothes.entity.SelectableValue;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
-import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepository;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.*;
 import com.codeit.weatherfit.domain.feed.dto.response.CommentGetResponse;
@@ -26,7 +22,6 @@ import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
 import com.codeit.weatherfit.domain.feed.service.FeedServiceImpl;
 import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
-import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
@@ -43,7 +38,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -83,13 +77,8 @@ class FeedServiceImplTest {
     private ClothesAttributeRepository clothesAttributeRepository;
 
     @Mock
-    private SelectableValueRepository selectableValueRepository;
-
-    @Mock
     private CommentRepository commentRepository;
 
-    @Mock
-    private ProfileRepository profileRepository;
 
     @InjectMocks
     private FeedServiceImpl feedService;
@@ -99,9 +88,6 @@ class FeedServiceImplTest {
 
     @Mock
     S3Service s3Service;
-
-    @Mock
-    ApplicationEventPublisher eventPublisher;
 
     @Mock
     FollowRepository followRepository;
@@ -126,6 +112,8 @@ class FeedServiceImplTest {
                     .thenAnswer(invocation -> invocation.getArgument(0));
             when(clothesRepository.findAllById(request.clothesIds()))
                     .thenAnswer(invocation -> Instancio.ofList(Clothes.class).size(request.clothesIds().size()).create());
+            when(clothesAttributeRepository.getClothesOptions(any(Clothes.class)))
+                    .thenReturn(List.of("옵션1"));
             when(followRepository.findAllByFollowee(any(User.class)))
                     .thenReturn(List.of());
             stubToFeedDto();
@@ -745,12 +733,6 @@ class FeedServiceImplTest {
     private void stubToFeedDto() {
         when(feedClothesRepository.findAllByFeed(any(Feed.class)))
                 .thenReturn(Instancio.createList(FeedClothes.class));
-        when(clothesRepository.findById(any(UUID.class)))
-                .thenReturn(Optional.of(Instancio.create(Clothes.class)));
-        when(clothesAttributeRepository.findByClothes(any(Clothes.class)))
-                .thenReturn(Instancio.createList(ClothesAttribute.class));
-        when(selectableValueRepository.findByClothesAttributeType(any(ClothesAttributeType.class)))
-                .thenReturn(Instancio.createList(SelectableValue.class));
         when(feedLikeRepository.countByFeed(any(Feed.class)))
                 .thenReturn(0L);
         when(commentRepository.countByFeed(any(Feed.class)))

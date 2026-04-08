@@ -1,8 +1,8 @@
 package com.codeit.weatherfit.domain.feed.dto;
 
 import com.codeit.weatherfit.domain.feed.entity.Feed;
+import com.codeit.weatherfit.domain.feed.entity.WeatherSnapshot;
 import com.codeit.weatherfit.domain.user.dto.response.UserFeedDto;
-import com.codeit.weatherfit.domain.weather.dto.response.SimpleWeatherResponse;
 
 import java.time.Instant;
 import java.util.List;
@@ -13,8 +13,8 @@ public record FeedDto(
         Instant createdAt,
         Instant updatedAt,
         UserFeedDto author,
-        SimpleWeatherResponse weather,
-        List<FeedClothesDto> ootds,
+        WeatherSnapshot weather,
+        List<Ootd> ootds,
         String content,
         Long likeCount,
         Long commentCount,
@@ -22,7 +22,7 @@ public record FeedDto(
 ) {
     public static FeedDto from(
             Feed feed,
-            List<FeedClothesDto> ootds,
+            List<Ootd> ootds,
             Long likeCount,
             Long commentCount,
             boolean likedByMe
@@ -32,7 +32,7 @@ public record FeedDto(
                 feed.getCreatedAt(),
                 feed.getUpdatedAt(),
                 UserFeedDto.from(feed.getAuthor()),
-                SimpleWeatherResponse.from(feed.getWeather()),
+                feed.getWeatherSnapshot(),
                 ootds,
                 feed.getContent(),
                 likeCount,
@@ -40,4 +40,5 @@ public record FeedDto(
                 likedByMe
         );
     }
+
 }
