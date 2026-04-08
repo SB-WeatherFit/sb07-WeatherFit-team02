@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.clothes.controller;
 
+import com.codeit.weatherfit.domain.clothes.controller.docs.ClothesAttributeDefControllerDocs;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefCreateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefGetRequest;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefUpdateRequest;
@@ -17,7 +18,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/clothes/attribute-defs")
-public class ClothesAttributeDefController {
+public class ClothesAttributeDefController implements ClothesAttributeDefControllerDocs {
 
     private final AttributeDefService attributeDefService;
 

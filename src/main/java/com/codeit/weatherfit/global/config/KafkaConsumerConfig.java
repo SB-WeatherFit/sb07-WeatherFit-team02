@@ -28,7 +28,7 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
 
         // 컨슈머 그룹 ID
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "message-send-group");
+//        props.put(ConsumerConfig.GROUP_ID_CONFIG, "message-send-group");
 
 //        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 

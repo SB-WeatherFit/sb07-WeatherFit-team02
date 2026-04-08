@@ -232,6 +232,9 @@ create table social_accounts
     constraint uk_social_accounts_user_provider unique (user_id, provider),
     constraint check_social_provider check (provider in ('GOOGLE'))
 );
+    constraint check_social_provider check (provider in ('GOOGLE', 'KAKAO'))
+);
+
 
 -- 삭제된 유저 센티널
 INSERT INTO users (id, role, email, name, password)
