@@ -44,20 +44,14 @@ public class RecommendationServiceImpl implements RecommendationService {
         } else {
             Weather weather = weatherRepository.findById(weatherId)
                     .orElseThrow(() -> new WeatherNotFoundException(weatherId));
-            //todo : 우선은 날씨 정보 전달 x
-
             Profile profile = profileRepository.findByUserId(userId).orElseThrow();
-
             List<Clothes> clothes = clothesRepository.findByOwnerId(userId);
-            System.out.println("clothes = " + clothes);
 
             if (clothes.isEmpty()) {
                 return null;
             }
 
             List<List<UUID>>uuids  = clothesRecommender.recommendClothes(clothes, weather, profile);
-//            List<List<UUID>> uuids = clothesRecommender.recommendClothes(clothes, null, profile);
-            System.out.println("llm 조회 성공 uuids = " + uuids);
 
             if (uuids != null && !uuids.isEmpty()) {
                 result = uuids.getFirst();
@@ -67,10 +61,8 @@ public class RecommendationServiceImpl implements RecommendationService {
                     redisTemplate.opsForList().rightPushAll(key, remainingSets.toArray());
 
 
-                    redisTemplate.expire(key, 12, TimeUnit.HOURS);
+                    redisTemplate.expire(key, 1, TimeUnit.HOURS);
                 }
-            } else {
-                return null;
             }
         }
 
