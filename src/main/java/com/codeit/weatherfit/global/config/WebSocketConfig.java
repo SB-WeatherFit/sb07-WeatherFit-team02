@@ -18,7 +18,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("http://localhost:8080")
+                .setAllowedOriginPatterns("http://localhost:8080",
+                        "https://www.weatherfit.cloud"
+                )
                 .withSockJS();
     }
 }
