@@ -22,7 +22,6 @@ import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
 import com.codeit.weatherfit.domain.feed.service.FeedServiceImpl;
 import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
-import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
@@ -39,7 +38,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -81,8 +79,6 @@ class FeedServiceImplTest {
     @Mock
     private CommentRepository commentRepository;
 
-    @Mock
-    private ProfileRepository profileRepository;
 
     @InjectMocks
     private FeedServiceImpl feedService;
@@ -92,9 +88,6 @@ class FeedServiceImplTest {
 
     @Mock
     S3Service s3Service;
-
-    @Mock
-    ApplicationEventPublisher eventPublisher;
 
     @Mock
     FollowRepository followRepository;

@@ -2,7 +2,6 @@ package com.codeit.weatherfit.global.s3;
 
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
-import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.global.s3.properties.S3Properties;
 import org.junit.jupiter.api.DisplayName;
@@ -39,9 +38,6 @@ class S3SchedulerTest {
 
     @Mock
     private ProfileRepository profileRepository;
-
-    @Mock
-    private FeedRepository feedRepository;
 
     @Mock
     private FeedClothesRepository feedClothesRepository;

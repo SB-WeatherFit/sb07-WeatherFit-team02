@@ -2,7 +2,6 @@ package com.codeit.weatherfit.domain.feed.entity;
 
 import com.codeit.weatherfit.domain.base.BaseEntity;
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
-import com.codeit.weatherfit.domain.clothes.entity.ClothesType;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.weather.entity.PrecipitationType;
 import com.codeit.weatherfit.domain.weather.entity.SkyStatus;

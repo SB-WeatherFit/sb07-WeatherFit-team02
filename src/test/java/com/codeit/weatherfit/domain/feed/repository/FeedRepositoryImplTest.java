@@ -11,7 +11,10 @@ import com.codeit.weatherfit.domain.weather.entity.*;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -19,9 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -114,7 +115,7 @@ class FeedRepositoryImplTest {
 
             // 먼저 전체 내림차순 조회하여 두 번째 항목의 커서를 확보
             List<Feed> firstPage = feedRepository.findWithCursor(request(1, SortDirection.DESCENDING));
-            Feed lastOfFirstPage = firstPage.get(0);
+            Feed lastOfFirstPage = firstPage.getFirst();
 
             // 커서로 두 번째 페이지 조회
             FeedGetRequest cursorReq = new FeedGetRequest(
@@ -141,7 +142,7 @@ class FeedRepositoryImplTest {
 
             // 오름차순 첫 페이지
             List<Feed> firstPage = feedRepository.findWithCursor(request(1, SortDirection.ASCENDING));
-            Feed lastOfFirstPage = firstPage.get(0);
+            Feed lastOfFirstPage = firstPage.getFirst();
 
             // 커서로 두 번째 페이지 조회
             FeedGetRequest cursorReq = new FeedGetRequest(

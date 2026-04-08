@@ -2,7 +2,6 @@ package com.codeit.weatherfit.global.s3;
 
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
-import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.global.s3.properties.S3Properties;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ public class S3Scheduler {
     private final S3Client s3Client;
     private final ClothesRepository clothesRepository;
     private final ProfileRepository profileRepository;
-    private final FeedRepository feedRepository;
     private final FeedClothesRepository feedClothesRepository;
 
     @Scheduled(cron = "0 0 0 * * mon") // 일주일에 한번 고아 이미지 파일 삭제
