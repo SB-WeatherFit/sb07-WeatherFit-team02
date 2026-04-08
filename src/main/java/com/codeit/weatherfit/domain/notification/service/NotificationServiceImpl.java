@@ -82,4 +82,10 @@ public class NotificationServiceImpl implements NotificationService {
 
         notificationRepository.delete(notification);
     }
+
+    @Override
+    @Transactional
+    public void deleteAllNotifications(UUID userId) {
+        notificationRepository.deleteNotificationsByReceiverId(userId);
+    }
 }
