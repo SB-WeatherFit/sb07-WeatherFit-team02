@@ -16,8 +16,7 @@ public class MessageConsumer {
 
     @KafkaListener(
             topics = "message.send",
-            groupId = "message-send-group-#{T(java.util.UUID).randomUUID().toString()}",
-            containerFactory = "messageKafkaListenerContainerFactory"
+            groupId = "message-send-group-#{T(java.util.UUID).randomUUID().toString()}"
     )
     public void consume(MessageCreatedEvent event) {
         log.info("카프카에서 메시지 수신: messageId={}, key={}", event.dmDto().id(), event.messageKey());
