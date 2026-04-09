@@ -18,7 +18,7 @@ public class FeedLike extends BaseEntity {
     private Feed feed;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "liked_user_id", nullable = false)
+    @JoinColumn(name = "liked_user_id", nullable = false) // TODO 유저 탈퇴시 좋아요 개수 유지
     private User likedUser;
 
     public static FeedLike create(Feed feed, User user) {

@@ -9,6 +9,7 @@ import com.codeit.weatherfit.domain.weather.entity.SkyStatus;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,6 @@ import java.util.UUID;
 import static com.codeit.weatherfit.domain.feed.entity.QFeed.feed;
 import static com.codeit.weatherfit.domain.feed.entity.QFeedLike.feedLike;
 import static com.codeit.weatherfit.domain.user.entity.QUser.user;
-import static com.codeit.weatherfit.domain.weather.entity.QWeather.weather;
 
 @RequiredArgsConstructor
 public class FeedRepositoryImpl implements FeedRepositoryCustom {
@@ -32,7 +32,6 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
         return queryFactory
                 .selectFrom(feed)
                 .join(feed.author, user)
-                .join(feed.weather, weather)
                 .where(
                         cursorCondition(request.cursor(), request.idAfter(), request.sortDirection()),
                         keywordLike(request.keywordLike()),
@@ -73,13 +72,19 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
     private BooleanExpression skyStatusEq(SkyStatus skyStatus) {
         if (skyStatus == null)
             return null;
-        return feed.weather.skyStatus.eq(skyStatus);
+        return Expressions.stringTemplate(
+                "jsonb_extract_path_text({0}, 'skyStatus')",
+                feed.weatherSnapshot
+        ).eq(skyStatus.name());
     }
 
     private BooleanExpression precipitationTypeEq(PrecipitationType precipitationType) {
         if (precipitationType == null)
             return null;
-        return feed.weather.type.eq(precipitationType);
+        return Expressions.stringTemplate(
+                "jsonb_extract_path_text({0}, 'type')",
+                feed.weatherSnapshot
+        ).eq(precipitationType.name());
     }
 
     private BooleanExpression authorIdEq(UUID authorId) {
@@ -94,8 +99,6 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
             return null;
         return feed.content.contains(keyword);
     }
-
-
 
 
 }
