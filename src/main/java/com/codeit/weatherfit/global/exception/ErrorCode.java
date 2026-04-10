@@ -40,6 +40,7 @@ public enum ErrorCode {
     ALREADY_LIKED(HttpStatus.BAD_REQUEST, "이미 좋아요한 피드입니다.", "FE-002"),
     LIKE_NOT_EXIST(HttpStatus.BAD_REQUEST, "좋아요하지 않은 피드입니다.", "FE-003"),
     FEED_BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.", "FE-004"),
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "덧글을 찾을 수 없습니다.", "FE-005"),
 
     FEED_DOCUMENT_NOT_EXIST(HttpStatus.NOT_FOUND, "피드 문서를 찾을 수 없습니다.","FD-001" ),
 
