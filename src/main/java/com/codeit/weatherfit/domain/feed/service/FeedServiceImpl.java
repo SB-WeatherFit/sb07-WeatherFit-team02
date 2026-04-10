@@ -2,6 +2,7 @@ package com.codeit.weatherfit.domain.feed.service;
 
 import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
+import com.codeit.weatherfit.domain.clothes.exception.ClothesNotFoundException;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.feed.dto.CommentDto;
@@ -10,7 +11,12 @@ import com.codeit.weatherfit.domain.feed.dto.Ootd;
 import com.codeit.weatherfit.domain.feed.dto.request.*;
 import com.codeit.weatherfit.domain.feed.dto.response.CommentGetResponse;
 import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
-import com.codeit.weatherfit.domain.feed.entity.*;
+import com.codeit.weatherfit.domain.feed.entity.Comment;
+import com.codeit.weatherfit.domain.feed.entity.Feed;
+import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
+import com.codeit.weatherfit.domain.feed.entity.FeedLike;
+import com.codeit.weatherfit.domain.feed.event.FeedCreatedEvent;
+import com.codeit.weatherfit.domain.feed.event.FeedUpdatedEvent;
 import com.codeit.weatherfit.domain.feed.exception.FeedBadRequestException;
 import com.codeit.weatherfit.domain.feed.exception.FeedLikeAlreadyExistException;
 import com.codeit.weatherfit.domain.feed.exception.FeedLikeNotExistException;
@@ -19,6 +25,8 @@ import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
+import com.codeit.weatherfit.domain.feed.repository.search.FeedSearchRepository;
+import com.codeit.weatherfit.domain.feed.service.search.FeedSearchService;
 import com.codeit.weatherfit.domain.follow.entity.Follow;
 import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
 import com.codeit.weatherfit.domain.notification.event.feed.FeedCommentedEvent;
@@ -30,6 +38,7 @@ import com.codeit.weatherfit.domain.user.service.UserService;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
+import com.codeit.weatherfit.global.exception.ErrorCode;
 import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +47,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -59,6 +70,8 @@ public class FeedServiceImpl implements FeedService {
     private final ApplicationEventPublisher eventPublisher;
     private final FollowRepository followRepository;
     private final ClothesAttributeRepository clothesAttributeRepository;
+    private final FeedSearchService feedSearchService;
+    private final FeedSearchRepository feedSearchRepository;
 
     @Override
     @Transactional
@@ -83,6 +96,7 @@ public class FeedServiceImpl implements FeedService {
         feedClothesRepository.saveAll(coords);
 
         publishNotiToFollowers(feed);
+        eventPublisher.publishEvent(new FeedCreatedEvent(saved.getId()));
 
         log.info("피드 생성 완료: feedId={}", saved.getId());
         return toFeedDto(feed, author);
@@ -106,7 +120,23 @@ public class FeedServiceImpl implements FeedService {
     @Override
     public FeedGetResponse getFeedsByCursor(FeedGetRequest request, WeatherFitUserDetails userDetails) {
         log.info("피드 커서 조회: sortBy={}, sortDirection={}, limit={}", request.sortBy(), request.sortDirection(), request.limit());
-        List<Feed> feeds = feedRepository.findWithCursor(request);
+        List<Feed> feeds;
+
+        if (request.keywordLike() != null && !request.keywordLike().isBlank()) {
+            List<UUID> feedIds = feedSearchService.searchFeeds(request);
+            feeds = feedIds.isEmpty()
+                    ? List.of()
+                    : feedRepository.findAllById(feedIds);
+            // TODO ES 순서대로 재정렬
+            Map<UUID, Feed> feedMap = new HashMap<>();
+            feeds.forEach(f -> feedMap.put(f.getId(), f));
+            feeds = feedIds.stream()
+                    .map(feedMap::get)
+                    .toList();
+        } else {
+            feeds = feedRepository.findWithCursor(request);
+        }
+
         User loginUser = getUserOrThrow(userDetails.getUserId());
         Feed lastFeed = null;
         if (feeds.size() == request.limit() + 1) {
@@ -138,6 +168,7 @@ public class FeedServiceImpl implements FeedService {
             throw new RuntimeException("Bad Request"); // 추후 인증 오류로 변경
         }
         feed.update(request.content());
+        eventPublisher.publishEvent(FeedUpdatedEvent.contentUpdated(feed.getId(), request.content()));
         log.info("피드 수정 완료: feedId={}", id);
         return toFeedDto(feed, feed.getAuthor());
     }
@@ -228,6 +259,9 @@ public class FeedServiceImpl implements FeedService {
             log.warn("피드 삭제 권한 불일치: feedId={}, authorId={}, loginUserId={}", id, feed.getAuthor().getId(), userDetails.getUserId());
             throw new RuntimeException("Bad Request"); // 추후 인증 오류로 수정
         }
+        feedClothesRepository.deleteByFeed(feed);
+        commentRepository.deleteByFeed(feed);
+        feedSearchRepository.deleteByFeedId(feed.getId());
         feedRepository.delete(feed);
         log.info("피드 삭제 완료: feedId={}", id);
     }
@@ -253,6 +287,8 @@ public class FeedServiceImpl implements FeedService {
             ));
         }
 
+        eventPublisher.publishEvent(FeedUpdatedEvent.liked(feed.getId()));
+
         log.info("피드 좋아요 완료: feedId={}, authorId={}", id, userDetails.getUserId());
     }
 
@@ -266,6 +302,9 @@ public class FeedServiceImpl implements FeedService {
         if (!feedLikeRepository.existsByFeedAndLikedUser(feed, likeUser))
             throw new FeedLikeNotExistException(feed, likeUser);
         feedLikeRepository.deleteByFeedAndLikedUser(feed, likeUser);
+
+        eventPublisher.publishEvent(FeedUpdatedEvent.unliked(feed.getId()));
+
         log.info("피드 좋아요 취소 완료: feedId={}, authorId={}", id, userDetails.getUserId());
     }
 
@@ -296,7 +335,7 @@ public class FeedServiceImpl implements FeedService {
         List<Clothes> clothes = clothesRepository.findAllById(clothesIds);
         if (clothes.size() != clothesIds.size()) {
             log.warn("존재하지 않는 옷 포함: 요청={}, 조회={}", clothesIds.size(), clothes.size());
-            throw new IllegalArgumentException("존재하지 않는 옷이 포함되어 있습니다.");
+            throw new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND);
         }
         return clothes;
     }

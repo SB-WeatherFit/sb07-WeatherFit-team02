@@ -34,7 +34,6 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
                 .join(feed.author, user)
                 .where(
                         cursorCondition(request.cursor(), request.idAfter(), request.sortDirection()),
-                        keywordLike(request.keywordLike()),
                         skyStatusEq(request.skyStatusEqual()),
                         precipitationTypeEq(request.precipitationTypeEqual()),
                         authorIdEq(request.authorIdEqual())
@@ -92,13 +91,4 @@ public class FeedRepositoryImpl implements FeedRepositoryCustom {
             return null;
         return feed.author.id.eq(authorId);
     }
-
-    // TODO : 추후 개선
-    private BooleanExpression keywordLike(String keyword) {
-        if (keyword == null)
-            return null;
-        return feed.content.contains(keyword);
-    }
-
-
 }
