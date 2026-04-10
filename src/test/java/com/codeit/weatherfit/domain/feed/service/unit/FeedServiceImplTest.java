@@ -2,6 +2,7 @@ package com.codeit.weatherfit.domain.feed.service.unit;
 
 import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
+import com.codeit.weatherfit.domain.clothes.exception.ClothesNotFoundException;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
@@ -12,10 +13,7 @@ import com.codeit.weatherfit.domain.feed.entity.Comment;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import com.codeit.weatherfit.domain.feed.entity.FeedLike;
-import com.codeit.weatherfit.domain.feed.exception.FeedBadRequestException;
-import com.codeit.weatherfit.domain.feed.exception.FeedLikeAlreadyExistException;
-import com.codeit.weatherfit.domain.feed.exception.FeedLikeNotExistException;
-import com.codeit.weatherfit.domain.feed.exception.FeedNotExistException;
+import com.codeit.weatherfit.domain.feed.exception.*;
 import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
@@ -91,6 +89,15 @@ class FeedServiceImplTest {
 
     @Mock
     FollowRepository followRepository;
+
+    @Mock
+    org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    com.codeit.weatherfit.domain.feed.service.search.FeedSearchService feedSearchService;
+
+    @Mock
+    com.codeit.weatherfit.domain.feed.repository.search.FeedSearchRepository feedSearchRepository;
 
     @Nested
     @DisplayName("생성")
@@ -186,7 +193,7 @@ class FeedServiceImplTest {
 
                 // when & then
                 assertThatThrownBy(() -> feedService.create(request, userDetails))
-                        .isInstanceOf(IllegalArgumentException.class); // 추후 커스텀 에러로 수정
+                        .isInstanceOf(ClothesNotFoundException.class);
             }
 
         }
@@ -234,7 +241,7 @@ class FeedServiceImplTest {
 
                 // when & then
                 assertThatThrownBy(() -> feedService.update(UUID.randomUUID(), request, userDetails))
-                        .isInstanceOf(com.codeit.weatherfit.domain.feed.exception.FeedNotExistException.class);
+                        .isInstanceOf(FeedNotExistException.class);
             }
         }
 
@@ -362,7 +369,7 @@ class FeedServiceImplTest {
 
                 // when & then
                 assertThatThrownBy(() -> feedService.delete(UUID.randomUUID(), userDetails))
-                        .isInstanceOf(com.codeit.weatherfit.domain.feed.exception.FeedNotExistException.class);
+                        .isInstanceOf(FeedNotExistException.class);
             }
         }
     }
@@ -528,7 +535,7 @@ class FeedServiceImplTest {
 
                 // when & then
                 assertThatThrownBy(() -> feedService.like(UUID.randomUUID(), userDetails))
-                        .isInstanceOf(com.codeit.weatherfit.domain.feed.exception.FeedNotExistException.class);
+                        .isInstanceOf(FeedNotExistException.class);
             }
 
             @Test
@@ -607,7 +614,7 @@ class FeedServiceImplTest {
 
                 // when & then
                 assertThatThrownBy(() -> feedService.unlike(UUID.randomUUID(), userDetails))
-                        .isInstanceOf(com.codeit.weatherfit.domain.feed.exception.FeedNotExistException.class);
+                        .isInstanceOf(FeedNotExistException.class);
             }
 
             @Test
@@ -686,7 +693,7 @@ class FeedServiceImplTest {
 
                 // when & then
                 assertThatThrownBy(() -> feedService.deleteComment(UUID.randomUUID(), UUID.randomUUID(), userDetails))
-                        .isInstanceOf(FeedNotExistException.class);
+                        .isInstanceOf(CommentNotFoundException.class);
             }
 
             @Test
