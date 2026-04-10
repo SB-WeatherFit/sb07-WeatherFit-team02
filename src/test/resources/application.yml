@@ -28,3 +28,5 @@ spring:
           model: nvidia/nemotron-3-super-120b-a12b:free
   kafka:
     bootstrap-servers: localhost:9092
+    properties:
+      sasl.jaas.config: test-config
