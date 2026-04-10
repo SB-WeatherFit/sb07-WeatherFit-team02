@@ -6,4 +6,5 @@ import java.util.UUID;
 
 public interface RecommendationService {
     RecommendationDto getRecommendations(UUID weatherId, UUID userId);
+    RecommendationDto getRecommendationsLLM(UUID weatherId, UUID userId);
 }
