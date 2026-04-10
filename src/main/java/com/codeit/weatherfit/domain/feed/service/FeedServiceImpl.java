@@ -125,7 +125,7 @@ public class FeedServiceImpl implements FeedService {
             feeds = feedIds.isEmpty()
                     ? List.of()
                     : feedRepository.findAllById(feedIds);
-            // TODO ES 순서대로 재정렬
+            // ES 순서대로 재정렬
             Map<UUID, Feed> feedMap = new HashMap<>();
             feeds.forEach(f -> feedMap.put(f.getId(), f));
             feeds = feedIds.stream()
