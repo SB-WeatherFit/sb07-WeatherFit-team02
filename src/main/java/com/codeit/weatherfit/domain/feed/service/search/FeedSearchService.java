@@ -57,7 +57,7 @@ public class FeedSearchService {
         }
         if (request.precipitationTypeEqual() != null) {
             bool.filter(f -> f.term(
-                    t -> t.field("skyStatus").value(request.precipitationTypeEqual().name()))
+                    t -> t.field("precipitationType").value(request.precipitationTypeEqual().name()))
             );
         }
         if (request.authorIdEqual() != null) {

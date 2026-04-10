@@ -259,8 +259,8 @@ public class FeedServiceImpl implements FeedService {
         }
         feedClothesRepository.deleteByFeed(feed);
         commentRepository.deleteByFeed(feed);
-        feedSearchRepository.deleteByFeedId(feed.getId());
         eventPublisher.publishEvent(new FeedDeletedEvent(feed.getId()));
+        feedRepository.delete(feed);
         log.info("피드 삭제 완료: feedId={}", id);
     }
 
