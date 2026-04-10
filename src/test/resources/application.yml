@@ -16,6 +16,8 @@ weatherfit:
     type: s3
 
 spring:
+  elasticsearch:
+    uris: http://localhost:9200
   batch:
     job:
       enabled: false
