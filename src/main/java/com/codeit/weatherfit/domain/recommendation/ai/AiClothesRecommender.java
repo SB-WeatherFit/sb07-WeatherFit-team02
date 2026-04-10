@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.UUID;
 
-//@Component
-public class AiClothesRecommender implements ClothesRecommender {
+@Component
+public class AiClothesRecommender{
 
     private final ChatClient chatClient;
 
@@ -24,23 +24,23 @@ public class AiClothesRecommender implements ClothesRecommender {
                 .build();
     }
 
-    @Override
-    public List<List<UUID>> recommendClothes(List<Clothes> clothesList, Weather weather, Profile profile) {
+
+    public List<UUID> recommendClothes(List<Clothes> clothesList, Weather weather, Profile profile) {
 
         List<PromptClothesInfo> list = clothesList.stream()
                 .map(PromptClothesInfo::from)
                 .toList();
 
-//        WeatherInfo weatherInfo = WeatherInfo.from(weather); // todo: 우선은 고정된 날씨 정보 전달
-        WeatherInfo weatherInfo = new WeatherInfo(12, 13, 10, SkyStatus.CLEAR.name(), PrecipitationType.NONE.name(), 3.3, 10, "서울");
+        WeatherInfo weatherInfo = WeatherInfo.from(weather); // todo: 우선은 고정된 날씨 정보 전달
+//        WeatherInfo weatherInfo = new WeatherInfo(12, 13, 10, SkyStatus.CLEAR.name(), PrecipitationType.NONE.name(), 3.3, 10, "서울");
         UserInfo userInfo = UserInfo.from(profile);
 
-        var outputConverter = new BeanOutputConverter<>(new ParameterizedTypeReference<List<ClothesSetResponse>>() {});
+        var outputConverter = new BeanOutputConverter<>(new ParameterizedTypeReference<ClothesSetResponse>() {});
 
         String systemMessage = ClothesRecommendationPrompt.systemPrompt();
         String userMessage = ClothesRecommendationPrompt.userPrompt(list, weatherInfo, userInfo);
 
-        List<ClothesSetResponse> entity = chatClient.prompt()
+        ClothesSetResponse entity = chatClient.prompt()
                 .system(systemMessage)
                 .user(userMessage)
                 .call()
@@ -50,6 +50,6 @@ public class AiClothesRecommender implements ClothesRecommender {
             throw new RuntimeException("");
         }
 
-        return entity.stream().map(ClothesSetResponse::items).toList();
+        return entity.items();
     }
 }

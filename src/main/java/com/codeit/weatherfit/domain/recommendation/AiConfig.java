@@ -6,6 +6,10 @@ import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.web.client.RestClient;
+
+import java.time.Duration;
 
 @Configuration
 public class AiConfig {
@@ -38,9 +42,17 @@ public class AiConfig {
 
     @Bean
     public OpenAiApi openAiApi() {
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory();
+        requestFactory.setReadTimeout(Duration.ofSeconds(60));    // 읽기 타임아웃 60초 (LLM 응답 대기용)
+//        requestFactory.setConnectTimeout(Duration.ofSeconds(10)); // 연결 타임아웃 10초
+
+        // 2. 위에서 만든 설정을 사용하는 RestClient.Builder 생성
+        RestClient.Builder restClientBuilder = RestClient.builder()
+                .requestFactory(requestFactory);
         return OpenAiApi.builder()
                 .apiKey(OPENROUTER_API_KEY)
                 .baseUrl(OPENAI_BASE_URL)
+                .restClientBuilder(restClientBuilder)
                 .build();
     }
 }
