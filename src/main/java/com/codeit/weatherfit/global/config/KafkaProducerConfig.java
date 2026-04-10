@@ -14,15 +14,31 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import java.util.HashMap;
 import java.util.Map;
 
-
+@Configuration
 public class KafkaProducerConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
+    @Value("${spring.kafka.properties.security.protocol}")
+    private String securityProtocol;
+
+    @Value("${spring.kafka.properties.sasl.mechanism}")
+    private String saslMechanism;
+
+    @Value("${spring.kafka.properties.sasl.jaas.config}")
+    private String saslJaasConfig;
+
     @Bean
     public ProducerFactory<String, MessageCreatedEvent> messageProducerFactory() {
         Map<String, Object> configProps = new HashMap<>();
+
+        if(!bootstrapServers.equals("localhost:9092")) {
+            configProps.put("security.protocol", securityProtocol);
+            configProps.put("sasl.mechanism", saslMechanism);
+            configProps.put("sasl.jaas.config", saslJaasConfig);
+
+        }
 
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
 

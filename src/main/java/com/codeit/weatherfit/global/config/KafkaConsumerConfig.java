@@ -15,17 +15,33 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import java.util.HashMap;
 import java.util.Map;
 
-
+@Configuration
 public class KafkaConsumerConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
+
+    @Value("${spring.kafka.properties.security.protocol}")
+    private String securityProtocol;
+
+    @Value("${spring.kafka.properties.sasl.mechanism}")
+    private String saslMechanism;
+
+    @Value("${spring.kafka.properties.sasl.jaas.config}")
+    private String saslJaasConfig;
+
 
     @Bean
     public ConsumerFactory<String, MessageCreatedEvent> messageConsumerFactory() {
         Map<String, Object> props = new HashMap<>();
 
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        if(!bootstrapServers.equals("localhost:9092")) {
+
+            props.put("security.protocol", securityProtocol);
+            props.put("sasl.mechanism", saslMechanism);
+            props.put("sasl.jaas.config", saslJaasConfig);
+        }
 
         // 컨슈머 그룹 ID
 //        props.put(ConsumerConfig.GROUP_ID_CONFIG, "message-send-group");
