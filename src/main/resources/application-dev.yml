@@ -1,8 +1,9 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:weatherfit
-    username: sa
-    driver-class-name: org.h2.Driver
+    url: jdbc:postgresql://localhost:5432/weatherFit
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
   cache:
     type: redis
     cache-name:

@@ -1,5 +1,20 @@
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: weatherFit
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    networks:
+      - weatherfit-net
+
   redis:
     image: redis:7.2-alpine
     container_name: redis
@@ -65,5 +80,6 @@ networks:
   weatherfit-net:
 
 volumes:
+  postgres-data:
   redis-data:
   es-data:
