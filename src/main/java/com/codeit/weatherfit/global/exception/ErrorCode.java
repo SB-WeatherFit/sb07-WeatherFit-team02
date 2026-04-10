@@ -10,6 +10,7 @@ public enum ErrorCode {
     INVALID_FOLLOW_ARGUMENT(HttpStatus.BAD_REQUEST, "팔로워와 팔로이는 반드시 존재해야 합니다.", "F-002"),
     ALREADY_FOLLOW_EXCEPTION(HttpStatus.BAD_REQUEST, "팔로우는 한 번만 할 수 있습니다", "F-003"),
     NOT_EXIST_FOLLOW(HttpStatus.BAD_REQUEST, "팔로우하지 않았습니다.", "F-004"),
+
     //Message
     NOT_SEND_SELF_MESSAGE(HttpStatus.BAD_REQUEST, "자신에게 메시지를 보낼 수 없습니다", "M-001"),
     INVALID_MESSAGE_ARGUMENT(HttpStatus.BAD_REQUEST, "발신자와 수신자는 반드시 존재해야 합니다.", "M-002"),
@@ -39,6 +40,8 @@ public enum ErrorCode {
     ALREADY_LIKED(HttpStatus.BAD_REQUEST, "이미 좋아요한 피드입니다.", "FE-002"),
     LIKE_NOT_EXIST(HttpStatus.BAD_REQUEST, "좋아요하지 않은 피드입니다.", "FE-003"),
     FEED_BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.", "FE-004"),
+
+    FEED_DOCUMENT_NOT_EXIST(HttpStatus.NOT_FOUND, "피드 문서를 찾을 수 없습니다.","FD-001" ),
 
     // Auth
     INVALID_SIGN_IN_REQUEST(HttpStatus.BAD_REQUEST, "이메일과 비밀번호는 필수입니다.", "A-001"),
