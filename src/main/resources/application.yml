@@ -26,26 +26,7 @@ spring:
             enable: true
           starttls:
             enable: false
-  kafka:
-    bootstrap-servers: ${KAFKA_SERVER}
-    client-id: ${KAFKA_CLIENT_ID}
-    properties:
-      client.dns.lookup: use_all_dns_ips
-      security.protocol: SASL_SSL
-      sasl.mechanism: PLAIN
-      sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username='${KAFKA_API_KEY}' password='${KAFKA_SECRET_KEY}';"
 
-    consumer:
-      group-id: test-group
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
-
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 
 
