@@ -74,7 +74,6 @@ dependencies {
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
 
     // Test
-    // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test' // Security 관련 테스트만 필요하면 추가
     testImplementation 'org.springframework.batch:spring-batch-test'         // Batch 관련 테스트만 필요하면 추가
@@ -100,6 +99,9 @@ dependencies {
 
     // swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.16'
+
+    // elasticsearch
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
 }
 
 tasks.named('test') {

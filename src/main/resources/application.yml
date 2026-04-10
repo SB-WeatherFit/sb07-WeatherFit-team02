@@ -27,6 +27,12 @@ spring:
           starttls:
             enable: false
 
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URL:http://localhost:9200}
 
 
 

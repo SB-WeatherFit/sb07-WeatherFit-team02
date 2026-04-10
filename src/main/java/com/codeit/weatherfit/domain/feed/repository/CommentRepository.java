@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface CommentRepository extends JpaRepository<Comment, UUID>, CommentRepositoryCustom {
     @Cacheable(value = "feedCommentCount", key = "#feed.id.toString()")
     Long countByFeed(Feed feed);
+
+    void deleteByFeed(Feed feed);
 }

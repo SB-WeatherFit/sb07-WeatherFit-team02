@@ -40,6 +40,11 @@ public class AsyncConfig {
         return createExecutor("async-", 10, 20, 100);
     }
 
+    @Bean(name = "elasticTaskExecutor")
+    public Executor elasticTaskExecutor() {
+        return createExecutor("elastic-", 10, 20, 100);
+    }
+
     @Bean(name = "s3UploadTaskExecutor")
     public Executor s3UploadTaskExecutor() {
         return createExecutor("s3-upload-", 10, 20, 100);

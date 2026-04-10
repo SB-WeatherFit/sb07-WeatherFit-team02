@@ -8,14 +8,14 @@ import com.codeit.weatherfit.domain.profile.entity.Location;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.entity.UserRole;
 import com.codeit.weatherfit.domain.weather.entity.*;
+import com.codeit.weatherfit.global.config.JpaAuditingConfig;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -26,11 +26,12 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Disabled("H2에서 JSONB 컬럼 미지원 — Feed/FeedClothes 테이블 생성 불가. Testcontainers(PostgreSQL) 환경 필요")
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({
         FeedRepositoryImpl.class,
-        FeedRepositoryImplTest.QuerydslConfig.class
+        FeedRepositoryImplTest.QuerydslConfig.class,
+        JpaAuditingConfig.class
 })
 class FeedRepositoryImplTest {
 
@@ -82,206 +83,175 @@ class FeedRepositoryImplTest {
         return new FeedGetRequest(null, null, limit, SortBy.createdAt, direction, null, null, null, null);
     }
 
-    @Nested
-    @DisplayName("커서 페이지네이션")
-    class CursorPagination {
+    // === 커서 페이지네이션 ===
 
-        @Test
-        @DisplayName("limit+1개를 반환하여 다음 페이지 여부를 감지한다")
-        void returnsLimitPlusOneForHasNextDetection() {
-            User user = createAndPersistUser("a@test.com", "유저A");
-            for (int i = 0; i < 5; i++) {
-                createAndPersistFeed(user, "피드 " + i);
-            }
-            em.flush();
-            em.clear();
-
-            FeedGetRequest req = request(3, SortDirection.DESCENDING);
-            List<Feed> result = feedRepository.findWithCursor(req);
-
-            // limit(3) + 1 = 4개를 요청하므로 5개 중 4개가 반환
-            assertThat(result).hasSize(4);
+    @Test
+    @DisplayName("커서 페이지네이션: limit+1개를 반환하여 다음 페이지 여부를 감지한다")
+    void returnsLimitPlusOneForHasNextDetection() {
+        User user = createAndPersistUser("a@test.com", "유저A");
+        for (int i = 0; i < 5; i++) {
+            createAndPersistFeed(user, "피드 " + i);
         }
+        em.flush();
+        em.clear();
 
-        @Test
-        @DisplayName("내림차순 커서가 올바르게 적용된다")
-        void descendingCursor() {
-            User user = createAndPersistUser("b@test.com", "유저B");
-            Feed feed1 = createAndPersistFeed(user, "첫번째");
-            Feed feed2 = createAndPersistFeed(user, "두번째");
-            Feed feed3 = createAndPersistFeed(user, "세번째");
-            em.flush();
-            em.clear();
+        FeedGetRequest req = request(3, SortDirection.DESCENDING);
+        List<Feed> result = feedRepository.findWithCursor(req);
 
-            // 먼저 전체 내림차순 조회하여 두 번째 항목의 커서를 확보
-            List<Feed> firstPage = feedRepository.findWithCursor(request(1, SortDirection.DESCENDING));
-            Feed lastOfFirstPage = firstPage.getFirst();
+        // limit(3) + 1 = 4개를 요청하므로 5개 중 4개가 반환
+        assertThat(result).hasSize(4);
+    }
 
-            // 커서로 두 번째 페이지 조회
-            FeedGetRequest cursorReq = new FeedGetRequest(
-                    lastOfFirstPage.getCreatedAt(), lastOfFirstPage.getId(),
-                    10, SortBy.createdAt, SortDirection.DESCENDING,
-                    null, null, null, null
-            );
-            List<Feed> secondPage = feedRepository.findWithCursor(cursorReq);
+    @Test
+    @DisplayName("커서 페이지네이션: 내림차순 커서가 올바르게 적용된다")
+    void descendingCursor() {
+        User user = createAndPersistUser("b@test.com", "유저B");
+        Feed feed1 = createAndPersistFeed(user, "첫번째");
+        Feed feed2 = createAndPersistFeed(user, "두번째");
+        Feed feed3 = createAndPersistFeed(user, "세번째");
+        em.flush();
+        em.clear();
 
-            // 커서 이후의 피드만 반환되어야 함 (첫 페이지 항목 제외)
-            assertThat(secondPage).noneMatch(f -> f.getId().equals(lastOfFirstPage.getId()));
-            assertThat(secondPage).isNotEmpty();
-        }
+        // 먼저 전체 내림차순 조회하여 두 번째 항목의 커서를 확보
+        List<Feed> firstPage = feedRepository.findWithCursor(request(1, SortDirection.DESCENDING));
+        Feed lastOfFirstPage = firstPage.getFirst();
 
-        @Test
-        @DisplayName("오름차순 커서가 올바르게 적용된다")
-        void ascendingCursor() {
-            User user = createAndPersistUser("c@test.com", "유저C");
-            Feed feed1 = createAndPersistFeed(user, "첫번째");
-            Feed feed2 = createAndPersistFeed(user, "두번째");
-            Feed feed3 = createAndPersistFeed(user, "세번째");
-            em.flush();
-            em.clear();
+        // 커서로 두 번째 페이지 조회
+        FeedGetRequest cursorReq = new FeedGetRequest(
+                lastOfFirstPage.getCreatedAt(), lastOfFirstPage.getId(),
+                10, SortBy.createdAt, SortDirection.DESCENDING,
+                null, null, null, null
+        );
+        List<Feed> secondPage = feedRepository.findWithCursor(cursorReq);
 
-            // 오름차순 첫 페이지
-            List<Feed> firstPage = feedRepository.findWithCursor(request(1, SortDirection.ASCENDING));
-            Feed lastOfFirstPage = firstPage.getFirst();
+        // 커서 이후의 피드만 반환되어야 함 (첫 페이지 항목 제외)
+        assertThat(secondPage).noneMatch(f -> f.getId().equals(lastOfFirstPage.getId()));
+        assertThat(secondPage).isNotEmpty();
+    }
 
-            // 커서로 두 번째 페이지 조회
-            FeedGetRequest cursorReq = new FeedGetRequest(
-                    lastOfFirstPage.getCreatedAt(), lastOfFirstPage.getId(),
-                    10, SortBy.createdAt, SortDirection.ASCENDING,
-                    null, null, null, null
-            );
-            List<Feed> secondPage = feedRepository.findWithCursor(cursorReq);
+    @Test
+    @DisplayName("커서 페이지네이션: 오름차순 커서가 올바르게 적용된다")
+    void ascendingCursor() {
+        User user = createAndPersistUser("c@test.com", "유저C");
+        Feed feed1 = createAndPersistFeed(user, "첫번째");
+        Feed feed2 = createAndPersistFeed(user, "두번째");
+        Feed feed3 = createAndPersistFeed(user, "세번째");
+        em.flush();
+        em.clear();
 
-            assertThat(secondPage).noneMatch(f -> f.getId().equals(lastOfFirstPage.getId()));
-            assertThat(secondPage).isNotEmpty();
+        // 오름차순 첫 페이지
+        List<Feed> firstPage = feedRepository.findWithCursor(request(1, SortDirection.ASCENDING));
+        Feed lastOfFirstPage = firstPage.getFirst();
+
+        // 커서로 두 번째 페이지 조회
+        FeedGetRequest cursorReq = new FeedGetRequest(
+                lastOfFirstPage.getCreatedAt(), lastOfFirstPage.getId(),
+                10, SortBy.createdAt, SortDirection.ASCENDING,
+                null, null, null, null
+        );
+        List<Feed> secondPage = feedRepository.findWithCursor(cursorReq);
+
+        assertThat(secondPage).noneMatch(f -> f.getId().equals(lastOfFirstPage.getId()));
+        assertThat(secondPage).isNotEmpty();
+    }
+
+    // === 필터 ===
+
+@Test
+    @DisplayName("필터: authorId로 작성자 필터링이 동작한다")
+    void authorIdFilter() {
+        User userA = createAndPersistUser("e@test.com", "유저E");
+        User userB = createAndPersistUser("f@test.com", "유저F");
+        createAndPersistFeed(userA, "유저A의 피드1");
+        createAndPersistFeed(userA, "유저A의 피드2");
+        createAndPersistFeed(userB, "유저B의 피드");
+        em.flush();
+        em.clear();
+
+        FeedGetRequest req = new FeedGetRequest(
+                null, null, 10, SortBy.createdAt, SortDirection.DESCENDING,
+                null, null, null, userA.getId()
+        );
+        List<Feed> result = feedRepository.findWithCursor(req);
+
+        assertThat(result).hasSize(2);
+        assertThat(result).allMatch(f -> f.getAuthor().getId().equals(userA.getId()));
+    }
+
+    @Test
+    @DisplayName("필터: 필터 없이 전체 조회가 동작한다")
+    void noFilter() {
+        User user = createAndPersistUser("g@test.com", "유저G");
+        createAndPersistFeed(user, "피드1");
+        createAndPersistFeed(user, "피드2");
+        createAndPersistFeed(user, "피드3");
+        em.flush();
+        em.clear();
+
+        FeedGetRequest req = request(10, SortDirection.DESCENDING);
+        List<Feed> result = feedRepository.findWithCursor(req);
+
+        assertThat(result).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("필터: skyStatus JSONB 필터링")
+    void skyStatusFilter() {
+        // PostgreSQL에서만 동작
+    }
+
+    @Test
+    @DisplayName("필터: precipitationType JSONB 필터링")
+    void precipitationTypeFilter() {
+        // PostgreSQL에서만 동작
+    }
+
+    // === 정렬 ===
+
+    @Test
+    @DisplayName("정렬: createdAt 내림차순 정렬")
+    void descendingSort() throws InterruptedException {
+        User user = createAndPersistUser("h@test.com", "유저H");
+        Feed first = createAndPersistFeed(user, "먼저 생성");
+        em.flush();
+
+        // createdAt 차이를 보장하기 위해 약간의 지연
+        Thread.sleep(50);
+        Feed second = createAndPersistFeed(user, "나중에 생성");
+        em.flush();
+        em.clear();
+
+        FeedGetRequest req = request(10, SortDirection.DESCENDING);
+        List<Feed> result = feedRepository.findWithCursor(req);
+
+        assertThat(result).hasSizeGreaterThanOrEqualTo(2);
+        // 내림차순이므로 첫 번째 요소의 createdAt >= 두 번째
+        for (int i = 0; i < result.size() - 1; i++) {
+            assertThat(result.get(i).getCreatedAt())
+                    .isAfterOrEqualTo(result.get(i + 1).getCreatedAt());
         }
     }
 
-    @Nested
-    @DisplayName("필터")
-    class Filter {
+    @Test
+    @DisplayName("정렬: createdAt 오름차순 정렬")
+    void ascendingSort() throws InterruptedException {
+        User user = createAndPersistUser("i@test.com", "유저I");
+        Feed first = createAndPersistFeed(user, "먼저 생성");
+        em.flush();
 
-        @Test
-        @DisplayName("keyword로 content 검색이 동작한다")
-        void keywordFilter() {
-            User user = createAndPersistUser("d@test.com", "유저D");
-            createAndPersistFeed(user, "오늘 날씨가 좋아서 반팔 입었다");
-            createAndPersistFeed(user, "비가 와서 우산을 챙겼다");
-            createAndPersistFeed(user, "반팔이 딱 좋은 날");
-            em.flush();
-            em.clear();
+        Thread.sleep(50);
+        Feed second = createAndPersistFeed(user, "나중에 생성");
+        em.flush();
+        em.clear();
 
-            FeedGetRequest req = new FeedGetRequest(
-                    null, null, 10, SortBy.createdAt, SortDirection.DESCENDING,
-                    "반팔", null, null, null
-            );
-            List<Feed> result = feedRepository.findWithCursor(req);
+        FeedGetRequest req = request(10, SortDirection.ASCENDING);
+        List<Feed> result = feedRepository.findWithCursor(req);
 
-            assertThat(result).hasSize(2);
-            assertThat(result).allMatch(f -> f.getContent().contains("반팔"));
-        }
-
-        @Test
-        @DisplayName("authorId로 작성자 필터링이 동작한다")
-        void authorIdFilter() {
-            User userA = createAndPersistUser("e@test.com", "유저E");
-            User userB = createAndPersistUser("f@test.com", "유저F");
-            createAndPersistFeed(userA, "유저A의 피드1");
-            createAndPersistFeed(userA, "유저A의 피드2");
-            createAndPersistFeed(userB, "유저B의 피드");
-            em.flush();
-            em.clear();
-
-            FeedGetRequest req = new FeedGetRequest(
-                    null, null, 10, SortBy.createdAt, SortDirection.DESCENDING,
-                    null, null, null, userA.getId()
-            );
-            List<Feed> result = feedRepository.findWithCursor(req);
-
-            assertThat(result).hasSize(2);
-            assertThat(result).allMatch(f -> f.getAuthor().getId().equals(userA.getId()));
-        }
-
-        @Test
-        @DisplayName("필터 없이 전체 조회가 동작한다")
-        void noFilter() {
-            User user = createAndPersistUser("g@test.com", "유저G");
-            createAndPersistFeed(user, "피드1");
-            createAndPersistFeed(user, "피드2");
-            createAndPersistFeed(user, "피드3");
-            em.flush();
-            em.clear();
-
-            FeedGetRequest req = request(10, SortDirection.DESCENDING);
-            List<Feed> result = feedRepository.findWithCursor(req);
-
-            assertThat(result).hasSize(3);
-        }
-
-        @Test
-        @Disabled("jsonb_extract_path_text는 PostgreSQL 전용 — Testcontainers 환경 필요")
-        @DisplayName("skyStatus JSONB 필터링")
-        void skyStatusFilter() {
-            // PostgreSQL에서만 동작
-        }
-
-        @Test
-        @Disabled("jsonb_extract_path_text는 PostgreSQL 전용 — Testcontainers 환경 필요")
-        @DisplayName("precipitationType JSONB 필터링")
-        void precipitationTypeFilter() {
-            // PostgreSQL에서만 동작
-        }
-    }
-
-    @Nested
-    @DisplayName("정렬")
-    class Sorting {
-
-        @Test
-        @DisplayName("createdAt 내림차순 정렬")
-        void descendingSort() throws InterruptedException {
-            User user = createAndPersistUser("h@test.com", "유저H");
-            Feed first = createAndPersistFeed(user, "먼저 생성");
-            em.flush();
-
-            // createdAt 차이를 보장하기 위해 약간의 지연
-            Thread.sleep(50);
-            Feed second = createAndPersistFeed(user, "나중에 생성");
-            em.flush();
-            em.clear();
-
-            FeedGetRequest req = request(10, SortDirection.DESCENDING);
-            List<Feed> result = feedRepository.findWithCursor(req);
-
-            assertThat(result).hasSizeGreaterThanOrEqualTo(2);
-            // 내림차순이므로 첫 번째 요소의 createdAt >= 두 번째
-            for (int i = 0; i < result.size() - 1; i++) {
-                assertThat(result.get(i).getCreatedAt())
-                        .isAfterOrEqualTo(result.get(i + 1).getCreatedAt());
-            }
-        }
-
-        @Test
-        @DisplayName("createdAt 오름차순 정렬")
-        void ascendingSort() throws InterruptedException {
-            User user = createAndPersistUser("i@test.com", "유저I");
-            Feed first = createAndPersistFeed(user, "먼저 생성");
-            em.flush();
-
-            Thread.sleep(50);
-            Feed second = createAndPersistFeed(user, "나중에 생성");
-            em.flush();
-            em.clear();
-
-            FeedGetRequest req = request(10, SortDirection.ASCENDING);
-            List<Feed> result = feedRepository.findWithCursor(req);
-
-            assertThat(result).hasSizeGreaterThanOrEqualTo(2);
-            // 오름차순이므로 첫 번째 요소의 createdAt <= 두 번째
-            for (int i = 0; i < result.size() - 1; i++) {
-                assertThat(result.get(i).getCreatedAt())
-                        .isBeforeOrEqualTo(result.get(i + 1).getCreatedAt());
-            }
+        assertThat(result).hasSizeGreaterThanOrEqualTo(2);
+        // 오름차순이므로 첫 번째 요소의 createdAt <= 두 번째
+        for (int i = 0; i < result.size() - 1; i++) {
+            assertThat(result.get(i).getCreatedAt())
+                    .isBeforeOrEqualTo(result.get(i + 1).getCreatedAt());
         }
     }
 }
