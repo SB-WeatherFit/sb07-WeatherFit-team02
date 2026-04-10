@@ -30,9 +30,11 @@ spring:
 
   kafka:
     bootstrap-servers: ${KAFKA_SERVER}
-    client-id: ${KAFKA_CLIENT_ID:}
     properties:
-      sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username='${KAFKA_API_KEY:}' password='${KAFKA_SECRET_KEY:}';"
+      client.dns.lookup: use_all_dns_ips
+      security.protocol: SASL_SSL
+      sasl.mechanism: PLAIN
+      sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username='${KAFKA_API_KEY}' password='${KAFKA_SECRET_KEY}';"
 
 
     producer:

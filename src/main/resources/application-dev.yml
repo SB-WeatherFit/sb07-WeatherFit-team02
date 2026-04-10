@@ -18,9 +18,7 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
-    client-id: ${KAFKA_CLIENT_ID:}
-    properties:
-      sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username='${KAFKA_API_KEY}' password='${KAFKA_SECRET_KEY}';"
+
   jpa:
     show-sql: true
     properties:
