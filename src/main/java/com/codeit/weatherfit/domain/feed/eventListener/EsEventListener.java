@@ -3,6 +3,7 @@ package com.codeit.weatherfit.domain.feed.eventListener;
 import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.search.FeedDocument;
 import com.codeit.weatherfit.domain.feed.event.FeedCreatedEvent;
+import com.codeit.weatherfit.domain.feed.event.FeedDeletedEvent;
 import com.codeit.weatherfit.domain.feed.event.FeedUpdatedEvent;
 import com.codeit.weatherfit.domain.feed.exception.FeedDocumentNotFoundException;
 import com.codeit.weatherfit.domain.feed.exception.FeedNotExistException;
@@ -11,6 +12,7 @@ import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
 import com.codeit.weatherfit.domain.feed.repository.search.FeedSearchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -28,7 +30,7 @@ public class EsEventListener {
 
     @Async("elasticTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Retryable(maxAttempts = 5)
+    @Retryable(maxAttempts = 5, backoff = @Backoff(delay = 1000))
     public void handleFeedCreatedEvent(FeedCreatedEvent event) {
         log.info("[ES 동기화] 피드 생성 이벤트 수신: feedId={}", event.feedId());
         Feed feed = feedRepository.findById(event.feedId())
@@ -44,21 +46,30 @@ public class EsEventListener {
 
     @Async("elasticTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Retryable(maxAttempts = 5)
+    @Retryable(maxAttempts = 5, backoff = @Backoff(delay = 1000))
     public void handleFeedUpdatedEvent(FeedUpdatedEvent event) {
         log.info("[ES 동기화] 피드 업데이트 이벤트 수신: feedId={}, eventType={}", event.feedId(), event.eventType());
-        FeedDocument feedDocument = feedSearchRepository.findById(event.feedId().toString())
+        FeedDocument feedDocument = feedSearchRepository.findById(event.feedId())
                 .orElseThrow(() -> {
                     log.error("[ES 동기화] FeedDocument 조회 실패: feedId={}", event.feedId());
                     return new FeedDocumentNotFoundException(event.feedId().toString());
                 });
-        switch (event.eventType()){
+        switch (event.eventType()) {
             case LIKE_UP -> feedDocument.liked();
             case LIKE_DOWN -> feedDocument.unliked();
             case CONTENT_UPDATED -> feedDocument.updateContent(event.content());
         }
         feedSearchRepository.save(feedDocument);
         log.info("[ES 동기화] 피드 업데이트 인덱싱 완료: feedId={}, eventType={}", event.feedId(), event.eventType());
+    }
+
+    @Async("elasticTaskExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Retryable(maxAttempts = 5, backoff = @Backoff(delay = 1000))
+    public void handleFeedDeletedEvent(FeedDeletedEvent event) {
+        log.info("[ES 동기화] 피드 삭제 이벤트 수신: feedId={}", event.feedId());
+        feedSearchRepository.deleteByFeedId(event.feedId());
+        log.info("[ES 동기화] 피드 삭제 완료: feedId={}", event.feedId());
     }
 
 

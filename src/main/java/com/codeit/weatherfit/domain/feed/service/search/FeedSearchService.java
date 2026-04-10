@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
@@ -65,11 +66,16 @@ public class FeedSearchService {
             ));
         }
 
-        return NativeQuery.builder()
+        NativeQueryBuilder builder = NativeQuery.builder()
                 .withQuery(q -> q.bool(bool.build()))
                 .withSort(buildSort(request))
-                .withPageable(PageRequest.of(0, request.limit()))
-                .build();
+                .withPageable(PageRequest.of(0, request.limit() + 1));
+
+        if (request.cursor() != null) {
+            builder.withSearchAfter(List.of(request.cursor()));
+        }
+
+        return builder.build();
     }
 
     private Sort buildSort(FeedGetRequest request) {

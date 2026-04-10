@@ -16,11 +16,9 @@ import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import com.codeit.weatherfit.domain.feed.entity.FeedLike;
 import com.codeit.weatherfit.domain.feed.event.FeedCreatedEvent;
+import com.codeit.weatherfit.domain.feed.event.FeedDeletedEvent;
 import com.codeit.weatherfit.domain.feed.event.FeedUpdatedEvent;
-import com.codeit.weatherfit.domain.feed.exception.FeedBadRequestException;
-import com.codeit.weatherfit.domain.feed.exception.FeedLikeAlreadyExistException;
-import com.codeit.weatherfit.domain.feed.exception.FeedLikeNotExistException;
-import com.codeit.weatherfit.domain.feed.exception.FeedNotExistException;
+import com.codeit.weatherfit.domain.feed.exception.*;
 import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
@@ -262,7 +260,7 @@ public class FeedServiceImpl implements FeedService {
         feedClothesRepository.deleteByFeed(feed);
         commentRepository.deleteByFeed(feed);
         feedSearchRepository.deleteByFeedId(feed.getId());
-        feedRepository.delete(feed);
+        eventPublisher.publishEvent(new FeedDeletedEvent(feed.getId()));
         log.info("피드 삭제 완료: feedId={}", id);
     }
 
@@ -359,6 +357,6 @@ public class FeedServiceImpl implements FeedService {
 
     private Comment getCommentOrThrow(UUID commentId) {
         return commentRepository.findById(commentId)
-                .orElseThrow(() -> new FeedNotExistException(commentId));
+                .orElseThrow(() -> new CommentNotFoundException(commentId));
     }
 }
