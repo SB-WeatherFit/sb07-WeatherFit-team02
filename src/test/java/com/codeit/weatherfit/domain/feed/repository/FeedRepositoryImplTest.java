@@ -26,7 +26,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Disabled("H2에서 JSONB 컬럼 미지원 — Feed/FeedClothes 테이블 생성 불가. Testcontainers(PostgreSQL) 환경 필요")
 @DataJpaTest
 @Import({
         FeedRepositoryImpl.class,
@@ -219,14 +218,12 @@ class FeedRepositoryImplTest {
         }
 
         @Test
-        @Disabled("jsonb_extract_path_text는 PostgreSQL 전용 — Testcontainers 환경 필요")
         @DisplayName("skyStatus JSONB 필터링")
         void skyStatusFilter() {
             // PostgreSQL에서만 동작
         }
 
         @Test
-        @Disabled("jsonb_extract_path_text는 PostgreSQL 전용 — Testcontainers 환경 필요")
         @DisplayName("precipitationType JSONB 필터링")
         void precipitationTypeFilter() {
             // PostgreSQL에서만 동작
