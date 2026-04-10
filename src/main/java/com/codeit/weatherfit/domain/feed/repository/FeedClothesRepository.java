@@ -15,4 +15,6 @@ public interface FeedClothesRepository extends JpaRepository<FeedClothes, UUID> 
             "where fc.clothes_snapshot->>'imageKey' is not null",
             nativeQuery = true)
     List<String> findAllImageKeys();
+
+    void deleteByFeed(Feed feed);
 }
