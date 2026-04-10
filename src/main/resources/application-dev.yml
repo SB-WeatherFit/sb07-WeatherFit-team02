@@ -23,7 +23,7 @@ spring:
       client.dns.lookup: use_all_dns_ips
       security.protocol: SASL_SSL
       sasl.mechanism: PLAIN
-      sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username='${KAFKA_API_KEY}' password='${KAFKA_SECRET_KEY}';"
+      sasl.jaas.config: "org.apache.kafka.common.security.plain.PlainLoginModule required username='${KAFKA_API_KEY:}' password='${KAFKA_SECRET_KEY:}';"
 
     consumer:
       group-id: test-group
