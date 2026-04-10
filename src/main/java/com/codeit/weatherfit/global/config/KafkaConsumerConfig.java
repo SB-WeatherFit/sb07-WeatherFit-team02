@@ -21,14 +21,12 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    @Value("${spring.kafka.properties.security.protocol}")
-    private String securityProtocol;
-
-    @Value("${spring.kafka.properties.sasl.mechanism}")
-    private String saslMechanism;
-
     @Value("${spring.kafka.properties.sasl.jaas.config}")
     private String saslJaasConfig;
+
+    private final String CLIENT_DNS = "use_all_dns_ips";
+    private final String SECURITY_PROTOCOL = "SASL_SSL";
+    private final String SASL_MECHANISM = "PLAIN";
 
 
     @Bean
@@ -38,8 +36,9 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         if(!bootstrapServers.equals("localhost:9092")) {
 
-            props.put("security.protocol", securityProtocol);
-            props.put("sasl.mechanism", saslMechanism);
+            props.put("security.protocol", SECURITY_PROTOCOL);
+            props.put("sasl.mechanism", SASL_MECHANISM);
+            props.put("client.dns.lookup",CLIENT_DNS);
             props.put("sasl.jaas.config", saslJaasConfig);
         }
 
