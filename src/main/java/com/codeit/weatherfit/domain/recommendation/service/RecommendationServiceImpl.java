@@ -1,12 +1,13 @@
 package com.codeit.weatherfit.domain.recommendation.service;
 
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
+import com.codeit.weatherfit.domain.clothes.entity.ClothesType;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
+import com.codeit.weatherfit.domain.recommendation.ai.AiClothesRecommender;
 import com.codeit.weatherfit.domain.recommendation.dto.RecommendationDto;
 import com.codeit.weatherfit.domain.recommendation.dto.RecommendedClothes;
-import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
@@ -24,12 +25,12 @@ import java.util.concurrent.TimeUnit;
 public class RecommendationServiceImpl implements RecommendationService {
 
     private final ClothesRepository clothesRepository;
-    private final UserRepository userRepository;
     private final WeatherRepository weatherRepository;
     private final ClothesRecommender clothesRecommender;
     private final ProfileRepository profileRepository;
     private final S3Service s3Service;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final AiClothesRecommender aiClothesRecommender;
 
     @Override
     public RecommendationDto getRecommendations(UUID weatherId, UUID userId) {
@@ -51,7 +52,7 @@ public class RecommendationServiceImpl implements RecommendationService {
                 return null;
             }
 
-            List<List<UUID>>uuids  = clothesRecommender.recommendClothes(clothes, weather, profile);
+            List<List<UUID>> uuids = clothesRecommender.recommendClothes(clothes, weather, profile);
 
             if (uuids != null && !uuids.isEmpty()) {
                 result = uuids.getFirst();
@@ -80,8 +81,76 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .toList();
 
         return new RecommendationDto(weatherId, userId, list);
+    }
+
+    @Override
+    public RecommendationDto getRecommendationsLLM(UUID weatherId, UUID userId) {
 
 
+        Weather weather = weatherRepository.findById(weatherId)
+                .orElseThrow(() -> new WeatherNotFoundException(weatherId));
+        Profile profile = profileRepository.findByUserId(userId).orElseThrow();
+        List<Clothes> clothes = clothesRepository.findByOwnerId(userId);
+
+
+        if (clothes.isEmpty()) {
+            return null;
+        }
+
+        List<Clothes> filteredClothes = filterClothesByUserSensitivity(clothes, weather.getTemperatureCurrent(), profile.getTemperatureSensitivity());
+
+        List<UUID> uuids = aiClothesRecommender.recommendClothes(filteredClothes, weather, profile);
+
+
+        List<RecommendedClothes> list = clothesRepository.findAllByIds(uuids)
+                .stream()
+                .map(clothe -> new RecommendedClothes(
+                                clothe.getId(),
+                                clothe.getName(),
+                                s3Service.getUrl(clothe.getImageKey()),
+                                clothe.getType(),
+                                List.of()
+                        )
+                )
+                .toList();
+
+        return new RecommendationDto(weatherId, userId, list);
+    }
+
+    private List<Clothes> filterClothesByUserSensitivity(List<Clothes> clothes, double currentTemperature, int temperatureSensitivity) {
+
+        double effectiveTemp =
+                switch (temperatureSensitivity) {
+                    case 1 -> currentTemperature - 3;
+                    case 2 -> currentTemperature - 1.5;
+                    case 4 -> currentTemperature + 1.5;
+                    case 5 -> currentTemperature + 3;
+                    default -> currentTemperature;
+                };
+
+
+        return clothes.stream()
+                .filter(clothe -> {
+                    ClothesType type = clothe.getType();
+
+                    if (effectiveTemp >= 25) {
+                        return !List.of(ClothesType.OUTER, ClothesType.SCARF).contains(type);
+                    }
+
+
+                    if (effectiveTemp >= 23) {
+
+                        return type != ClothesType.SCARF;
+                    }
+
+
+                    if (effectiveTemp <= 5) {
+                        return true;
+                    }
+
+                    return true;
+                })
+                .toList();
     }
 }
 
