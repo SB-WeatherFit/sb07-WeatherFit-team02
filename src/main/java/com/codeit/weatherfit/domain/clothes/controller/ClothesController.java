@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.clothes.controller;
 
 import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
+import com.codeit.weatherfit.domain.clothes.controller.docs.ClothesControllerDocs;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesUpdateRequest;
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesDto;
 import com.codeit.weatherfit.domain.clothes.dto.request.ClothesCreateRequest;
@@ -24,7 +25,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/clothes")
-public class ClothesController {
+public class ClothesController implements ClothesControllerDocs {
     private final ClothesService clothesService;
     private final RequestContextFilter request;
 
