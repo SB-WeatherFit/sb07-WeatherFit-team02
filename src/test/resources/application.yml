@@ -16,6 +16,16 @@ weatherfit:
     type: s3
 
 spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/weatherfit_test
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  elasticsearch:
+    uris: http://localhost:9200
   batch:
     job:
       enabled: false

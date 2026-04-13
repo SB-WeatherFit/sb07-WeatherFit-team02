@@ -34,9 +34,9 @@ create table weathers
     type                               varchar(20)              NOT NULL,
     forecast_at                        timestamp with time zone,
     forecasted_at                      timestamp with time zone,
-    address_first                            varchar(255),
-    address_second                           varchar(255),
-    address_third                            varchar(255)
+    address_first                      varchar(255),
+    address_second                     varchar(255),
+    address_third                      varchar(255),
 
     constraint check_weather_as_word check ( as_word IN ('WEAK', 'MODERATE', 'STRONG')),
     constraint check_weather_sky_status check (sky_status IN ('CLEAR', 'MOSTLY_CLOUDY', 'CLOUDY')),
@@ -45,15 +45,14 @@ create table weathers
 
 create table feeds
 (
-    id         uuid PRIMARY KEY,
-    created_at timestamp with time zone not null DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    author_id  uuid                     not null,
-    content    text                     not null,
-    weather_id uuid                     not null,
+    id               uuid PRIMARY KEY,
+    created_at       timestamp with time zone not null DEFAULT CURRENT_TIMESTAMP,
+    updated_at       timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    author_id        uuid                     not null default '00000000-0000-0000-0000-000000000000',
+    content          text                     not null,
+    weather_snapshot JSONB                    not null,
 
-    CONSTRAINT fk_feeds_users foreign key (author_id) references users (id),
-    constraint fk_feeds_weathers foreign key (weather_id) references weathers (id)
+    CONSTRAINT fk_feeds_users foreign key (author_id) references users (id) on delete set default
 );
 
 create table clothes
@@ -87,7 +86,7 @@ create table selectable_values
     created_at timestamp with time zone not null default CURRENT_TIMESTAMP,
     updated_at timestamp with time zone not null default CURRENT_TIMESTAMP,
     type_id    uuid                     not null,
-    option      text                     not null,
+    option     text                     not null,
 
     CONSTRAINT fk_selectable_values_clothes_attribute_types foreign key (type_id) references clothes_attribute_types (id),
     CONSTRAINT uk_type_option unique (type_id, option)
@@ -113,12 +112,12 @@ create table comments
     id         uuid PRIMARY KEY,
     created_at timestamp with time zone not null DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    author_id  uuid,
-    feed_id    uuid,
-    content    TEXT,
+    author_id  uuid                     not null default '00000000-0000-0000-0000-000000000000',
+    feed_id    uuid                     not null,
+    content    TEXT                     not null,
 
-    constraint fk_comments_users foreign key (author_id) references users (id),
-    constraint fk_comments_feeds foreign key (feed_id) references feeds (id)
+    constraint fk_comments_users foreign key (author_id) references users (id) on delete set default,
+    constraint fk_comments_feeds foreign key (feed_id) references feeds (id) on delete cascade
 );
 
 create table feed_likes
@@ -129,7 +128,7 @@ create table feed_likes
     feed_id       uuid                     not null,
     liked_user_id uuid                     not null,
 
-    constraint fk_feed_likes_feeds foreign key (feed_id) references feeds (id),
+    constraint fk_feed_likes_feeds foreign key (feed_id) references feeds (id) on delete cascade,
     CONSTRAINT fk_feed_likes_users foreign key (liked_user_id) references users (id)
 );
 
@@ -180,15 +179,14 @@ CREATE INDEX idx_notifications_group_id ON notifications (group_id);
 
 create table feed_clothes
 (
-    id         uuid primary key,
-    created_at timestamp with time zone not null default CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone not null default CURRENT_TIMESTAMP,
-    feed_id    uuid                     not null,
-    clothes_id uuid                     not null,
+    id               uuid primary key,
+    created_at       timestamp with time zone not null default CURRENT_TIMESTAMP,
+    updated_at       timestamp with time zone not null default CURRENT_TIMESTAMP,
+    feed_id          uuid                     not null,
+    clothes_snapshot JSONB                    not null,
 
-    constraint fk_feed_clothes_feeds foreign key (feed_id) references feeds (id) on DELETE cascade,
-    constraint fk_feed_clothes_clothes foreign key (clothes_id) references clothes (id) on DELETE cascade
-);
+    constraint fk_feed_clothes_feeds foreign key (feed_id) references feeds (id) on delete cascade
+); -- TODO GIN 인덱스 설정
 
 create table profiles
 (
@@ -232,5 +230,13 @@ create table social_accounts
     constraint fk_social_accounts_users foreign key (user_id) references users (id),
     constraint uk_social_accounts_provider_user_id unique (provider, provider_user_id),
     constraint uk_social_accounts_user_provider unique (user_id, provider),
+    constraint check_social_provider check (provider in ('GOOGLE'))
+);
     constraint check_social_provider check (provider in ('GOOGLE', 'KAKAO'))
 );
+
+
+-- 삭제된 유저 센티널
+INSERT INTO users (id, role, email, name, password)
+VALUES ('00000000-0000-0000-0000-000000000000', 'USER', 'deleted@system.local', '삭제된 유저', 'DELETED')
+ON CONFLICT (id) DO NOTHING;

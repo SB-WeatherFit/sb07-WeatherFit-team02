@@ -26,4 +26,12 @@ public class RecommendationController {
         RecommendationDto result = recommendationService.getRecommendations(weatherId, userId);
         return ResponseEntity.ok().body(result);
     }
+
+    @GetMapping("/llm")
+    public ResponseEntity<RecommendationDto> getRecommendationsLLM(
+            @RequestParam UUID weatherId,
+            @AuthenticationPrincipal(expression = "userId") UUID userId){
+        RecommendationDto result = recommendationService.getRecommendationsLLM(weatherId, userId);
+        return ResponseEntity.ok().body(result);
+    }
 }

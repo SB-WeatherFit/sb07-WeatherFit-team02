@@ -62,7 +62,10 @@ public class SecurityConfig {
                                     "/*.jpg",
                                     "/*.jpeg",
                                     "/*.webp",
-                                    "/actuator/health"
+                                    "/actuator/health",
+                                    "/swagger-ui/**",
+                                    "/swagger-ui.html",
+                                    "/v3/api-docs/**"
                             ).permitAll()
                             .requestMatchers("/h2-console/**").permitAll()
                             .requestMatchers("/ws/**").permitAll()

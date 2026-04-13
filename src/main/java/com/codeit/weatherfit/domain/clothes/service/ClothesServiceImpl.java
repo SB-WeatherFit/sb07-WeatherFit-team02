@@ -64,10 +64,8 @@ public class ClothesServiceImpl implements ClothesService {
 
         if (image != null && !image.isEmpty()) {
             try {
-                key = S3KeyGenerator.generateKey(image.getOriginalFilename());
-
-                s3Service.put(
-                        key,
+                key = s3Service.put(
+                        image.getOriginalFilename(),
                         image.getContentType(),
                         image.getBytes()
                 );
@@ -134,10 +132,11 @@ public class ClothesServiceImpl implements ClothesService {
 
         if (image != null && !image.isEmpty()) {
             try {
-                key = S3KeyGenerator.generateKey(image.getOriginalFilename());
-
-                s3Service.put(
-                        key,
+                if (key != null) {
+                    s3Service.delete(key);
+                }
+                key = s3Service.put(
+                        image.getOriginalFilename(),
                         image.getContentType(),
                         image.getBytes()
                 );
@@ -199,6 +198,9 @@ public class ClothesServiceImpl implements ClothesService {
 
         clothesAttributeRepository.deleteByClothes(clothes);
         clothesRepository.delete(clothes);
+        if (clothes.getImageKey() != null) {
+            s3Service.delete(clothes.getImageKey());
+        }
     }
 
     @Override
@@ -264,19 +266,6 @@ public class ClothesServiceImpl implements ClothesService {
         Clothes clothes = clothesRepository.findById(clothesId)
                 .orElseThrow(() -> new ClothesNotFoundException(ErrorCode.CLOTHES_NOT_FOUND));
         clothes.updateImageKey(null);
-    }
-
-    private String publishImageUploadEvent(UUID id, MultipartFile image) {
-        String key = null;
-        if (image != null && !image.isEmpty()) {
-            try {
-                key = S3KeyGenerator.generateKey(image.getOriginalFilename());
-                eventPublisher.publishEvent(new S3ClothesPutEvent(id, key, image.getContentType(), image.getBytes()));
-            } catch (IOException e) {
-                throw new S3UploadException(image.getOriginalFilename());
-            }
-        }
-        return key;
     }
 
     @Override

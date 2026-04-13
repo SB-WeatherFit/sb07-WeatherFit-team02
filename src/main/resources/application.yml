@@ -26,8 +26,16 @@ spring:
             enable: true
           starttls:
             enable: false
-  kafka:
-    bootstrap-servers: ${KAFKA_SERVER:localhost:9092}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URL:http://localhost:9200}
+
+
+
 
   security:
     oauth2:
@@ -79,6 +87,7 @@ weatherfit:
     temporary-password-expiration-seconds: ${TEMPORARY_PASSWORD_EXPIRATION_SECONDS:180}
     social:
       success-redirect-uri: ${SOCIAL_LOGIN_SUCCESS_REDIRECT_URI:http://localhost:8080/index.html}
+  default-user-id: ${DEFAULT_USER_ID:}
 
 info:
   app:

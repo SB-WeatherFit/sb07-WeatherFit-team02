@@ -8,6 +8,8 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -16,9 +18,11 @@ import lombok.NoArgsConstructor;
 public class Comment extends BaseEntity {
 
     @ManyToOne
+    @OnDelete(action = OnDeleteAction.SET_DEFAULT) // TODO default 유저 세팅
     private User author;
 
     @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Feed feed;
 
     private String content;
