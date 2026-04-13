@@ -8,6 +8,7 @@ import com.codeit.weatherfit.domain.clothes.dto.response.ClothesAttributeDefDto;
 import com.codeit.weatherfit.domain.clothes.service.AttributeDefService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +25,7 @@ public class ClothesAttributeDefController implements ClothesAttributeDefControl
 
     @PostMapping
     public ResponseEntity<ClothesAttributeDefDto> create(
-            @RequestBody @Valid ClothesAttributeDefCreateRequest request
+            @Valid @ParameterObject @ModelAttribute ClothesAttributeDefCreateRequest request
     ) {
 
         ClothesAttributeDefDto response = attributeDefService.createAttributeDef(request);
@@ -43,7 +44,7 @@ public class ClothesAttributeDefController implements ClothesAttributeDefControl
     @PatchMapping("/{definitionId}")
     public ResponseEntity<ClothesAttributeDefDto> update(
             @PathVariable UUID definitionId,
-            @RequestBody @Valid ClothesAttributeDefUpdateRequest request
+            @Valid @ParameterObject @ModelAttribute ClothesAttributeDefUpdateRequest request
             ) {
 
         ClothesAttributeDefDto response = attributeDefService.patchAttributeDef(definitionId, request);

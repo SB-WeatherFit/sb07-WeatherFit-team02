@@ -41,6 +41,7 @@ public enum ErrorCode {
     LIKE_NOT_EXIST(HttpStatus.BAD_REQUEST, "좋아요하지 않은 피드입니다.", "FE-003"),
     FEED_BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.", "FE-004"),
     COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "덧글을 찾을 수 없습니다.", "FE-005"),
+    FEED_FORBIDDEN(HttpStatus.FORBIDDEN, "해당 리소스에 대한 권한이 없습니다.", "FE-006"),
 
     FEED_DOCUMENT_NOT_EXIST(HttpStatus.NOT_FOUND, "피드 문서를 찾을 수 없습니다.","FD-001" ),
 
@@ -54,6 +55,8 @@ public enum ErrorCode {
     UNSUPPORTED_SOCIAL_PROVIDER(HttpStatus.BAD_REQUEST, "지원하지 않는 소셜 제공자입니다.", "A-007"),
     SOCIAL_SIGN_IN_FAILED(HttpStatus.UNAUTHORIZED, "소셜 로그인에 실패했습니다.", "A-008"),
     SOCIAL_ACCOUNT_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "동일한 이메일의 기존 계정이 있어 소셜 로그인을 진행할 수 없습니다.", "A-009"),
+
+
     // Global
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001"),
 

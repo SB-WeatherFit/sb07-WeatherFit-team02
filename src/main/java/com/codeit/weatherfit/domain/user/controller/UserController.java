@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.user.controller;
 
+import com.codeit.weatherfit.domain.user.controller.docs.UserControllerDocs;
 import com.codeit.weatherfit.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserCreateRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserLockUpdateRequest;
@@ -9,6 +10,7 @@ import com.codeit.weatherfit.domain.user.dto.response.UserDtoCursorResponse;
 import com.codeit.weatherfit.domain.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,12 +19,12 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
-public class UserController {
+public class UserController implements UserControllerDocs {
 
     private final UserService userService;
 
     @PostMapping
-    public UserDto create(@Valid @RequestBody UserCreateRequest request) {
+    public UserDto create(@Valid @ParameterObject @ModelAttribute UserCreateRequest request) {
         return userService.create(request);
     }
 
@@ -52,7 +54,7 @@ public class UserController {
     @PatchMapping("/{userId}/role")
     public UserDto updateRole(
             @PathVariable UUID userId,
-            @Valid @RequestBody UserRoleUpdateRequest request
+            @Valid @ParameterObject @ModelAttribute UserRoleUpdateRequest request
     ) {
         return userService.updateRole(userId, request);
     }
@@ -60,7 +62,7 @@ public class UserController {
     @PatchMapping("/{userId}/lock")
     public UserDto updateLock(
             @PathVariable UUID userId,
-            @Valid @RequestBody UserLockUpdateRequest request
+            @Valid @ParameterObject @ModelAttribute UserLockUpdateRequest request
     ) {
         return userService.updateLock(userId, request);
     }
@@ -68,7 +70,7 @@ public class UserController {
     @PatchMapping("/{userId}/password")
     public ResponseEntity<Void> updatePassword(
             @PathVariable UUID userId,
-            @Valid @RequestBody ChangePasswordRequest request
+            @Valid @ParameterObject @ModelAttribute ChangePasswordRequest request
     ) {
         userService.updatePassword(userId, request);
         return ResponseEntity.noContent().build();

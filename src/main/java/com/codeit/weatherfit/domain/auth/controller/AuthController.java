@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.auth.controller;
 
+import com.codeit.weatherfit.domain.auth.controller.docs.AuthControllerDocs;
 import com.codeit.weatherfit.domain.auth.dto.request.ResetPasswordRequest;
 import com.codeit.weatherfit.domain.auth.dto.request.SignInRequest;
 import com.codeit.weatherfit.domain.auth.dto.response.JwtDto;
@@ -7,6 +8,7 @@ import com.codeit.weatherfit.domain.auth.service.AuthService;
 import com.codeit.weatherfit.domain.auth.service.AuthTokenResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +19,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
-public class AuthController {
+public class AuthController implements AuthControllerDocs {
 
     private static final String REFRESH_TOKEN_COOKIE_NAME = "REFRESH_TOKEN";
 
@@ -62,7 +64,7 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(
-            @Valid @RequestBody ResetPasswordRequest request
+            @Valid @ParameterObject @ModelAttribute ResetPasswordRequest request
     ) {
         authService.resetPassword(request);
         return ResponseEntity.noContent().build();

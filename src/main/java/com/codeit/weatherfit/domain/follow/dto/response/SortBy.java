@@ -1,8 +1,10 @@
 package com.codeit.weatherfit.domain.follow.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
+@Schema(description = "팔로우 정렬 기준")
 @Getter
 public enum SortBy {
     CREATED_AT("createdAt");

@@ -1,5 +1,8 @@
 package com.codeit.weatherfit.domain.clothes.entity;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "의상 종류", enumAsRef = true)
 public enum ClothesType {
 
         TOP("상의"),

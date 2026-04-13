@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.follow.controller;
 
+import com.codeit.weatherfit.domain.follow.controller.docs.FollowControllerDocs;
 import com.codeit.weatherfit.domain.follow.dto.request.FollowCreateRequest;
 import com.codeit.weatherfit.domain.follow.dto.request.FollowerSearchCondition;
 import com.codeit.weatherfit.domain.follow.dto.request.FolloweeSearchCondition;
@@ -9,6 +10,7 @@ import com.codeit.weatherfit.domain.follow.dto.response.FollowSummaryDto;
 import com.codeit.weatherfit.domain.follow.service.FollowService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,13 +21,13 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/follows")
-public class FollowController {
+public class FollowController implements FollowControllerDocs {
 
     private final FollowService followService;
 
     @PostMapping
     public ResponseEntity<FollowDto> createFollow(
-            @Valid @RequestBody FollowCreateRequest createRequest) {
+            @Valid @ParameterObject @ModelAttribute FollowCreateRequest createRequest) {
         FollowDto result = followService.follow(createRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(result);

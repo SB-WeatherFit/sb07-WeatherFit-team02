@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.notification.controller;
 
+import com.codeit.weatherfit.domain.notification.controller.docs.SseControllerDocs;
 import com.codeit.weatherfit.domain.notification.service.SseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -14,7 +15,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-public class SseController {
+public class SseController implements SseControllerDocs {
 
     private final SseService sseService;
 
