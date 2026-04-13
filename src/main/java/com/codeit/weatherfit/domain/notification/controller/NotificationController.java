@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.notification.controller;
 
+import com.codeit.weatherfit.domain.notification.controller.docs.NotificationControllerDocs;
 import com.codeit.weatherfit.domain.notification.dto.request.NotificationSearchCondition;
 import com.codeit.weatherfit.domain.notification.dto.response.NotificationCursorResponse;
 import com.codeit.weatherfit.domain.notification.service.NotificationService;
@@ -15,7 +16,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/notifications")
-public class NotificationController {
+public class NotificationController implements NotificationControllerDocs {
 
     private final NotificationService notificationService;
 

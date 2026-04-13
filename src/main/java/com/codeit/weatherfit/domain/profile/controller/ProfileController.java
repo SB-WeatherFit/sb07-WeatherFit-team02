@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.profile.controller;
 
+import com.codeit.weatherfit.domain.profile.controller.docs.ProfileControllerDocs;
 import com.codeit.weatherfit.domain.profile.dto.request.ProfileUpdateRequest;
 import com.codeit.weatherfit.domain.profile.dto.response.ProfileDto;
 import com.codeit.weatherfit.domain.profile.service.ProfileService;
@@ -13,7 +14,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users/{userId}/profiles")
-public class ProfileController {
+public class ProfileController implements ProfileControllerDocs {
 
     private final ProfileService profileService;
 

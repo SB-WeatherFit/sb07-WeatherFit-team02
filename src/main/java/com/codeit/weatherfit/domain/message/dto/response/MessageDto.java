@@ -2,16 +2,17 @@ package com.codeit.weatherfit.domain.message.dto.response;
 
 import com.codeit.weatherfit.domain.message.entity.Message;
 import com.codeit.weatherfit.domain.user.entity.User;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 import java.util.UUID;
 
 public record MessageDto(
-        UUID messageId,
-        Instant createdAt,
-        MessageUser sender,
-        MessageUser receiver,
-        String content
+        @Schema(description = "메시지 ID") UUID messageId,
+        @Schema(description = "생성일시") Instant createdAt,
+        @Schema(description = "발신자 정보") MessageUser sender,
+        @Schema(description = "수신자 정보") MessageUser receiver,
+        @Schema(description = "메시지 내용") String content
 ) {
     public static MessageDto from(
             Message message,

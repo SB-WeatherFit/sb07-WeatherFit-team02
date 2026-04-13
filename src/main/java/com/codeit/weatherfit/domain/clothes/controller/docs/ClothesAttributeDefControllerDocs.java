@@ -6,6 +6,7 @@ import com.codeit.weatherfit.domain.clothes.dto.request.ClothesAttributeDefUpdat
 import com.codeit.weatherfit.domain.clothes.dto.response.ClothesAttributeDefDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import org.springdoc.core.annotations.ParameterObject;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,7 +42,7 @@ public interface ClothesAttributeDefControllerDocs {
             @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
     ResponseEntity<List<ClothesAttributeDefDto>> getAttributeDefs(
-            @Parameter(description = "조회 조건") ClothesAttributeDefGetRequest request
+            @ParameterObject ClothesAttributeDefGetRequest request
     );
 
     @Operation(summary = "옷 속성 정의 수정", description = "기존 옷 속성 정의를 수정합니다.")

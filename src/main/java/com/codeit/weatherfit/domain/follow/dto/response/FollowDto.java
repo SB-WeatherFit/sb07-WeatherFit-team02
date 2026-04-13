@@ -2,12 +2,14 @@ package com.codeit.weatherfit.domain.follow.dto.response;
 
 import com.codeit.weatherfit.domain.user.entity.User;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.UUID;
 
 public record FollowDto(
-        UUID id,
-        FollowUser followee,
-        FollowUser follower
+        @Schema(description = "팔로우 ID") UUID id,
+        @Schema(description = "팔로이 정보") FollowUser followee,
+        @Schema(description = "팔로워 정보") FollowUser follower
 ) {
     public static FollowDto create(
             UUID followId,

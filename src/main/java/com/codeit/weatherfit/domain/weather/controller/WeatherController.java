@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.weather.controller;
 
+import com.codeit.weatherfit.domain.weather.controller.docs.WeatherControllerDocs;
 import com.codeit.weatherfit.domain.weather.dto.request.WeatherApiTestRequest;
 import com.codeit.weatherfit.domain.weather.dto.request.WeatherRequest;
 import com.codeit.weatherfit.domain.weather.dto.response.KakaoLocationResponse;
@@ -26,7 +27,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/weathers")
 @RequiredArgsConstructor
-public class WeatherController {
+public class WeatherController implements WeatherControllerDocs {
 
     private final WeatherService weatherService;
     private final WeatherApiCallServiceImpl  weatherApiCallService;

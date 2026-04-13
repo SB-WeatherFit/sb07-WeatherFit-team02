@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.user.controller;
 
+import com.codeit.weatherfit.domain.user.controller.docs.UserControllerDocs;
 import com.codeit.weatherfit.domain.user.dto.request.ChangePasswordRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserCreateRequest;
 import com.codeit.weatherfit.domain.user.dto.request.UserLockUpdateRequest;
@@ -17,7 +18,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
-public class UserController {
+public class UserController implements UserControllerDocs {
 
     private final UserService userService;
 

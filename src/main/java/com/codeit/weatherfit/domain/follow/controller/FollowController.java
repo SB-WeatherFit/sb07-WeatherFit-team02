@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.follow.controller;
 
+import com.codeit.weatherfit.domain.follow.controller.docs.FollowControllerDocs;
 import com.codeit.weatherfit.domain.follow.dto.request.FollowCreateRequest;
 import com.codeit.weatherfit.domain.follow.dto.request.FollowerSearchCondition;
 import com.codeit.weatherfit.domain.follow.dto.request.FolloweeSearchCondition;
@@ -19,7 +20,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/follows")
-public class FollowController {
+public class FollowController implements FollowControllerDocs {
 
     private final FollowService followService;
 
