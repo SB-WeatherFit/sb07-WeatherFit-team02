@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.user.service;
 
 import com.codeit.weatherfit.domain.auth.repository.TemporaryPasswordRepository;
+import com.codeit.weatherfit.domain.auth.security.InMemoryAuthTokenStore;
 import com.codeit.weatherfit.domain.profile.entity.Location;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
@@ -13,7 +14,6 @@ import com.codeit.weatherfit.domain.user.dto.response.UserDtoCursorResponse;
 import com.codeit.weatherfit.domain.user.dto.response.UserSummary;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.entity.UserRole;
-import com.codeit.weatherfit.domain.user.event.UserRoleChangedEvent;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.user.repository.UserSearchCondition;
 import com.codeit.weatherfit.global.exception.ErrorCode;
@@ -21,7 +21,6 @@ import com.codeit.weatherfit.global.exception.WeatherFitException;
 import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,7 +39,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final S3Service s3Service;
     private final TemporaryPasswordRepository temporaryPasswordRepository;
-    private final ApplicationEventPublisher applicationEventPublisher;
+    private final InMemoryAuthTokenStore inMemoryAuthTokenStore;
 
     @Override
     public UserDto create(UserCreateRequest request) {
@@ -126,14 +125,10 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
 
         UserRole beforeRole = user.getRole();
-        UserRole afterRole = request.role();
+        user.updateRole(request.role());
 
-        user.updateRole(afterRole);
-
-        if (beforeRole != afterRole) {
-            applicationEventPublisher.publishEvent(
-                    new UserRoleChangedEvent(user.getId(), beforeRole, afterRole)
-            );
+        if (beforeRole != request.role()) {
+            inMemoryAuthTokenStore.revokeAllByUserId(user.getId());
         }
 
         return UserDto.from(user);
@@ -144,7 +139,12 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new WeatherFitException(ErrorCode.USER_NOT_FOUND));
 
+        boolean wasLocked = user.isLocked();
         user.updateLockState(request.locked());
+
+        if (!wasLocked && request.locked()) {
+            inMemoryAuthTokenStore.revokeAllByUserId(user.getId());
+        }
 
         return UserDto.from(user);
     }
@@ -218,7 +218,9 @@ public class UserServiceImpl implements UserService {
 
     @EventListener(ApplicationReadyEvent.class)
     protected void initializeAdmin() {
-        if(userRepository.existsUserByRole(UserRole.ADMIN)) {return;}
+        if (userRepository.existsUserByRole(UserRole.ADMIN)) {
+            return;
+        }
 
         User user = User.create(
                 "admin@admin.com",
@@ -228,7 +230,10 @@ public class UserServiceImpl implements UserService {
         );
 
         User savedUser = userRepository.save(user);
-        Profile profile = Profile.create(savedUser, null, null,
+        Profile profile = Profile.create(
+                savedUser,
+                null,
+                null,
                 Location.create(
                         37.2911,
                         127.0089,
@@ -236,7 +241,9 @@ public class UserServiceImpl implements UserService {
                         37,
                         List.of("경기도", "로날도", "수원")
                 ),
-                null, null);
+                null,
+                null
+        );
         profileRepository.save(profile);
     }
 }

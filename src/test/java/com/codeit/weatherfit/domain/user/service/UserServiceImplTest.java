@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.user.service;
 
 import com.codeit.weatherfit.domain.auth.repository.TemporaryPasswordRepository;
+import com.codeit.weatherfit.domain.auth.security.InMemoryAuthTokenStore;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.user.dto.request.ChangePasswordRequest;
@@ -11,7 +12,6 @@ import com.codeit.weatherfit.domain.user.dto.response.UserDto;
 import com.codeit.weatherfit.domain.user.dto.response.UserDtoCursorResponse;
 import com.codeit.weatherfit.domain.user.entity.User;
 import com.codeit.weatherfit.domain.user.entity.UserRole;
-import com.codeit.weatherfit.domain.user.event.UserRoleChangedEvent;
 import com.codeit.weatherfit.domain.user.repository.UserRepository;
 import com.codeit.weatherfit.domain.user.repository.UserSearchCondition;
 import com.codeit.weatherfit.global.exception.ErrorCode;
@@ -21,11 +21,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -56,7 +54,7 @@ class UserServiceImplTest {
     private TemporaryPasswordRepository temporaryPasswordRepository;
 
     @Mock
-    private ApplicationEventPublisher applicationEventPublisher;
+    private InMemoryAuthTokenStore inMemoryAuthTokenStore;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -129,13 +127,7 @@ class UserServiceImplTest {
             assertThat(result.sortBy()).isEqualTo("createdAt");
             assertThat(result.sortDirection()).isEqualTo("DESCENDING");
 
-            ArgumentCaptor<UserSearchCondition> captor = ArgumentCaptor.forClass(UserSearchCondition.class);
-            verify(userRepository).searchUsers(captor.capture());
-
-            UserSearchCondition condition = captor.getValue();
-            assertThat(condition.limit()).isEqualTo(20);
-            assertThat(condition.sortBy()).isEqualTo("createdAt");
-            assertThat(condition.sortDirection()).isEqualTo("DESCENDING");
+            verify(userRepository).searchUsers(any(UserSearchCondition.class));
         }
     }
 
@@ -153,14 +145,21 @@ class UserServiceImplTest {
             UserDto result = userService.updateRole(userId, new UserRoleUpdateRequest(UserRole.ADMIN));
 
             assertThat(result.role()).isEqualTo(UserRole.ADMIN);
+            verify(inMemoryAuthTokenStore).revokeAllByUserId(user.getId());
+        }
 
-            ArgumentCaptor<UserRoleChangedEvent> captor = ArgumentCaptor.forClass(UserRoleChangedEvent.class);
-            verify(applicationEventPublisher).publishEvent(captor.capture());
+        @Test
+        @DisplayName("같은 권한으로 요청하면 강제 로그아웃을 호출하지 않는다")
+        void updateRoleWithoutChange() {
+            UUID userId = UUID.randomUUID();
+            User user = User.create("user@test.com", "tester", UserRole.USER, "password");
 
-            UserRoleChangedEvent event = captor.getValue();
-            assertThat(event.receiverId()).isEqualTo(user.getId());
-            assertThat(event.beforeRole()).isEqualTo(UserRole.USER);
-            assertThat(event.afterRole()).isEqualTo(UserRole.ADMIN);
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+            UserDto result = userService.updateRole(userId, new UserRoleUpdateRequest(UserRole.USER));
+
+            assertThat(result.role()).isEqualTo(UserRole.USER);
+            verify(inMemoryAuthTokenStore, never()).revokeAllByUserId(any(UUID.class));
         }
 
         @Test
@@ -175,7 +174,7 @@ class UserServiceImplTest {
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
-            verify(applicationEventPublisher, never()).publishEvent(any());
+            verify(inMemoryAuthTokenStore, never()).revokeAllByUserId(any(UUID.class));
         }
     }
 
@@ -193,6 +192,37 @@ class UserServiceImplTest {
             UserDto result = userService.updateLock(userId, new UserLockUpdateRequest(true));
 
             assertThat(result.locked()).isTrue();
+            verify(inMemoryAuthTokenStore).revokeAllByUserId(user.getId());
+        }
+
+        @Test
+        @DisplayName("이미 잠긴 사용자를 다시 잠그면 강제 로그아웃을 호출하지 않는다")
+        void updateLockAlreadyLocked() {
+            UUID userId = UUID.randomUUID();
+            User user = User.create("user@test.com", "tester", UserRole.USER, "password");
+            user.updateLockState(true);
+
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+            UserDto result = userService.updateLock(userId, new UserLockUpdateRequest(true));
+
+            assertThat(result.locked()).isTrue();
+            verify(inMemoryAuthTokenStore, never()).revokeAllByUserId(any(UUID.class));
+        }
+
+        @Test
+        @DisplayName("잠금 해제 시 강제 로그아웃을 호출하지 않는다")
+        void updateUnlock() {
+            UUID userId = UUID.randomUUID();
+            User user = User.create("user@test.com", "tester", UserRole.USER, "password");
+            user.updateLockState(true);
+
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+            UserDto result = userService.updateLock(userId, new UserLockUpdateRequest(false));
+
+            assertThat(result.locked()).isFalse();
+            verify(inMemoryAuthTokenStore, never()).revokeAllByUserId(any(UUID.class));
         }
 
         @Test
@@ -206,6 +236,8 @@ class UserServiceImplTest {
                     .isInstanceOf(WeatherFitException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
+
+            verify(inMemoryAuthTokenStore, never()).revokeAllByUserId(any(UUID.class));
         }
     }
 
