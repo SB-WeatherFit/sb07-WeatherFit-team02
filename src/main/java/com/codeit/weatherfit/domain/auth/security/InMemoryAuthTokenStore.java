@@ -41,6 +41,18 @@ public class InMemoryAuthTokenStore {
         }
     }
 
+    public void revokeAllByUserId(UUID userId) {
+        String currentAccessToken = currentAccessTokenByUserId.remove(userId);
+        if (currentAccessToken != null && !currentAccessToken.isBlank()) {
+            revokedAccessTokens.put(currentAccessToken, true);
+        }
+
+        String currentRefreshToken = currentRefreshTokenByUserId.remove(userId);
+        if (currentRefreshToken != null && !currentRefreshToken.isBlank()) {
+            activeRefreshTokenToUserId.remove(currentRefreshToken);
+        }
+    }
+
     public UUID findUserIdByRefreshToken(String refreshToken) {
         return activeRefreshTokenToUserId.get(refreshToken);
     }

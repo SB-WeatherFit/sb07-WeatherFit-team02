@@ -54,6 +54,8 @@ public enum ErrorCode {
     UNSUPPORTED_SOCIAL_PROVIDER(HttpStatus.BAD_REQUEST, "지원하지 않는 소셜 제공자입니다.", "A-007"),
     SOCIAL_SIGN_IN_FAILED(HttpStatus.UNAUTHORIZED, "소셜 로그인에 실패했습니다.", "A-008"),
     SOCIAL_ACCOUNT_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "동일한 이메일의 기존 계정이 있어 소셜 로그인을 진행할 수 없습니다.", "A-009"),
+    AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.", "A-010"),
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다.", "A-011"),
     // Global
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "CM-001"),
 
