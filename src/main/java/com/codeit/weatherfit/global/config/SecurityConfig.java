@@ -2,6 +2,8 @@ package com.codeit.weatherfit.global.config;
 
 import com.codeit.weatherfit.domain.auth.security.JwtAuthenticationFilter;
 import com.codeit.weatherfit.domain.auth.security.OAuth2AuthenticationSuccessHandler;
+import com.codeit.weatherfit.global.security.CustomAccessDeniedHandler;
+import com.codeit.weatherfit.global.security.CustomAuthenticationEntryPoint;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,8 @@ import java.util.function.Supplier;
 public class SecurityConfig {
 
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
     @Bean
     public SecurityFilterChain filterChain(
@@ -80,6 +84,10 @@ public class SecurityConfig {
 
                     authorize.anyRequest().authenticated();
                 })
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler)
+                )
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable)
                 )

@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.auth.controller;
 
+import com.codeit.weatherfit.domain.auth.controller.docs.AuthControllerDocs;
 import com.codeit.weatherfit.domain.auth.dto.request.ResetPasswordRequest;
 import com.codeit.weatherfit.domain.auth.dto.request.SignInRequest;
 import com.codeit.weatherfit.domain.auth.dto.response.JwtDto;
@@ -17,7 +18,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
-public class AuthController {
+public class AuthController implements AuthControllerDocs {
 
     private static final String REFRESH_TOKEN_COOKIE_NAME = "REFRESH_TOKEN";
 

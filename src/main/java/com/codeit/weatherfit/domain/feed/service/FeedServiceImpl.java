@@ -37,6 +37,7 @@ import com.codeit.weatherfit.domain.weather.entity.Weather;
 import com.codeit.weatherfit.domain.weather.exception.WeatherNotFoundException;
 import com.codeit.weatherfit.domain.weather.repository.WeatherRepository;
 import com.codeit.weatherfit.global.exception.ErrorCode;
+import com.codeit.weatherfit.global.exception.WeatherFitException;
 import com.codeit.weatherfit.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -74,12 +75,14 @@ public class FeedServiceImpl implements FeedService {
     @Override
     @Transactional
     public FeedDto create(FeedCreateRequest request, WeatherFitUserDetails userDetails) {
-        log.info("피드 생성 요청: authorId={}, weatherId={}, clothesCount={}", request.authorId(), request.weatherId(), request.clothesIds().size());
-        if (!request.authorId().equals(userDetails.getUserId())) {
-            log.warn("피드 생성 권한 불일치: requestUserId={}, loginUserId={}", request.authorId(), userDetails.getUserId());
-            throw new RuntimeException("Bad request"); // 추후 인증 에러로 수정
+        UUID requestedId = request.authorId();
+        UUID loginUserId = userDetails.getUserId();
+        log.info("피드 생성 요청: authorId={}, weatherId={}, clothesCount={}", requestedId, request.weatherId(), request.clothesIds().size());
+        if (!requestedId.equals(loginUserId)) {
+            log.warn("피드 생성 권한 불일치: requestUserId={}, loginUserId={}", requestedId, loginUserId);
+            throw new FeedForbiddenException(requestedId, loginUserId);
         }
-        User author = getUserOrThrow(request.authorId());
+        User author = getUserOrThrow(requestedId);
         Weather weather = getWeatherOrThrow(request.weatherId());
         List<Clothes> clothes = getClothesOrThrow(request.clothesIds());
 
@@ -161,9 +164,11 @@ public class FeedServiceImpl implements FeedService {
     public FeedDto update(UUID id, FeedUpdateRequest request, WeatherFitUserDetails userDetails) {
         log.info("피드 수정 요청: feedId={}", id);
         Feed feed = getFeedOrThrow(id);
-        if (!userDetails.getUserId().equals(feed.getAuthor().getId())) {
-            log.warn("피드 수정 권한 불일치: feedId={}, authorId={}, loginUserId={}", id, feed.getAuthor().getId(), userDetails.getUserId());
-            throw new RuntimeException("Bad Request"); // 추후 인증 오류로 변경
+        UUID authorId = feed.getAuthor().getId();
+        UUID loginUserId = userDetails.getUserId();
+        if (!loginUserId.equals(authorId)) {
+            log.warn("피드 수정 권한 불일치: feedId={}, authorId={}, loginUserId={}", id, authorId, loginUserId);
+            throw new FeedForbiddenException(authorId, loginUserId); // 추후 인증 오류로 변경
         }
         feed.update(request.content());
         eventPublisher.publishEvent(FeedUpdatedEvent.contentUpdated(feed.getId(), request.content()));
@@ -175,17 +180,20 @@ public class FeedServiceImpl implements FeedService {
     @Transactional
     @CacheEvict(value = "feedCommentCount", key = "#id.toString()")
     public CommentDto createComment(UUID id, CommentCreateRequest request, WeatherFitUserDetails userDetails) {
-        log.info("댓글 생성 요청: authorId={}, feedId={}", request.authorId(), request.feedId());
-        if (!id.equals(request.feedId())) {
-            log.warn("댓글 생성 feedId 불일치: pathId={}, requestFeedId={}", id, request.feedId());
+        UUID authorId = request.authorId();
+        UUID feedId = request.feedId();
+        UUID loginUserId = userDetails.getUserId();
+        log.info("댓글 생성 요청: authorId={}, feedId={}", authorId, feedId);
+        if (!id.equals(feedId)) {
+            log.warn("댓글 생성 feedId 불일치: pathId={}, requestFeedId={}", id, feedId);
             throw new FeedBadRequestException();
         }
-        if (!userDetails.getUserId().equals(request.authorId())) {
-            log.warn("댓글 생성 권한 불일치: requestAuthorId={}, loginUserId={}", request.authorId(), userDetails.getUserId());
-            throw new RuntimeException("Bad Request"); // TODO 추후 인증 오류로 변경
+        if (!loginUserId.equals(authorId)) {
+            log.warn("댓글 생성 권한 불일치: requestAuthorId={}, loginUserId={}", authorId, loginUserId);
+            throw new FeedForbiddenException(authorId, loginUserId);
         }
-        User commenter = getUserOrThrow(request.authorId());
-        Feed feed = getFeedOrThrow(request.feedId());
+        User commenter = getUserOrThrow(authorId);
+        Feed feed = getFeedOrThrow(feedId);
         Comment comment = Comment.create(
                 commenter,
                 feed,
@@ -213,13 +221,16 @@ public class FeedServiceImpl implements FeedService {
     public void deleteComment(UUID id, UUID commentId, WeatherFitUserDetails userDetails) {
         log.info("댓글 삭제 요청: feedId={}, commentId={}", id, commentId);
         Comment comment = getCommentOrThrow(commentId);
-        if (!id.equals(comment.getFeed().getId())) {
-            log.warn("댓글 삭제 feedId 불일치: pathFeedId={}, commentFeedId={}", id, comment.getFeed().getId());
+        UUID feedId = comment.getFeed().getId();
+        UUID commentAuthorId = comment.getAuthor().getId();
+        UUID loginUserId = userDetails.getUserId();
+        if (!id.equals(feedId)) {
+            log.warn("댓글 삭제 feedId 불일치: pathFeedId={}, commentFeedId={}", id, feedId);
             throw new FeedBadRequestException("해당 feed의 comment가 아닙니다.");
         }
-        if (!comment.getAuthor().getId().equals(userDetails.getUserId())) {
-            log.warn("댓글 삭제 권한 불일치: commentAuthorId={}, loginUserId={}", comment.getAuthor().getId(), userDetails.getUserId());
-            throw new RuntimeException("댓글을 작성한 사람만 삭제할 수 있습니다."); // TODO 추후 인증 에러로 바꿈
+        if (!commentAuthorId.equals(loginUserId)) {
+            log.warn("댓글 삭제 권한 불일치: commentAuthorId={}, loginUserId={}", commentAuthorId, loginUserId);
+            throw new FeedForbiddenException(commentAuthorId, loginUserId);
         }
         commentRepository.deleteById(commentId);
         log.info("댓글 삭제 완료: commentId={}", commentId);
@@ -253,9 +264,11 @@ public class FeedServiceImpl implements FeedService {
     public void delete(UUID id, WeatherFitUserDetails userDetails) {
         log.info("피드 삭제 요청: feedId={}", id);
         Feed feed = getFeedOrThrow(id);
-        if (!userDetails.getUserId().equals(feed.getAuthor().getId())) {
-            log.warn("피드 삭제 권한 불일치: feedId={}, authorId={}, loginUserId={}", id, feed.getAuthor().getId(), userDetails.getUserId());
-            throw new RuntimeException("Bad Request"); // 추후 인증 오류로 수정
+        UUID feedAuthorId = feed.getAuthor().getId();
+        UUID loginUserId = userDetails.getUserId();
+        if (!loginUserId.equals(feedAuthorId)) {
+            log.warn("피드 삭제 권한 불일치: feedId={}, authorId={}, loginUserId={}", id, feedAuthorId, loginUserId);
+            throw new FeedForbiddenException(feedAuthorId, loginUserId);
         }
         feedClothesRepository.deleteByFeed(feed);
         commentRepository.deleteByFeed(feed);
@@ -351,8 +364,8 @@ public class FeedServiceImpl implements FeedService {
         return userRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.warn("유저 조회 실패: authorId={}", userId);
-                    return new IllegalArgumentException("존재하지 않는 id입니다.");
-                }); // TODO 커스텀 에러로 수정
+                    return new WeatherFitException(ErrorCode.USER_NOT_FOUND);
+                });
     }
 
     private Comment getCommentOrThrow(UUID commentId) {

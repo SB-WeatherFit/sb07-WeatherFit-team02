@@ -10,13 +10,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Encoding;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,25 +39,8 @@ public interface ClothesControllerDocs {
             @ApiResponse(responseCode = "415", description = "지원하지 않는 Content-Type")
     })
     ResponseEntity<ClothesDto> create(
-            @RequestBody(
-                    required = true,
-                    description = "옷 생성 요청 데이터와 이미지 파일",
-                    content = @Content(
-                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-                            schema = @Schema(type = "object"),
-                            encoding = {
-                                    @Encoding(name = "request", contentType = MediaType.APPLICATION_JSON_VALUE),
-                                    @Encoding(name = "image", contentType = "image/*")
-                            }
-                    )
-            )
             ClothesCreateRequest request,
-
-            @Parameter(
-                    description = "업로드할 옷 이미지 파일",
-                    content = @Content(mediaType = "image/*")
-            )
-            MultipartFile image
+            @Parameter(description = "업로드할 옷 이미지 파일") MultipartFile image
     );
 
     @Operation(
@@ -89,26 +69,8 @@ public interface ClothesControllerDocs {
                     example = "123e4567-e89b-12d3-a456-426614174000"
             )
             UUID clothesId,
-
-            @RequestBody(
-                    required = true,
-                    description = "옷 수정 요청 데이터와 이미지 파일",
-                    content = @Content(
-                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
-                            schema = @Schema(type = "object"),
-                            encoding = {
-                                    @Encoding(name = "request", contentType = MediaType.APPLICATION_JSON_VALUE),
-                                    @Encoding(name = "image", contentType = "image/*")
-                            }
-                    )
-            )
             ClothesUpdateRequest request,
-
-            @Parameter(
-                    description = "변경할 옷 이미지 파일",
-                    content = @Content(mediaType = "image/*")
-            )
-            MultipartFile image
+            @Parameter(description = "변경할 옷 이미지 파일") MultipartFile image
     );
 
     @Operation(

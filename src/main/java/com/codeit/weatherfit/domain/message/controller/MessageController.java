@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.message.controller;
 
+import com.codeit.weatherfit.domain.message.controller.docs.MessageControllerDocs;
 import com.codeit.weatherfit.domain.message.dto.request.MessageGetRequest;
 import com.codeit.weatherfit.domain.message.dto.response.MessageCursorResponse;
 import com.codeit.weatherfit.domain.message.service.MessageService;
@@ -15,7 +16,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/direct-messages")
 @RequiredArgsConstructor
-public class MessageController {
+public class MessageController implements MessageControllerDocs {
 
     private final MessageService messageService;
 

@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.feed.controller;
 
 import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
+import com.codeit.weatherfit.domain.feed.controller.docs.FeedControllerDocs;
 import com.codeit.weatherfit.domain.feed.dto.CommentDto;
 import com.codeit.weatherfit.domain.feed.dto.FeedDto;
 import com.codeit.weatherfit.domain.feed.dto.request.*;
@@ -19,7 +20,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/feeds")
-public class FeedController {
+public class FeedController implements FeedControllerDocs {
     private final FeedService feedService;
 
     @GetMapping

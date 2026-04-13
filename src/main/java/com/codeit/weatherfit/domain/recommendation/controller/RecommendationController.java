@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.recommendation.controller;
 
+import com.codeit.weatherfit.domain.recommendation.controller.docs.RecommendationControllerDocs;
 import com.codeit.weatherfit.domain.recommendation.dto.RecommendationDto;
 import com.codeit.weatherfit.domain.recommendation.service.RecommendationService;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/recommendations")
-public class RecommendationController {
+public class RecommendationController implements RecommendationControllerDocs {
 
     private final RecommendationService recommendationService;
 

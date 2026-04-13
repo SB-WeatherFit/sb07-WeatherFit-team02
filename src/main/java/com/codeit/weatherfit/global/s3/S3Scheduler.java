@@ -3,11 +3,14 @@ package com.codeit.weatherfit.global.s3;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
+import com.codeit.weatherfit.global.s3.exception.S3DeleteException;
 import com.codeit.weatherfit.global.s3.properties.S3Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
@@ -63,13 +66,21 @@ public class S3Scheduler {
         List<ObjectIdentifier> objectIds = keys.stream()
                 .map(key -> ObjectIdentifier.builder().key(key).build())
                 .toList();
-        for (int i = 0; i < objectIds.size(); i += 1000) {
-            List<ObjectIdentifier> batch = objectIds.subList(i, Math.min(i + 1000, objectIds.size()));
-            s3Client.deleteObjects(DeleteObjectsRequest.builder()
-                    .bucket(s3Properties.bucket())
-                    .delete(Delete.builder().objects(batch).build())
-                    .build());
-            log.info("배치 삭제 완료: {}건", batch.size());
+        int deletedCount = 0;
+        try {
+            for (int i = 0; i < objectIds.size(); i += 1000) {
+                List<ObjectIdentifier> batch = objectIds.subList(i, Math.min(i + 1000, objectIds.size()));
+                s3Client.deleteObjects(DeleteObjectsRequest.builder()
+                        .bucket(s3Properties.bucket())
+                        .delete(Delete.builder().objects(batch).build())
+                        .build());
+                deletedCount += batch.size();
+                log.info("배치 삭제 완료: {}건 (누적 {}건)", batch.size(), deletedCount);
+            }
+        } catch (AwsServiceException | SdkClientException e) {
+            log.error("배치 삭제 실패. 삭제 완료: {}건 / 전체: {}건 (미삭제: {}건)",
+                    deletedCount, objectIds.size(), objectIds.size() - deletedCount);
+            throw new S3DeleteException("배치 삭제 실패");
         }
         log.info("S3 고아 이미지 정리 완료: 총 {}건 삭제", objectIds.size());
     }
