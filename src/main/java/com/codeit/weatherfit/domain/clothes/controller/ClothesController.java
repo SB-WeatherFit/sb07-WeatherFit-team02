@@ -10,7 +10,6 @@ import com.codeit.weatherfit.domain.clothes.entity.ClothesType;
 import com.codeit.weatherfit.domain.clothes.service.ClothesService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +31,7 @@ public class ClothesController implements ClothesControllerDocs {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ClothesDto> create(
-            @Valid @ParameterObject @ModelAttribute ClothesCreateRequest request,
+            @RequestPart("request") ClothesCreateRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image
     ) {
         ClothesDto created = clothesService.create(request, image);
@@ -42,7 +41,7 @@ public class ClothesController implements ClothesControllerDocs {
     @PatchMapping(path = "/{clothesId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ClothesDto> update(
             @PathVariable UUID clothesId,
-            @Valid @ParameterObject @ModelAttribute ClothesUpdateRequest request,
+            @RequestPart("request") ClothesUpdateRequest request,
             @RequestPart(value = "image", required = false) MultipartFile image
     ) {
         ClothesDto response = clothesService.update(clothesId, request, image);
