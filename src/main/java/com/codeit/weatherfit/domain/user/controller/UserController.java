@@ -10,7 +10,6 @@ import com.codeit.weatherfit.domain.user.dto.response.UserDtoCursorResponse;
 import com.codeit.weatherfit.domain.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +23,7 @@ public class UserController implements UserControllerDocs {
     private final UserService userService;
 
     @PostMapping
-    public UserDto create(@Valid @ParameterObject @ModelAttribute UserCreateRequest request) {
+    public UserDto create(@Valid @RequestBody UserCreateRequest request) {
         return userService.create(request);
     }
 
@@ -54,7 +53,7 @@ public class UserController implements UserControllerDocs {
     @PatchMapping("/{userId}/role")
     public UserDto updateRole(
             @PathVariable UUID userId,
-            @Valid @ParameterObject @ModelAttribute UserRoleUpdateRequest request
+            @Valid @RequestBody UserRoleUpdateRequest request
     ) {
         return userService.updateRole(userId, request);
     }
@@ -62,7 +61,7 @@ public class UserController implements UserControllerDocs {
     @PatchMapping("/{userId}/lock")
     public UserDto updateLock(
             @PathVariable UUID userId,
-            @Valid @ParameterObject @ModelAttribute UserLockUpdateRequest request
+            @Valid @RequestBody UserLockUpdateRequest request
     ) {
         return userService.updateLock(userId, request);
     }
@@ -70,7 +69,7 @@ public class UserController implements UserControllerDocs {
     @PatchMapping("/{userId}/password")
     public ResponseEntity<Void> updatePassword(
             @PathVariable UUID userId,
-            @Valid @ParameterObject @ModelAttribute ChangePasswordRequest request
+            @Valid @RequestBody ChangePasswordRequest request
     ) {
         userService.updatePassword(userId, request);
         return ResponseEntity.noContent().build();

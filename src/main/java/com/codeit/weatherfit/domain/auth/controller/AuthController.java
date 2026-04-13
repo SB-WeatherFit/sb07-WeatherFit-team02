@@ -8,7 +8,6 @@ import com.codeit.weatherfit.domain.auth.service.AuthService;
 import com.codeit.weatherfit.domain.auth.service.AuthTokenResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -64,7 +63,7 @@ public class AuthController implements AuthControllerDocs {
 
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(
-            @Valid @ParameterObject @ModelAttribute ResetPasswordRequest request
+            @Valid @RequestBody ResetPasswordRequest request
     ) {
         authService.resetPassword(request);
         return ResponseEntity.noContent().build();

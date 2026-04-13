@@ -10,7 +10,6 @@ import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
 import com.codeit.weatherfit.domain.feed.service.FeedService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,7 +30,7 @@ public class FeedController implements FeedControllerDocs {
     }
 
     @PostMapping
-    public ResponseEntity<FeedDto> createFeed(@Valid @ParameterObject @ModelAttribute FeedCreateRequest request,
+    public ResponseEntity<FeedDto> createFeed(@RequestBody @Valid FeedCreateRequest request,
                                               @AuthenticationPrincipal WeatherFitUserDetails userDetails){
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 feedService.create(request, userDetails)
@@ -46,7 +45,7 @@ public class FeedController implements FeedControllerDocs {
 
     @PostMapping("/{id}/comments")
     public ResponseEntity<CommentDto> createComment(@PathVariable UUID id,
-                                                    @Valid @ParameterObject @ModelAttribute CommentCreateRequest request,
+                                                    @RequestBody @Valid CommentCreateRequest request,
                                                     @AuthenticationPrincipal WeatherFitUserDetails userDetails) {
         return ResponseEntity.status(HttpStatus.CREATED).body(feedService.createComment(id, request, userDetails));
     }
@@ -76,7 +75,7 @@ public class FeedController implements FeedControllerDocs {
 
     @PatchMapping("/{id}")
     public ResponseEntity<FeedDto> update(@PathVariable UUID id,
-                                          @Valid @ParameterObject @ModelAttribute FeedUpdateRequest request,
+                                          @RequestBody @Valid FeedUpdateRequest request,
                                           @AuthenticationPrincipal WeatherFitUserDetails userDetails) {
         return ResponseEntity.ok(feedService.update(id, request, userDetails));
     }
