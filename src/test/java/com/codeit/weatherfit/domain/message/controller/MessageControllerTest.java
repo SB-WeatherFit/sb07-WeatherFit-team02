@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.message.controller;
 
 import com.codeit.weatherfit.domain.auth.security.WeatherFitUserDetails;
+import com.codeit.weatherfit.domain.feed.repository.search.FeedSearchRepository;
 import com.codeit.weatherfit.domain.message.dto.response.MessageCursorResponse;
 import com.codeit.weatherfit.domain.message.entity.Message;
 import com.codeit.weatherfit.domain.message.repository.MessageRepository;
@@ -46,6 +47,8 @@ class MessageControllerTest {
 
     @Autowired
     MockMvcTester mvcTester;
+    @MockitoBean
+    private FeedSearchRepository feedSearchRepository;
 
     @MockitoBean
     private S3Service s3Service;

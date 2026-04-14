@@ -1,6 +1,6 @@
 package com.codeit.weatherfit.global.config;
 
-import com.codeit.weatherfit.domain.message.service.event.MessageEventListener;
+import com.codeit.weatherfit.domain.feed.repository.search.FeedSearchRepository;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,8 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -21,6 +20,8 @@ class AsyncConfigTest {
 
     @Autowired
     private SimpleAsyncService asyncTestService;
+    @MockitoBean
+    private FeedSearchRepository feedSearchRepository;
 
     @Test
     void async() throws Exception {

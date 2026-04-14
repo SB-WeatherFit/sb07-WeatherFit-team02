@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.message.service;
 
+import com.codeit.weatherfit.domain.feed.repository.search.FeedSearchRepository;
 import com.codeit.weatherfit.domain.message.dto.request.MessageCreateRequest;
 import com.codeit.weatherfit.domain.message.dto.request.MessageGetRequest;
 import com.codeit.weatherfit.domain.message.dto.response.MessageCursorResponse;
@@ -23,8 +24,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 import static com.codeit.weatherfit.domain.message.entity.UserFixture.createUser;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +57,8 @@ class MessageServiceTest {
     private S3Service s3Service;
     @MockitoBean
     private KafkaTemplate<String, MessageCreatedEvent> kafkaTemplate;
+    @MockitoBean
+    private FeedSearchRepository feedSearchRepository;
 
     @BeforeEach
     void setUp() {

@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.message.controller;
 
+import com.codeit.weatherfit.domain.feed.repository.search.FeedSearchRepository;
 import com.codeit.weatherfit.domain.message.dto.request.MessageCreateRequest;
 import com.codeit.weatherfit.domain.message.service.MessageService;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +42,9 @@ class MessageSocketControllerTest {
     private MessageService messageService;
 
     private WebSocketStompClient stompClient;
+
+    @MockitoBean
+    private FeedSearchRepository feedSearchRepository;
 
     @BeforeEach
     void setUp() {

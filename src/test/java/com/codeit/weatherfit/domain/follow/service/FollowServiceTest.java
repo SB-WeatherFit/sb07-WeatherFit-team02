@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.domain.follow.service;
 
 
+import com.codeit.weatherfit.domain.feed.repository.search.FeedSearchRepository;
 import com.codeit.weatherfit.domain.follow.dto.request.FollowCreateRequest;
 import com.codeit.weatherfit.domain.follow.dto.request.FollowerSearchCondition;
 import com.codeit.weatherfit.domain.follow.dto.response.FollowDto;
@@ -51,6 +52,8 @@ class FollowServiceTest {
     private S3Service s3Service;
     @MockitoBean
     private KafkaTemplate<String, MessageCreatedEvent> kafkaTemplate;
+    @MockitoBean
+    private FeedSearchRepository feedSearchRepository;
 
     @BeforeEach
     void setUp() {
