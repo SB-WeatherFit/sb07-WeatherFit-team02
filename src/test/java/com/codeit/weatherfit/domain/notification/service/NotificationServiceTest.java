@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.notification.service;
 
+import com.codeit.weatherfit.domain.feed.repository.search.FeedSearchRepository;
 import com.codeit.weatherfit.domain.message.entity.UserFixture;
 import com.codeit.weatherfit.domain.message.service.event.MessageCreatedEvent;
 import com.codeit.weatherfit.domain.notification.dto.request.NotificationSearchCondition;
@@ -18,12 +19,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
@@ -40,6 +38,8 @@ class NotificationServiceTest {
     EntityManager em;
     @MockitoBean
     private KafkaTemplate<String, MessageCreatedEvent> kafkaTemplate;
+    @MockitoBean
+    private FeedSearchRepository feedSearchRepository;
 
 
     @Test

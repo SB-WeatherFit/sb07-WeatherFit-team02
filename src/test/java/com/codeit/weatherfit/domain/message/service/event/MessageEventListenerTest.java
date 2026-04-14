@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.domain.message.service.event;
 
+import com.codeit.weatherfit.domain.feed.repository.search.FeedSearchRepository;
 import com.codeit.weatherfit.domain.message.dto.DmDto;
 import com.codeit.weatherfit.domain.message.dto.response.MessageUser;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,8 @@ class MessageEventListenerTest {
     ApplicationEventPublisher eventPublisher;
     @MockitoBean
     SimpMessagingTemplate messagingTemplate;
+    @MockitoBean
+    private FeedSearchRepository feedSearchRepository;
 
     @Test
     void send() {
