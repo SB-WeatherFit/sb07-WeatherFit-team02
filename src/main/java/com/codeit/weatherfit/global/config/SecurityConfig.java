@@ -1,6 +1,7 @@
 package com.codeit.weatherfit.global.config;
 
 import com.codeit.weatherfit.domain.auth.security.JwtAuthenticationFilter;
+import com.codeit.weatherfit.domain.auth.security.OAuth2AuthenticationFailureHandler;
 import com.codeit.weatherfit.domain.auth.security.OAuth2AuthenticationSuccessHandler;
 import com.codeit.weatherfit.global.security.CustomAccessDeniedHandler;
 import com.codeit.weatherfit.global.security.CustomAuthenticationEntryPoint;
@@ -31,6 +32,7 @@ import java.util.function.Supplier;
 public class SecurityConfig {
 
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
@@ -52,6 +54,8 @@ public class SecurityConfig {
                             .requestMatchers(
                                     "/",
                                     "/index.html",
+                                    "/login",
+                                    "/error",
                                     "/favicon.ico",
                                     "/assets/**",
                                     "/css/**",
@@ -110,6 +114,7 @@ public class SecurityConfig {
         if (oauth2Enabled) {
             http.oauth2Login(oauth2 -> oauth2
                     .successHandler(oAuth2AuthenticationSuccessHandler)
+                    .failureHandler(oAuth2AuthenticationFailureHandler)
             );
         }
 
