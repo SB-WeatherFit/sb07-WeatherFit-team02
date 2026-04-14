@@ -10,6 +10,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -25,6 +26,7 @@ import java.net.URI;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
     private static final String REFRESH_TOKEN_COOKIE_NAME = "REFRESH_TOKEN";
@@ -42,28 +44,40 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             HttpServletResponse response,
             Authentication authentication
     ) throws IOException, ServletException {
+        log.info("[OAuth2 success handler start] uri={}", request.getRequestURI());
+
         if (!(authentication instanceof OAuth2AuthenticationToken oAuth2AuthenticationToken)) {
+            log.error("[OAuth2 success handler] authentication type invalid: {}", authentication.getClass().getName());
             throw new WeatherFitException(ErrorCode.SOCIAL_SIGN_IN_FAILED);
         }
 
         String registrationId = oAuth2AuthenticationToken.getAuthorizedClientRegistrationId();
+        log.info("[OAuth2 success handler] registrationId={}", registrationId);
+
         SocialProvider socialProvider = parseProvider(registrationId);
 
         Object principal = authentication.getPrincipal();
         if (!(principal instanceof OAuth2User oAuth2User)) {
+            log.error("[OAuth2 success handler] principal type invalid: {}", principal.getClass().getName());
             throw new WeatherFitException(ErrorCode.SOCIAL_SIGN_IN_FAILED);
         }
 
+        log.info("[OAuth2 success handler] attributes={}", oAuth2User.getAttributes());
+
         User user = oAuth2SocialLoginService.loadOrCreateUser(socialProvider, oAuth2User);
+        log.info("[OAuth2 success handler] user loaded. userId={}, email={}", user.getId(), user.getEmail());
 
         if (user.isLocked()) {
+            log.error("[OAuth2 success handler] user locked. userId={}", user.getId());
             throw new WeatherFitException(ErrorCode.SOCIAL_SIGN_IN_FAILED);
         }
 
         String accessToken = jwtTokenProvider.generateAccessToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+        log.info("[OAuth2 success handler] tokens generated. userId={}", user.getId());
 
         inMemoryAuthTokenStore.register(user.getId(), accessToken, refreshToken);
+        log.info("[OAuth2 success handler] tokens registered. userId={}", user.getId());
 
         ResponseCookie refreshTokenCookie = createRefreshTokenCookie(refreshToken);
         response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
@@ -74,6 +88,8 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 .queryParam("accessToken", accessToken)
                 .build(true)
                 .toUri();
+
+        log.info("[OAuth2 success handler] redirectUri={}", redirectUri);
 
         clearOAuth2StateCookies(request, response);
 
