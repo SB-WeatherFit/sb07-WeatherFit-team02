@@ -48,7 +48,9 @@ public class AiConfig {
 
         // 2. 위에서 만든 설정을 사용하는 RestClient.Builder 생성
         RestClient.Builder restClientBuilder = RestClient.builder()
-                .requestFactory(requestFactory);
+                .requestFactory(requestFactory)
+                .defaultHeader("HTTP-Referer", "https://weatherfit.cloud")
+                .defaultHeader("X-Title", "WeatherFit");
         return OpenAiApi.builder()
                 .apiKey(OPENROUTER_API_KEY)
                 .baseUrl(OPENAI_BASE_URL)
