@@ -132,9 +132,6 @@ public class RecommendationServiceImpl implements RecommendationService {
                 )
                 .toList();
 
-        List<String> strings = list.getFirst().attributes().getFirst().selectableValues();
-        System.out.println("strings = " + strings);
-
         return new RecommendationDto(weatherId, userId, list);
     }
 
