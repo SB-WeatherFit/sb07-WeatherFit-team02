@@ -4,6 +4,7 @@ import com.codeit.weatherfit.domain.feed.entity.Feed;
 import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,4 +18,7 @@ public interface FeedClothesRepository extends JpaRepository<FeedClothes, UUID> 
     List<String> findAllImageKeys();
 
     void deleteByFeed(Feed feed);
+
+    @Query("select fc from FeedClothes fc where fc.feed.id in :feedIds")
+    List<FeedClothes> findAllFeedClothesByFeeds(@Param("feedIds") List<UUID> feedIds);
 }

@@ -11,10 +11,7 @@ import com.codeit.weatherfit.domain.feed.dto.Ootd;
 import com.codeit.weatherfit.domain.feed.dto.request.*;
 import com.codeit.weatherfit.domain.feed.dto.response.CommentGetResponse;
 import com.codeit.weatherfit.domain.feed.dto.response.FeedGetResponse;
-import com.codeit.weatherfit.domain.feed.entity.Comment;
-import com.codeit.weatherfit.domain.feed.entity.Feed;
-import com.codeit.weatherfit.domain.feed.entity.FeedClothes;
-import com.codeit.weatherfit.domain.feed.entity.FeedLike;
+import com.codeit.weatherfit.domain.feed.entity.*;
 import com.codeit.weatherfit.domain.feed.event.FeedCreatedEvent;
 import com.codeit.weatherfit.domain.feed.event.FeedDeletedEvent;
 import com.codeit.weatherfit.domain.feed.event.FeedUpdatedEvent;
@@ -23,7 +20,6 @@ import com.codeit.weatherfit.domain.feed.repository.CommentRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedClothesRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedLikeRepository;
 import com.codeit.weatherfit.domain.feed.repository.FeedRepository;
-import com.codeit.weatherfit.domain.feed.repository.search.FeedSearchRepository;
 import com.codeit.weatherfit.domain.feed.service.search.FeedSearchService;
 import com.codeit.weatherfit.domain.follow.entity.Follow;
 import com.codeit.weatherfit.domain.follow.repository.FollowRepository;
@@ -46,10 +42,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -70,7 +64,6 @@ public class FeedServiceImpl implements FeedService {
     private final FollowRepository followRepository;
     private final ClothesAttributeRepository clothesAttributeRepository;
     private final FeedSearchService feedSearchService;
-    private final FeedSearchRepository feedSearchRepository;
 
     @Override
     @Transactional
@@ -147,9 +140,7 @@ public class FeedServiceImpl implements FeedService {
         boolean hasNext = lastFeed != null;
         log.info("피드 커서 조회 완료: count={}, hasNext={}", feeds.size(), hasNext);
         return new FeedGetResponse(
-                feeds.stream()
-                        .map(f -> this.toFeedDto(f, loginUser))
-                        .toList(),
+                toFeedDtos(feeds, loginUser),
                 hasNext ? lastFeed.getCreatedAt() : null,
                 hasNext ? lastFeed.getId() : null,
                 hasNext,
@@ -320,18 +311,56 @@ public class FeedServiceImpl implements FeedService {
     }
 
     private FeedDto toFeedDto(Feed feed, User loginUser) {
-        return FeedDto.from(
-                feed,
-                feedClothesRepository.findAllByFeed(feed).stream()
-                        .map(FeedClothes::getClothesSnapshot)
-                        .map(cs -> Ootd.from(
-                                cs,
-                                cs.imageKey() == null? null : s3Service.getUrl(cs.imageKey())
-                        )).toList(),
-                feedLikeRepository.countByFeed(feed),
-                commentRepository.countByFeed(feed),
-                feedLikeRepository.existsByFeedAndLikedUser(feed, loginUser)
-        );
+        return toFeedDtos(List.of(feed), loginUser).getFirst();
+    }
+
+    private List<FeedDto> toFeedDtos(List<Feed> feeds, User loginUser) {
+        if(feeds.isEmpty()) return List.of();
+
+        List<UUID> feedIds = feeds.stream().map(Feed::getId).toList();
+        Map<UUID, List<ClothesSnapshot>> feedMap = loadSnapshotMap(feedIds);
+        Map<UUID, Long> likeMap = loadLikeCountMap(feedIds);
+        Map<UUID, Long> commentMap = loadCommentCountMap(feedIds);
+        Set<UUID> likedFeedSet = feedLikeRepository.findLikedFeedIds(feedIds, loginUser);
+
+        return feeds.stream()
+                .map(feed -> FeedDto.from(
+                        feed,
+                        toOotds(feedMap.getOrDefault(feed.getId(), List.of())),
+                        likeMap.getOrDefault(feed.getId(), 0L),
+                        commentMap.getOrDefault(feed.getId(), 0L),
+                        likedFeedSet.contains(feed.getId())
+                )).toList();
+    }
+
+    private List<Ootd> toOotds(List<ClothesSnapshot> clothesSnapshots) {
+        return clothesSnapshots.stream()
+                .map(cs -> cs.imageKey() == null? null : Ootd.from(cs, s3Service.getUrl(cs.imageKey())))
+                .toList();
+    }
+
+    private Map<UUID, Long> loadCommentCountMap(List<UUID> feedIds) {
+        return commentRepository.countByFeedIn(feedIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (UUID) row[0],
+                        row -> (Long) row[1]
+                ));
+    }
+
+    private Map<UUID, Long> loadLikeCountMap(List<UUID> feedIds) {
+        return feedLikeRepository.countByFeedIn(feedIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (UUID) row[0],
+                        row -> (Long) row[1]
+                ));
+    }
+
+    private Map<UUID, List<ClothesSnapshot>> loadSnapshotMap(List<UUID> feedIds) {
+        return feedClothesRepository.findAllFeedClothesByFeeds(feedIds).stream()
+                .collect(Collectors.groupingBy(
+                        fc -> fc.getFeed().getId(),
+                        Collectors.mapping(FeedClothes::getClothesSnapshot, Collectors.toList())
+                ));
     }
 
     private Feed getFeedOrThrow(UUID id) {

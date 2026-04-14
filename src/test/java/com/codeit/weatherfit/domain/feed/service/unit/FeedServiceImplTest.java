@@ -40,9 +40,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -97,8 +95,6 @@ class FeedServiceImplTest {
     @Mock
     com.codeit.weatherfit.domain.feed.service.search.FeedSearchService feedSearchService;
 
-    @Mock
-    com.codeit.weatherfit.domain.feed.repository.search.FeedSearchRepository feedSearchRepository;
 
     @Nested
     @DisplayName("생성")
@@ -124,7 +120,7 @@ class FeedServiceImplTest {
                     .thenReturn(List.of("옵션1"));
             when(followRepository.findAllByFollowee(any(User.class)))
                     .thenReturn(List.of());
-            stubToFeedDto();
+            stubToFeedDtos();
 
             // when
             feedService.create(request, userDetails);
@@ -216,7 +212,7 @@ class FeedServiceImplTest {
             String newContent = "새로바뀝";
             when(feedRepository.findById(any(UUID.class)))
                     .thenReturn(Optional.of(feed));
-            stubToFeedDto();
+            stubToFeedDtos();
             FeedUpdateRequest feedUpdateRequest = new FeedUpdateRequest(newContent);
 
             // when
@@ -269,7 +265,7 @@ class FeedServiceImplTest {
             when(feedRepository.findWithCursor(request)).thenReturn(feeds);
             when(userRepository.findById(loginUser.getId()))
                     .thenReturn(Optional.of(loginUser));
-            stubToFeedDto();
+            stubToFeedDtos();
 
             // when
             FeedGetResponse response = feedService.getFeedsByCursor(request, userDetails);
@@ -301,7 +297,7 @@ class FeedServiceImplTest {
             when(feedRepository.findWithCursor(request)).thenReturn(feeds);
             when(userRepository.findById(loginUser.getId()))
                     .thenReturn(Optional.of(loginUser));
-            stubToFeedDto();
+            stubToFeedDtos();
 
             // when
             FeedGetResponse response = feedService.getFeedsByCursor(request, userDetails);
@@ -771,17 +767,15 @@ class FeedServiceImplTest {
         }
     }
 
-    private void stubToFeedDto() {
-        when(feedClothesRepository.findAllByFeed(any(Feed.class)))
-                .thenReturn(Instancio.createList(FeedClothes.class));
-        when(feedLikeRepository.countByFeed(any(Feed.class)))
-                .thenReturn(0L);
-        when(commentRepository.countByFeed(any(Feed.class)))
-                .thenReturn(0L);
-        when(feedLikeRepository.existsByFeedAndLikedUser(any(Feed.class), any(User.class)))
-                .thenReturn(false);
-        when(s3Service.getUrl(any()))
-                .thenReturn("http://localhost:8080/image/1234567890");
+    private void stubToFeedDtos() {
+        when(feedClothesRepository.findAllFeedClothesByFeeds(anyList()))
+                .thenReturn(List.of());
+        when(feedLikeRepository.countByFeedIn(anyList()))
+                .thenReturn(List.of());
+        when(commentRepository.countByFeedIn(anyList()))
+                .thenReturn(List.of());
+        when(feedLikeRepository.findLikedFeedIds(anyList(), any(User.class)))
+                .thenReturn(new HashSet<>());
     }
 
 }
