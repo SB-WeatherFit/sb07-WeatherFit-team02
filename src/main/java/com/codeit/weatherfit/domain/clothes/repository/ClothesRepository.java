@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,6 +18,11 @@ public interface ClothesRepository extends JpaRepository<Clothes, UUID>, Clothes
             UUID ownerId,
             Pageable pageable
     );
+
+    @Query("select c from Clothes c " +
+            " join fetch c.owner" +
+            " where c.id = :clothesId")
+    Optional<Clothes> findWithOwnerById(@Param("clothesId") UUID clothesId);
 
     List<Clothes> findByOwnerId(UUID ownerId);
 
