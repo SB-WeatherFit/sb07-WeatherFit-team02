@@ -41,6 +41,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 //    implementation 'com.fasterxml.jackson.core:jackson-databind'
 
+    // redis rock
+
+    implementation "net.javacrumbs.shedlock:shedlock-spring:5.10.0"
+    implementation "net.javacrumbs.shedlock:shedlock-provider-redis-spring:5.10.0"
+
     // JJWT
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
     //kafka
