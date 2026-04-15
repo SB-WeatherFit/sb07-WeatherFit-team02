@@ -35,6 +35,9 @@ public class AsyncConfig {
     @Bean(name = "weatherUpdateTaskExecutor")
     public Executor weatherUpdateTaskExecutor() {return createExecutor("weather-update-", 20, 40, 500);}
 
+
+    @Bean(name = "weatherNotificationExecutor")
+    public Executor weatherNotificationExecutor() {return createExecutor("weather-notification-", 20, 40, 500);}
     @Bean(name = "weatherDeleteTaskExecutor")
     public Executor weatherDeleteTaskExecutor() {
         return createExecutor("async-", 10, 20, 100);

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 
 public interface WeatherRepositoryCustom {
@@ -17,4 +18,6 @@ public interface WeatherRepositoryCustom {
     void deleteOldForecast(double longitude, double latitude, Instant forecastAt);
     void deleteOlderThen(Instant forecastAt);
     List<Weather> getWeatherByLocationAndForecastAt(double longitude, double latitude, Instant forecastedAt);
+    List<UUID> getTemperatureNotificationTarget();
+    List<UUID> getHumidityNotificationTarget();
 }

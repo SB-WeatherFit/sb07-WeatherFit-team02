@@ -17,23 +17,6 @@ import java.time.temporal.ChronoUnit;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Weather extends BaseEntity {
 
-//    @Column(name="forecast_at")
-//    private Instant forecastedAt;
-//    private Instant forecastAt;
-//    private double latitude;
-//    private double longitude;
-//    private AsWord asWord;
-//    private double amount;
-//    private double comparedToDayBefore;
-//    private double max;
-//    private double min;
-//    private double probability;
-//    private double speed;
-//    private double temperatureComparedToDayBefore;
-//    private double temperatureCurrent;
-//    private double type;
-//    private String address;
-
     @Column(name = "forecasted_at")
     private Instant forecastedAt;
 
