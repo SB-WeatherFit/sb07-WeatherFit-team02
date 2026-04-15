@@ -22,7 +22,7 @@ public class WeatherNotificationConfig {
 
     @Bean
     public Job weatherNotificationJob() {
-        return new JobBuilder(JobStatus.WEATHER_DELETE.getJobName(),jobRepository)
+        return new JobBuilder(JobStatus.WEATHER_NOTIFICATION.getJobName(),jobRepository)
                 .start(weatherNotificationStep())
                 .build();
     }
