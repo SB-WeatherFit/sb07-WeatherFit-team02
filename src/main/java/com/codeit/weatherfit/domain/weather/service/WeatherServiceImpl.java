@@ -41,7 +41,7 @@ public class WeatherServiceImpl implements WeatherService {
 
 
     @Override
-//    @Cacheable(value = "weathers", key = "#request.latitude() +':'+ #request.longitude")
+    @Cacheable(value = "weathers", key = "#request.latitude() +':'+ #request.longitude")
     public List<WeatherResponse> create(WeatherRequest request) {
         Instant time = Instant.now();
         KakaoLocationResponse kaKaoResponse = locationApiCallService.getKaKaoResponse(request);
