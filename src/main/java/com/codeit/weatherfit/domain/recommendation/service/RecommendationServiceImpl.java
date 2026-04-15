@@ -2,10 +2,14 @@ package com.codeit.weatherfit.domain.recommendation.service;
 
 import com.codeit.weatherfit.domain.clothes.entity.Clothes;
 import com.codeit.weatherfit.domain.clothes.entity.ClothesType;
+import com.codeit.weatherfit.domain.clothes.entity.SelectableValue;
+import com.codeit.weatherfit.domain.clothes.repository.ClothesAttributeRepository;
 import com.codeit.weatherfit.domain.clothes.repository.ClothesRepository;
+import com.codeit.weatherfit.domain.clothes.repository.SelectableValueRepository;
 import com.codeit.weatherfit.domain.profile.entity.Profile;
 import com.codeit.weatherfit.domain.profile.repository.ProfileRepository;
 import com.codeit.weatherfit.domain.recommendation.ai.AiClothesRecommender;
+import com.codeit.weatherfit.domain.recommendation.dto.AttributesDto;
 import com.codeit.weatherfit.domain.recommendation.dto.RecommendationDto;
 import com.codeit.weatherfit.domain.recommendation.dto.RecommendedClothes;
 import com.codeit.weatherfit.domain.weather.entity.Weather;
@@ -31,6 +35,9 @@ public class RecommendationServiceImpl implements RecommendationService {
     private final S3Service s3Service;
     private final RedisTemplate<String, Object> redisTemplate;
     private final AiClothesRecommender aiClothesRecommender;
+    //    private final ClothesAttributeTypeRepository clothesAttributeTypeRepository;
+    private final ClothesAttributeRepository clothesAttributeRepository;
+    private final SelectableValueRepository selectableValueRepository;
 
     @Override
     public RecommendationDto getRecommendations(UUID weatherId, UUID userId) {
@@ -67,7 +74,6 @@ public class RecommendationServiceImpl implements RecommendationService {
             }
         }
 
-
         List<RecommendedClothes> list = clothesRepository.findAllByIds(result)
                 .stream()
                 .map(clothe -> new RecommendedClothes(
@@ -75,7 +81,13 @@ public class RecommendationServiceImpl implements RecommendationService {
                                 clothe.getName(),
                                 s3Service.getUrl(clothe.getImageKey()),
                                 clothe.getType(),
-                                List.of()
+                                clothesAttributeRepository.findAllByClothesId(clothe.getId()).stream().map(attribute ->
+                                        AttributesDto.from(attribute,
+                                                selectableValueRepository.findByClothesAttributeTypeId(attribute.getOption().getClothesAttributeType().getId())
+                                                        .stream()
+                                                        .map(SelectableValue::getOption)
+                                                        .toList()
+                                        )).toList()
                         )
                 )
                 .toList();
@@ -109,7 +121,13 @@ public class RecommendationServiceImpl implements RecommendationService {
                                 clothe.getName(),
                                 s3Service.getUrl(clothe.getImageKey()),
                                 clothe.getType(),
-                                List.of()
+                        clothesAttributeRepository.findAllByClothesId(clothe.getId()).stream().map(attribute ->
+                                AttributesDto.from(attribute,
+                                        selectableValueRepository.findByClothesAttributeTypeId(attribute.getOption().getClothesAttributeType().getId())
+                                                .stream()
+                                                .map(SelectableValue::getOption)
+                                                .toList()
+                                )).toList()
                         )
                 )
                 .toList();

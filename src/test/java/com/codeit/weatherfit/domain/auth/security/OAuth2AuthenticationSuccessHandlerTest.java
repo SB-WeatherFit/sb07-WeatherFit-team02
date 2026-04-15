@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,12 +23,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class OAuth2AuthenticationSuccessHandlerTest {
@@ -42,6 +42,9 @@ class OAuth2AuthenticationSuccessHandlerTest {
 
     @Mock
     private InMemoryAuthTokenStore inMemoryAuthTokenStore;
+
+    @Mock
+    private HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
     @Mock
     private HttpServletRequest request;
@@ -87,6 +90,8 @@ class OAuth2AuthenticationSuccessHandlerTest {
         verify(response).addHeader(eq("Set-Cookie"), contains("REFRESH_TOKEN="));
         verify(response).sendRedirect(contains("socialLogin=true"));
         verify(response).sendRedirect(contains("accessToken=access-token"));
+        verify(httpCookieOAuth2AuthorizationRequestRepository)
+                .removeAuthorizationRequestCookies(request, response);
     }
 
     @Test
@@ -123,6 +128,8 @@ class OAuth2AuthenticationSuccessHandlerTest {
         verify(response).addHeader(eq("Set-Cookie"), contains("REFRESH_TOKEN="));
         verify(response).sendRedirect(contains("socialLogin=true"));
         verify(response).sendRedirect(contains("accessToken=access-token"));
+        verify(httpCookieOAuth2AuthorizationRequestRepository)
+                .removeAuthorizationRequestCookies(request, response);
     }
 
     @Test

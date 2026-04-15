@@ -4,7 +4,8 @@ public enum JobStatus {
 
     WEATHER_UPDATE("weatherUpdateJob","weatherUpdateStep"),
     WEATHER_DELETE("weatherDeleteJob","weatherDeleteStep"),
-    LOG_UPLOAD("logUploadJob","logUploadStep");
+    LOG_UPLOAD("logUploadJob","logUploadStep"),
+    WEATHER_NOTIFICATION("weatherNotificationJob","weatherNotificationStep");
     private final String jobName;
     private final String stepName;
 

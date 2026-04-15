@@ -89,4 +89,71 @@ public class WeatherRepositoryImpl implements WeatherRepositoryCustom {
                 .execute();
 
     }
+
+    @Override
+    public List<UUID> getTemperatureNotificationTarget() {
+        Instant currentTime = Instant.now().truncatedTo(ChronoUnit.HOURS);
+        Instant oneHourBefore = currentTime.minus(1, ChronoUnit.HOURS);
+
+        QWeather weather1 = weather;
+        QWeather weather2 = new QWeather("weather2");
+        QProfile profile = QProfile.profile;
+
+        return factory
+                .select(profile.user.id)
+                .from(weather1)
+                .join(weather2)
+                .on(
+                        weather1.latitude.eq(weather2.latitude),
+                        weather1.longitude.eq(weather2.longitude)
+                )
+                .join(profile)
+                .on(
+                        profile.location.latitude.eq(weather1.latitude),
+                        profile.location.longitude.eq(weather1.longitude)
+                )
+                .where(
+                        weather1.forecastAt.eq(currentTime),
+                        weather2.forecastAt.eq(oneHourBefore),
+                        weather1.temperatureCurrent
+                                .subtract(weather2.temperatureCurrent)
+                                .abs()
+                                .gt(5.0)
+                )
+                .distinct()
+                .fetch();
+    }
+
+    @Override
+    public List<UUID> getHumidityNotificationTarget() {
+        Instant currentTime = Instant.now().truncatedTo(ChronoUnit.HOURS);
+        Instant oneHourBefore = currentTime.minus(1, ChronoUnit.HOURS);
+
+        QWeather weather1 = weather;
+        QWeather weather2 = new QWeather("weather2");
+        QProfile profile = QProfile.profile;
+
+        return factory
+                .select(profile.user.id)
+                .from(weather1)
+                .join(weather2)
+                .on(
+                        weather1.latitude.eq(weather2.latitude),
+                        weather1.longitude.eq(weather2.longitude)
+                )
+                .join(profile)
+                .on(
+                        profile.location.latitude.eq(weather1.latitude),
+                        profile.location.longitude.eq(weather1.longitude)
+                )
+                .where(
+                        weather1.forecastAt.eq(currentTime),
+                        weather2.forecastAt.eq(oneHourBefore),
+                        weather1.amount
+                                .subtract(weather2.amount)
+                                .gt(5.0)
+                )
+                .distinct()
+                .fetch();
+    }
 }

@@ -33,7 +33,11 @@ public class SystemScheduler {
         batchScheduler.run(JobStatus.LOG_UPLOAD.getJobName());
     }
 
-
+    @Scheduled(cron = "0 10 7,8,9,10,11,12,13,14,15,16,17,18,19,20,21 * * ?")
+    public void runWeatherNotificationJob(){
+        log.info("Starting weather Notification job : {}",Instant.now());
+        batchScheduler.run(JobStatus.WEATHER_NOTIFICATION.getJobName());
+    }
 
 
 }

@@ -37,6 +37,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
     private final OAuth2SocialLoginService oAuth2SocialLoginService;
     private final JwtTokenProvider jwtTokenProvider;
     private final InMemoryAuthTokenStore inMemoryAuthTokenStore;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
     @Override
     public void onAuthenticationSuccess(
@@ -92,6 +93,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         log.info("[OAuth2 success handler] redirectUri={}", redirectUri);
 
         clearOAuth2StateCookies(request, response);
+        httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
 
         response.sendRedirect(redirectUri.toString());
     }
