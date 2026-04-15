@@ -19,10 +19,8 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
-import java.net.URI;
 
 @Component
 @RequiredArgsConstructor
@@ -31,7 +29,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
     private static final String REFRESH_TOKEN_COOKIE_NAME = "REFRESH_TOKEN";
 
-    @Value("${weatherfit.auth.social.success-redirect-uri:http://localhost:8080/index.html}")
+    @Value("${weatherfit.auth.social.success-redirect-uri:https://www.weatherfit.cloud/}")
     private String successRedirectUri;
 
     private final OAuth2SocialLoginService oAuth2SocialLoginService;
@@ -83,19 +81,11 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         ResponseCookie refreshTokenCookie = createRefreshTokenCookie(refreshToken);
         response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
 
-        URI redirectUri = UriComponentsBuilder
-                .fromUriString(successRedirectUri)
-                .queryParam("socialLogin", true)
-                .queryParam("accessToken", accessToken)
-                .build(true)
-                .toUri();
-
-        log.info("[OAuth2 success handler] redirectUri={}", redirectUri);
-
         clearOAuth2StateCookies(request, response);
         httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
 
-        response.sendRedirect(redirectUri.toString());
+        log.info("[OAuth2 success handler] redirectUri={}", successRedirectUri);
+        response.sendRedirect(successRedirectUri);
     }
 
     private SocialProvider parseProvider(String registrationId) {
