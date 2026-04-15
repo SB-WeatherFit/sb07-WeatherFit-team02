@@ -38,10 +38,10 @@ public class WeatherNotificationTasklet implements Tasklet {
         return RepeatStatus.FINISHED;
     }
 
-    public void executeWeatherNotification(){
-        CompletableFuture.runAsync(this::weatherHumidityNotification,weatherNotificationExecutor
-                );
-        CompletableFuture.runAsync(this::weatherTemperatureNotification,weatherNotificationExecutor
+    public void executeWeatherNotification() {
+        CompletableFuture.runAsync(this::weatherHumidityNotification, weatherNotificationExecutor
+        );
+        CompletableFuture.runAsync(this::weatherTemperatureNotification, weatherNotificationExecutor
         );
     }
 
@@ -51,8 +51,7 @@ public class WeatherNotificationTasklet implements Tasklet {
                 eventPublisher.publishEvent(
 
                         new TemperatureNotificationEvent(
-                                target,
-                                "급격한 온도 변화가 관측되었습니다. 기온 변화에 유의하세요"
+                                target
                         )
 
                 )
@@ -66,8 +65,7 @@ public class WeatherNotificationTasklet implements Tasklet {
         targets.forEach(x ->
                 eventPublisher.publishEvent(
                         new HumidityNotificationEvent(
-                                x,
-                                "급격한 강수량 변화가 관측되었습니다. 갑작스러운 날씨 변화를 유의하세요"
+                                x
                         )
                 )
         );

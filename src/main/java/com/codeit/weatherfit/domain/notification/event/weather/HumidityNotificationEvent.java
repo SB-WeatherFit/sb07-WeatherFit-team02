@@ -6,8 +6,7 @@ import com.codeit.weatherfit.domain.notification.event.PersonalNotificationEvent
 import java.util.UUID;
 
 public record HumidityNotificationEvent(
-        UUID receiverId,
-        String content
+        UUID receiverId
 )  implements PersonalNotificationEvent {
     @Override
     public UUID getReceiverId() {
@@ -21,7 +20,7 @@ public record HumidityNotificationEvent(
 
     @Override
     public String getContent() {
-        return content;
+        return "급격한 강수량 변화가 관측되었습니다. 갑작스러운 날씨 변화를 유의하세요";
     }
 
     @Override
