@@ -35,7 +35,6 @@ public class RecommendationServiceImpl implements RecommendationService {
     private final S3Service s3Service;
     private final RedisTemplate<String, Object> redisTemplate;
     private final AiClothesRecommender aiClothesRecommender;
-    //    private final ClothesAttributeTypeRepository clothesAttributeTypeRepository;
     private final ClothesAttributeRepository clothesAttributeRepository;
     private final SelectableValueRepository selectableValueRepository;
 

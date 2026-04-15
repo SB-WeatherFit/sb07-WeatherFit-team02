@@ -16,6 +16,7 @@ import com.codeit.weatherfit.global.s3.exception.S3UploadException;
 import com.codeit.weatherfit.global.s3.util.S3KeyGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final ProfileLocationResolver profileLocationResolver;
     private final ApplicationEventPublisher eventPublisher;
     private final S3Service s3Service;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     @Transactional(readOnly = true)
@@ -78,10 +80,16 @@ public class ProfileServiceImpl implements ProfileService {
             }
         }
 
+        if(request.temperatureSensitivity() != profile.getTemperatureSensitivity()) {
+            redisDelete(userId);
+        }
+
         profile.updateGender(request.gender());
         profile.updateBirthDate(request.birthDate());
         profile.updateLocation(location);
         profile.updateTemperatureSensitivity(request.temperatureSensitivity());
+
+
 
         return ProfileDto.from(profile, getProfileImageUrl(profile));
     }
@@ -100,5 +108,10 @@ public class ProfileServiceImpl implements ProfileService {
             return null;
         }
         return s3Service.getUrl(profileImageKey);
+    }
+
+    private void redisDelete(UUID userId){
+        String key = "rec:pool:" + userId;
+        redisTemplate.delete(key);
     }
 }

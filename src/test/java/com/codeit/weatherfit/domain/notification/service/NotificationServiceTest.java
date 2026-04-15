@@ -37,8 +37,6 @@ class NotificationServiceTest {
     @Autowired
     EntityManager em;
     @MockitoBean
-    private KafkaTemplate<String, MessageCreatedEvent> kafkaTemplate;
-    @MockitoBean
     private FeedSearchRepository feedSearchRepository;
 
 

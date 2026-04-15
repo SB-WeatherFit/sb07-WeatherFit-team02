@@ -26,9 +26,11 @@ import org.jsoup.nodes.Document;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -47,7 +49,7 @@ public class ClothesServiceImpl implements ClothesService {
     private final ClothesAttributeTypeRepository clothesAttributeTypeRepository;
     private final ClothesAttributeRepository clothesAttributeRepository;
     private final S3Service s3Service;
-    private final ApplicationEventPublisher eventPublisher;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     @Transactional
@@ -111,6 +113,7 @@ public class ClothesServiceImpl implements ClothesService {
                 clothesAttributeRepository.save(clothesAttribute);
             }
 
+            redisDelete(ownerId);
         }
 
 
@@ -201,6 +204,8 @@ public class ClothesServiceImpl implements ClothesService {
         if (clothes.getImageKey() != null) {
             s3Service.delete(clothes.getImageKey());
         }
+
+        redisDelete(clothes.getOwner().getId());
     }
 
     @Override
@@ -300,5 +305,10 @@ public class ClothesServiceImpl implements ClothesService {
         } catch (IOException e) {
             throw new ClothesExtractionException(ErrorCode.URL_PARSING_FAILED);
         }
+    }
+
+    private void redisDelete(UUID userId){
+        String key = "rec:pool:" + userId;
+        redisTemplate.delete(key);
     }
 }
