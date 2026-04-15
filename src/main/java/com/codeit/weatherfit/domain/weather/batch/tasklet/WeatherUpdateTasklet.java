@@ -38,14 +38,12 @@ public class WeatherUpdateTasklet implements Tasklet {
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-
         updateWeather();
         return RepeatStatus.FINISHED;
     }
 
     @CacheEvict(value="weathers",allEntries = true)
     public void deleteAllWeatherCache(){
-
     }
 
     public void updateWeather() {
@@ -82,11 +80,7 @@ public class WeatherUpdateTasklet implements Tasklet {
                 }, weatherUpdateTaskExecutor))
                 .toList();
 
-
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
         return ;
-
-
     }
 }

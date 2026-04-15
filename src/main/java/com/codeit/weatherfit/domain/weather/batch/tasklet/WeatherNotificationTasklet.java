@@ -49,15 +49,11 @@ public class WeatherNotificationTasklet implements Tasklet {
         List<UUID> targets = weatherRepository.getTemperatureNotificationTarget();
         targets.forEach(target ->
                 eventPublisher.publishEvent(
-
                         new TemperatureNotificationEvent(
                                 target
                         )
-
                 )
-
         );
-
     }
 
     public void weatherHumidityNotification() {
@@ -69,7 +65,6 @@ public class WeatherNotificationTasklet implements Tasklet {
                         )
                 )
         );
-
 
     }
 }

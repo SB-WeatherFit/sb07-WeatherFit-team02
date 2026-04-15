@@ -7,6 +7,7 @@ import com.codeit.weatherfit.global.s3.exception.S3DeleteException;
 import com.codeit.weatherfit.global.s3.properties.S3Properties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
@@ -30,6 +31,7 @@ public class S3Scheduler {
     private final FeedClothesRepository feedClothesRepository;
 
     @Scheduled(cron = "0 0 0 * * mon") // 일주일에 한번 고아 이미지 파일 삭제
+    @SchedulerLock(name = "deleteImageJob", lockAtMostFor = "10m")
     public void deleteImages() {
         log.info("S3 고아 이미지 정리 시작");
         ListObjectsV2Request request = ListObjectsV2Request.builder()
