@@ -28,4 +28,11 @@ public interface ClothesAttributeRepository extends JpaRepository <ClothesAttrib
     @Query(
             "select ca.option.option from ClothesAttribute ca " + "where ca.clothes = :clothes")
     List<String> getClothesOptions(@Param("clothes") Clothes clothes);
+
+    @Query("select ca from ClothesAttribute  ca" +
+            " join fetch ca.option sa" +
+            " join fetch sa.clothesAttributeType" +
+            " where ca.clothes.id = :clothesId")
+    List<ClothesAttribute> findAllByClothesId(
+            @Param("clothesId") UUID clothesId);
 }
