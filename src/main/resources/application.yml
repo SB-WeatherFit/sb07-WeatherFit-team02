@@ -87,6 +87,7 @@ weatherfit:
     temporary-password-expiration-seconds: ${TEMPORARY_PASSWORD_EXPIRATION_SECONDS:180}
     social:
       success-redirect-uri: ${SOCIAL_LOGIN_SUCCESS_REDIRECT_URI:http://localhost:8080/index.html}
+      failure-redirect-uri: ${SOCIAL_LOGIN_FAILURE_REDIRECT_URI:https://www.weatherfit.cloud/#/auth/login}
   default-user-id: ${DEFAULT_USER_ID:}
 
 info:

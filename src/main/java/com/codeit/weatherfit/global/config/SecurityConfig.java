@@ -1,5 +1,6 @@
 package com.codeit.weatherfit.global.config;
 
+import com.codeit.weatherfit.domain.auth.security.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.codeit.weatherfit.domain.auth.security.JwtAuthenticationFilter;
 import com.codeit.weatherfit.domain.auth.security.OAuth2AuthenticationFailureHandler;
 import com.codeit.weatherfit.domain.auth.security.OAuth2AuthenticationSuccessHandler;
@@ -33,6 +34,7 @@ public class SecurityConfig {
 
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
 
@@ -113,6 +115,9 @@ public class SecurityConfig {
 
         if (oauth2Enabled) {
             http.oauth2Login(oauth2 -> oauth2
+                    .authorizationEndpoint(authorizationEndpoint -> authorizationEndpoint
+                            .authorizationRequestRepository(httpCookieOAuth2AuthorizationRequestRepository)
+                    )
                     .successHandler(oAuth2AuthenticationSuccessHandler)
                     .failureHandler(oAuth2AuthenticationFailureHandler)
             );
