@@ -61,7 +61,7 @@ class OAuth2AuthenticationSuccessHandlerTest {
     }
 
     @Test
-    @DisplayName("Google 로그인 성공 시 access token, refresh cookie, redirect를 처리한다")
+    @DisplayName("Google 로그인 성공 시 refresh cookie 저장 후 success redirect로 이동한다")
     void onAuthenticationSuccess_google() throws Exception {
         OAuth2User oAuth2User = new DefaultOAuth2User(
                 List.of(),
@@ -87,15 +87,16 @@ class OAuth2AuthenticationSuccessHandlerTest {
         successHandler.onAuthenticationSuccess(request, response, authentication);
 
         verify(inMemoryAuthTokenStore).register(user.getId(), accessToken, refreshToken);
-        verify(response).addHeader(eq("Set-Cookie"), contains("REFRESH_TOKEN="));
-        verify(response).sendRedirect(contains("socialLogin=true"));
-        verify(response).sendRedirect(contains("accessToken=access-token"));
+        verify(response).addHeader(eq("Set-Cookie"), contains("REFRESH_TOKEN=refresh-token"));
+        verify(response).addHeader(eq("Set-Cookie"), contains("HttpOnly"));
+        verify(response).addHeader(eq("Set-Cookie"), contains("SameSite=Lax"));
         verify(httpCookieOAuth2AuthorizationRequestRepository)
                 .removeAuthorizationRequestCookies(request, response);
+        verify(response).sendRedirect("http://localhost:8080/index.html");
     }
 
     @Test
-    @DisplayName("Kakao 로그인 성공 시 access token, refresh cookie, redirect를 처리한다")
+    @DisplayName("Kakao 로그인 성공 시 refresh cookie 저장 후 success redirect로 이동한다")
     void onAuthenticationSuccess_kakao() throws Exception {
         OAuth2User oAuth2User = new DefaultOAuth2User(
                 List.of(),
@@ -125,11 +126,12 @@ class OAuth2AuthenticationSuccessHandlerTest {
         successHandler.onAuthenticationSuccess(request, response, authentication);
 
         verify(inMemoryAuthTokenStore).register(user.getId(), accessToken, refreshToken);
-        verify(response).addHeader(eq("Set-Cookie"), contains("REFRESH_TOKEN="));
-        verify(response).sendRedirect(contains("socialLogin=true"));
-        verify(response).sendRedirect(contains("accessToken=access-token"));
+        verify(response).addHeader(eq("Set-Cookie"), contains("REFRESH_TOKEN=refresh-token"));
+        verify(response).addHeader(eq("Set-Cookie"), contains("HttpOnly"));
+        verify(response).addHeader(eq("Set-Cookie"), contains("SameSite=Lax"));
         verify(httpCookieOAuth2AuthorizationRequestRepository)
                 .removeAuthorizationRequestCookies(request, response);
+        verify(response).sendRedirect("http://localhost:8080/index.html");
     }
 
     @Test
