@@ -34,11 +34,10 @@ public class RedisPersonalSubscriber {
         Notification notification = notificationRepository.findById(event.notificationId()).orElseThrow(null);
         NotificationDto notificationDto = NotificationDto.create(notification);
 
-        if(notificationDto.receiverId().equals(event.receiverId())) {
+        if(!notificationDto.receiverId().equals(event.receiverId())) {
             return;
         }
 
         sseService.send(notificationDto);
-        log.info("Sent notification receiverId: {} | event receiverId: {} ", notificationDto.receiverId(),event.receiverId());
     }
 }
