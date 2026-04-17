@@ -25,6 +25,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
 
@@ -47,6 +48,7 @@ import static org.mockito.Mockito.*;
     @Mock private ClothesAttributeRepository clothesAttributeRepository;
     @Mock private S3Service s3Service;
     @Mock private ApplicationEventPublisher eventPublisher;
+    @Mock private RedisTemplate<String, Object> redisTemplate;
 
     @Nested
     class Create {
@@ -225,6 +227,11 @@ import static org.mockito.Mockito.*;
         void success() {
             UUID id = UUID.randomUUID();
             Clothes clothes = mock(Clothes.class);
+            User owner = mock(User.class); // Owner용 Mock 추가
+
+
+            when(clothes.getOwner()).thenReturn(owner);
+            when(owner.getId()).thenReturn(id);
 
             when(clothesRepository.findById(id))
                     .thenReturn(Optional.of(clothes));
